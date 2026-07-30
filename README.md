@@ -1,39 +1,28 @@
 # CauseForge
 
 > **A Budgeted Interventional Data Engine for Agent Improvement**
-> 在明确的执行预算下，主动获取、验证并持续维护关于改写 Agent 任务结果的因果数据。
+> 在有限执行预算下，主动获取、验证并持续维护真正改变 Agent 任务结果的因果数据。
 
-**状态：M1 立卡片已完成（端到端跑通，首个生死数字达标：flip 可复现率 100%）。** 本 README 是项目的合同：主张、路线、判死线都写在这里。
-
----
+**状态：M1 完成**——竖切面端到端跑通，24 项测试全绿，玩具 workload 上 flip 可复现率 18/18 = 100%（判死线 ≥90% 已固化为 CI 断言）。注意：该数字是缓存/脚本化条件下的仪器上界，真实开奖在 M1.5。代码已与本仓库统一（远端开发机 `/home/jovyan/causeforge` ↔ GitHub `main`）。本 README 是项目的合同：主张、路线、判死线都写在这里。
 
 ## 快速开始
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e .
-.venv/bin/python -m causeforge demo            # 一条命令端到端 demo
+.venv/bin/python -m causeforge demo             # 一条命令端到端 demo
 .venv/bin/python -m causeforge report runs/demo
-.venv/bin/python -m causeforge regress runs/demo   # 重放导出的反事实回归用例
+.venv/bin/python -m causeforge regress runs/demo  # 重放导出的反事实回归用例
 .venv/bin/python -m pytest tests/
-```
-
-Demo 输出（toy workload，9 任务 / 6 失败 / 7 候选干预）：
-
-```text
-units by tier       : {'SUGGESTED': 1, 'MINIMAL': 6}
-determinism control : OK
-FLIP REPRO RATE     : 100.0% (18/18 intervened replays flipped)  [kill line: >= 90%]
-causal slicing      : 7 atoms -> 6 atoms
 ```
 
 ## 这是什么
 
-Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、单臂的，不随模型/prompt/工具/环境升级迅速失效。现有系统的共同盲点是**被动处理已经产生的日志**（存储、摘要、召回、导出）。CauseForge 打的是另一件事：
+Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、冗余的，且随模型/prompt/工具/环境升级迅速失效。现有系统的共同点是**被动处理已经产生的日志**（存储、打分、切分、导出）。CauseForge 做的是另一件事：
 
 > Experience systems store what agents happened to try;
 > **CauseForge actively acquires the causal experience that agents should learn from.**
 
-系统主动决定：在哪条轨迹的哪个状态、施加什么类型的干预、fork 环境后成对反事实重放、验证结果是否真的翻转、最小化到最小因果切片，并物化为四类资产：
+系统主动决定：在哪条轨迹的哪个状态、施加什么类型的干预、fork 环境做成对反事实重放、验证结果是否真的翻转、提取最小因果单元，并物化为四类资产：
 
 | 输出 | 用途 |
 |---|---|
@@ -44,6 +33,72 @@ Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、单臂�
 
 完整设计见 [docs/design.md](docs/design.md)。
 
+## 生态位：一个"因果版 Data-Juicer"？
+
+电梯稿可以这么讲，但精确的定位是站在 Data-Juicer 一族没有的那根轴上：
+
+> Data-Juicer refines the data you already have;
+> **CauseForge decides which executions to run to create the data you're missing — and proves each unit actually changed the outcome.**
+
+| | Data-Juicer 家族（DJ 2.0 / Sandbox / Trinity-RFT） | CauseForge |
+|---|---|---|
+| 输入 | 已存在的语料 / 经验数据 | 可重放的 Agent 执行环境 |
+| 核心动作 | 算子变换：清洗、过滤、去重、合成 | fork / 干预 / 成对反事实重放 |
+| 质量信号 | 启发式统计、模型打分、训练反馈（池粒度、观察性） | verifier 结果翻转（unit 粒度、干预性、可复现） |
+| 环境在闭环里 | 否 | **是——这是本质分界线** |
+| 数据失效 | 重新跑一遍处理 | provenance 驱动的选择性重验证 |
+
+- **生态策略**：不与 DJ 竞争，站它上游——validated causal units 可直接作为 DJ / Trinity-RFT 管线的高置信输入源。
+- **时间压力**：Trinity-RFT 已把 DJ 接进 agent 经验管线（带优先级的 experience replay）。反事实验证和版本化失效的空位还在，但不会永远空着。
+- **Related work 必引**：Data-Juicer 2.0（NeurIPS'25 D&B）、DJ Sandbox（ICML'25）、Trinity-RFT、AgentTrek。
+
+## 干预性算子：把算子抽象从观察性推进到因果
+
+核心设计（也是论文 Contribution 1 的新表述）：**扩展算子的类型签名**。
+
+```text
+DJ 算子:          Dataset → Dataset                # 纯变换，花 CPU/GPU 时间
+CauseForge 算子:  (Units, Env, Budget) → Units'    # 可花真实执行预算，可提升证据等级
+```
+
+Budget 分两层，这是库的核心卖点（tree-search 造数据家族的头号痛点就是 rollout 成本）：
+
+- **机制层（永远在线）**：成本记账、shared-prefix 复用、LLM 全量缓存、sequential stopping、多保真漏斗——用户跑任何策略都免费获得省钱层；
+- **策略层（可插拔）**：我们的 acquisition optimizer 是默认调度策略之一，用户可自带策略（MCTS 展开、随机、穷举）在同一记账系统上运行——评估因此可以和已发表方法的真实策略同台比 cost-per-unit。
+
+三类算子构成完整代数：
+
+| 算子类 | 成员 | 环境 | 预算 | 证据等级效果 |
+|---|---|---|---|---|
+| 观察性（DJ 同款语义） | screen / rank / signature-dedup / 启发式切片 | 不需要 | 零 | 封顶 Suggested |
+| **干预性（新物种）** | propose / fork+paired-replay / minimize / revalidate | 需要 | 真实执行成本 | 推进至 Counterfactual-Validated / Reproducible / Minimal |
+| 编译 | sft / dpo / memory / regression | 不需要 | 零 | 不变，随视图携带 |
+
+由此获得三个免费的统一：
+
+- **三级接入模式 = 算子集合的三个子集 + 证据等级天花板。**Import Mode 只有观察性+编译算子；Tool Replay Mode 增加局部干预算子；Snapshot Mode 全量开放。
+- **Acquisition optimizer = 配方调度器。**决定数据池中多大流量通过哪个贵算子——多保真漏斗成为配方语言的一等公民。
+- **方向对称：repair 与 stress 是同一台机器。**干预算子无方向，目标函数有方向——repair 方向在失败轨迹上搜索 fail→pass 翻转（恢复数据）；stress 方向在成功轨迹上搜索 pass→fail 的最小扰动（鲁棒性报告、加强版回归测试、对抗课程 / hard negatives）。机制共享，只换目标符号。stress 方向为 v2；对外文案统一用 perturbation / stress-testing，不用 "attack"。
+- **通用性边界**：任何领域只要提供可重放环境 + verifier，全部算子即可用；给不出的领域降级至 Import Mode。
+
+实现边界：语义上与 DJ 兼容（units 可导出进 DJ/Trinity 管线），实现上不寄生——不在 data-juicer 代码库上开发，只做导出适配器。
+
+## 库定位：N 篇论文的手搓循环 → 一个公共底座
+
+2024–2026 已成型一个方法家族：从分支 / 反事实 rollout 造训练信号（MCTS→step-level DPO 对、TreeRL / Tree-GRPO / ARPO、rollout-tree 信用分配 RTMC / AT2PO、CCPO 的 SCM+ATE 信用、CriticSearch……）。每篇都在手搓同一个循环：**分支 → rollout → 比较 → 步级信号 → 编译**。CauseForge 的库主张：这个家族共享一个底座，我们把它做成库。
+
+| 已发表方法家族 | 在 CauseForge 中的表达 |
+|---|---|
+| MCTS → step-level DPO 对 | fork + paired replay + DPO 编译算子 |
+| Rollout-tree 信用分配（Tree-GRPO / RTMC / AT2PO） | shared-prefix trace DAG + paired outcomes |
+| 反事实信用（CCPO 的 ATE） | paired replay 效应估计 $\widehat{\Delta}$ |
+| Process reward 数据 | process-reward 视图编译算子 |
+| HER 式 relabel | ObservationEdit / relabel 观察性算子 |
+
+这个定位卸掉了 RQ1 赌局：方法有效性已由各原论文证明，我们的主张是底座——评估变为 (1) 表达力案例研究（≤100 行复现 2–3 个已发表方法的数据管线）、(2) 效率（DAG/缓存/预算调度 vs 各自的 naive 循环）、(3) 独有能力（证据等级、副作用安全、版本化保鲜）。
+
+**Adoption 硬条件**：导出 verl / TRL 兼容格式；无状态环境（数学/推理任务的从前缀重采样）作为零成本特例支持——这是家族里最大的用户群，snapshot 在此退化为 prompt 前缀。有状态工具环境的 snapshot/fork/副作用管理是护城河，留给 code agent 场景。
+
 ## 核心闭环
 
 ```text
@@ -53,46 +108,49 @@ Agent Execution → Trace Collection → Candidate Screening
     → SFT / DPO / Memory / Regression Views → Version-Aware Revalidation
 ```
 
-四个核心抽象（`Episode` / `Snapshot` / `Intervention` / `Outcome`），最终数据单位是带证据等级的 `CausalUnit`：
+四个核心抽象：`Episode` / `Snapshot` / `Intervention` / `Outcome`，最终数据单位是带证据等级的 `CausalUnit`：
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
 任何 API 和展示中，证据等级永远随数据可见——不把弱证据包装成因果。
 
-## 怎么证明它有用：三条证据链
+## 怎么证明它有用：证据链
 
 | 证据链 | 内容 | 成本 |
 |---|---|---|
 | **A. 引擎自身高效** | flip 可复现率、每个 validated unit 的获取成本、prefix 复用节省、selective revalidation vs 全量重放 | 机器时间，无训练开销 |
-| **B. 数据有价值** | matched-budget 下二组对照的下游效用（含零成本 baseline：不执行任何 replay 的 LLM 修正对） | 训练实验，唯一真正的赌注 |
-| **C. 有人真用** | 一条命令 demo、开源、外部项目接入 Import Mode | 工程 + 社区 |
+| **B. 表达力** | 用算子抽象 ≤100 行复现 2–3 个已发表方法的数据管线（MCTS-DPO、rollout-tree 信用分配、HER relabel） | 工程，无训练开销 |
+| **C. 数据有价值（加分项）** | matched-budget 下五组对照的下游效用（含零成本 baseline：不执行任何 replay 的 LLM 修正对） | 训练实验；库定位下已非生死赌局 |
+| **D. 有人真用** | 一条命令 demo、开源、verl/TRL/DJ 导出适配、外部项目接入 Import Mode。宣传时机：A+B 数字亮了再出去说话；主渠道是 integration PR（verl/TRL 导入、awesome-list、DJ 适配器），不是发帖 | 工程 + 社区 |
 
-点亮顺序 A → B → C。B 翻车不毁项目：主线从"训练数据引擎"转向"Agent 回归测试与数据保鲜"，证据链 A 与 M4 实验原样保值。
+点亮顺序 A → B → D，C 择机做。C 翻车不毁项目：库的价值主张由 A+B+D 支撑，训练主张降级为其中一个应用；A 与 M4 实验原样保值。
 
 ## 路线图
 
 - [x] **M0** 设计文档（[docs/design.md](docs/design.md)）
-- [x] **M1 立卡片**：schemas → collector → 本地环境 snapshot/restore → paired replay → pytest verifier → SFT/DPO export → 玩具 demo 端到端跑通。**首个生死数字：flip 可复现率 = 100%（18/18，确定性子集）**
-- [ ] **M1.5 workload**：自建 dependency-migration mini-bench（20–50 任务，锚定真实 breaking change：pydantic v2、pandas 2.x、numpy 2.0 等，PyMigBench 作候选来源）+ Docker 环境适配器
-- [ ] **M2 获取优化器**：多保真筛选、adaptive singleton、sequential stopping、effect-signature 去重；产出 cost-per-unit 曲线 vs exhaustive/random
-- [ ] **M3 存储与调度**：shared-prefix trace DAG、checkpoint placement；产出 replay 加速数据
-- [ ] **M4 保鲜维护**：全链路 provenance、selective revalidation、用一次真实包版本升级做实验
-- [ ] **训练 pilot（RQ1）**：二组 matched-token 对照，单一底座单一 LoRA 配置
-- [ ] 论文骨架与 claim 表随 M1 起步并行推进（`experiments/claims.md`）
+- [x] **M1 竖切面**：schemas → collector → 本地环境 snapshot/restore → paired replay → pytest verifier → 四种 export → 玩具 demo 端到端跑通。实测：flip 可复现率 18/18 = 100%（玩具上界）、9 episodes、7→6 causal atoms（ddmin 切片）、cost ~2.2s/unit、判死线进 CI（`tests/test_e2e_demo.py`）。M1.5 需补报：live agent 下的对照支 digest 匹配率
+- [ ] **M1.5 workload**：自建 dependency-migration mini-bench（20–50 任务，选真实 breaking change：pydantic v2、pandas 2.x、numpy 2.0 等；PyMigBench 作候选底料）+ Docker 环境适配器
+- [ ] **M2 预算层 + 获取优化器**：机制层（记账/缓存/前缀复用/提前停止）对所有策略生效；默认策略（多保真筛选、adaptive singleton、effect-signature 去重）作为可插拔调度器，产出 cost-per-unit 曲线 vs exhaustive / random / 用户自带策略
+- [ ] **M3 存储与调度**：shared-prefix trace DAG、checkpoint placement。产出 replay 加速数据
+- [ ] **M4 保鲜维护**：全链路 provenance、selective revalidation。用一次真实发生的版本升级做实验
+- [ ] **案例研究（证据链 B）**：用算子抽象复现 2–3 个已发表方法的数据管线；导出 verl/TRL 兼容格式
+- [ ] **训练 pilot（RQ1，加分项）**：五组 matched-token 对照，同一基座同一 LoRA 配置
+- [ ] **(v2) CauseForge Sandbox**：小成本下游代理信号（LoRA 探针 / memory 命中率 / regression 通过率）反馈校准 acquisition optimizer——把 TransferEstimate 从静态启发式变成自校准闭环。与 DJ Sandbox 平行："他们 co-develop 数据配方与模型，我们 co-develop 干预策略与 Agent"。依赖 M1–M4 全部就位，v1 冻结
+- [ ] 论文骨架与 claim 表随 M1 起步并行推进（[experiments/claims.md](experiments/claims.md)）
 
-## 判死线（提前写死，不许挪动）
+## 判死线（提前写死，不许恋战）
 
-1. 纯净子集 flip 可复现率 **< 90%** → 停下修 determinism 或换 workload，不带病前进。**（M1 实测 100%，通过）**
+1. 纯净子集 flip 可复现率 **< 90%** → 停下修 determinism 或换 workload，不带病前进。
 2. RQ1 输给零成本 LLM 修正对 baseline → 当天转线到 regression/freshness 主线。
 3. 连续两周没有产出新数字 → 项目跑偏，回到本表。
 
-## 拿铁设计约束
+## 承重设计约束
 
-- **只在 step 边界 fork。**Snapshot = 文件系统 + 显式声明状态，不承诺恢复运行中的进程（无 CRIU 依赖）。
-- **副作用分级执行。**工具声明 `PURE / IDEMPOTENT / REVERSIBLE / TRANSACTIONAL / EXTERNAL_SIDE_EFFECT`；EXTERNAL 不得进行真实重放，只允许 mock/dry-run。
-- **Recorded replay 优先，LLM 响应全量缓存。**Live paired replay 只留给策略分支——这是成本存活机制，不是可选优化。
-- **成本记账从第一行代码开始。**token/时间/美元入账，总成本是论文横轴，事后补记等于造假。
-- **不依赖任何未经核实的外部资产。**workload 自建或选用公开数据集。
+- **只在 step 边界 fork。**Snapshot = 文件系统 + 显式声明状态，不承诺恢复进行中的进程（无 CRIU 依赖）。
+- **副作用分级执行。**工具声明 `PURE / IDEMPOTENT / REVERSIBLE / TRANSACTIONAL / EXTERNAL_SIDE_EFFECT`；EXTERNAL 一律禁止真实重放，只允许 mock/dry-run。
+- **Recorded replay 优先，LLM 响应全量缓存。**Live paired replay 只留给过筛候选——这是成本活命机制，不是可选优化。
+- **成本记账从第一行代码开始。**token/时间/美元入账，总成本是论文横轴，事后补记等于重跑。
+- **不依赖任何未经核实的外部资产。**workload 自建或采用公开数据集。
 
 ## 第一版范围纪律
 
@@ -100,28 +158,24 @@ Agent Execution → Trace Collection → Candidate Screening
 
 **冻结**（直到证据链亮两条）：Web UI、多框架 adapter、PostgreSQL、OpenTelemetry、remote workers、通用化 API 打磨。
 
-## 仓库结构
+## 规划的仓库结构
 
 ```text
 causeforge/
 ├── sdk/            # schemas（四个核心抽象 = 论文 Contribution 1）
-├── runtime/        # collector、agent policy、pytest verifier
-├── store/          # content-addressed blob store（trace DAG 属 M3）
+├── runtime/        # collector、agent adapter
+├── store/          # trace DAG、blob store、checkpoint policy   (M3)
 ├── replay/         # sandbox、recorded/paired replay
-├── interventions/  # ActionReplace、ToolArgumentEdit + 原子分解
-├── acquisition/    # screener（adaptive singleton、stopping 属 M2）
-├── slicing/        # ddmin 最小因果切片
-├── compiler/       # sft / dpo / memory / regression 四种导出
-├── maintenance/    # provenance、selective revalidation 钩子
-├── workloads/      # toy workload（M1.5 换 dependency-migration bench）
-├── pipeline.py     # 端到端编排
-├── run_store.py    # run 目录持久化（自包含、可重执行）
-└── cli.py          # demo / report / regress
-experiments/        # claims.md（claim → 实验 → 阈值）
+├── interventions/  # ActionReplace、ToolArgumentEdit、…
+├── acquisition/    # screener、adaptive singleton、stopping     (M2)
+├── slicing/        # delta debug、minimal context
+├── compiler/       # sft / dpo / memory / regression
+├── maintenance/    # provenance、selective replay               (M4)
+└── cli.py
+experiments/        # claims.md（claim → 实验 → 阈值）、pilot 脚本
 docs/               # design.md
-tests/              # 24 项单测 + E2E（判死线以 CI 断言形式存在）
 ```
 
 ## 开发环境约定
 
-一切安装发生在项目内（`.venv`），不安装全局。macOS 只做开发机；论文性能数字（replay throughput 等）在 Linux 上测。
+一切安装圈定在项目内（`.venv`），不做全局安装。macOS 只作开发机；论文性能数字（replay throughput 等）在 Linux 上测。

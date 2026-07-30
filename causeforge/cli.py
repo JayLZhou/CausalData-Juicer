@@ -58,6 +58,14 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_acq = sub.add_parser("acquire-eval", help="M2: cost-per-unit curves across policies")
+    p_acq.add_argument("--base", default="runs/depmig-7b")
+    p_acq.add_argument("--pool", nargs="*", default=[])
+    p_acq.add_argument("--policies", default="exhaustive,random:0,random:1,adaptive")
+    p_acq.add_argument("--budgets", default="15,30,60,120")
+    p_acq.add_argument("--repro", type=int, default=3)
+    p_acq.add_argument("--out", default="experiments/results/m2_curves.json")
+
     p_bench = sub.add_parser("bench-build", help="build + validate the depmig bench")
     p_bench.add_argument("--env-root", default="bench_envs")
     p_bench.add_argument("--out", default="bench_envs/certificate.json")
@@ -88,6 +96,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
+        return 0
+
+    if args.cmd == "acquire-eval":
+        from causeforge.acquisition.evaluate import evaluate, print_eval
+        report = evaluate(
+            Path(args.base), [Path(p) for p in args.pool],
+            policies=args.policies.split(","),
+            budgets=[int(b) for b in args.budgets.split(",")],
+            n_repro=args.repro,
+        )
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=2))
+        print_eval(report)
+        print(f"curves: {out}")
         return 0
 
     if args.cmd == "bench-build":

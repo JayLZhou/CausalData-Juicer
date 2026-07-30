@@ -12,7 +12,7 @@
 | A6 | prefix 复用节省 replay 成本 | M3 checkpoint placement 实验 | vs 全量重放的加速比 | ⬜ M3 |
 | A9 | live agent 下对照支 digest 匹配率（新指标） | M1.5 bench 全量采集 | 报告数值 + 分解不匹配来源；toy 上界 100% | ✅ **100%**（29 unit 对照支，live agent）, 2026-07-30；无不匹配来源可分解 |
 | A10 | fixer 产出率随 fixer 强度提升 | 同一 19 失败集（agent 轨迹缓存复现），fixer 7B vs 14B | 原假设：14B > 7B | ✅ **假设被否，发现更好的**：7B 翻 4 任务、14B 翻 3 任务、只重叠 1 个，**并集 6 任务**——异构 fixer 池 ≻ 单一强 fixer（M2 多源筛选的第一个实证论据）；两轮 flip-repro 均 15/15=100%、digest-match 均 100%, 2026-07-30 → `experiments/results/depmig-7b-fixer14b.json` |
-| A7 | 预算筛选 beat exhaustive/random | M2 cost-per-unit 曲线 | 同预算下 validated units 更多 | ⬜ M2 |
+| A7 | 预算筛选 beat exhaustive/random | M2 cost-per-unit 曲线（55 池化候选, 4 策略 + 机制消融） | 同预算下 validated units 更多 | ◐ **双结论**, 2026-07-30：(1) **机制层节省 26%**（137→101 replays, 产出相同 9u/6t; 全部来自对照支 memoization）；(2) **策略层 null result**——此规模（55 候选/19 失败/家族翻转率差异小）下 adaptive 与 exhaustive/random 无显著差异，全部收敛 9u/6t@101。放大条件（更大池、更贵验证、家族差异悬殊）留待 M2.5 复验 → `experiments/results/m2_curves{,_nomech}.json` |
 | A8 | selective revalidation << 全量 | M4 真实包升级实验 | 重放次数下降 ≥ 5× 且不漏降级 | ⬜ M4 |
 | B1 (RQ1) | causal 数据 beat 零成本修正对 | matched-token 二组对照训练 | 输了 → 当天转线 regression/freshness | ⬜ pilot |
 

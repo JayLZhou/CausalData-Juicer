@@ -1,0 +1,385 @@
+{
+  "base_run": "runs/depmig-7b",
+  "pool_runs": [
+    "runs/depmig-7b-fixer14b"
+  ],
+  "n_candidates": 55,
+  "n_repro": 3,
+  "budgets": [
+    15,
+    30,
+    60,
+    120
+  ],
+  "results": [
+    {
+      "policy": "exhaustive[no-mech]",
+      "candidates": "55/55",
+      "total": {
+        "replays": 137,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      "at_budget": {
+        "15": {
+          "replays": 15,
+          "seconds": 7.93,
+          "validated_units": 1,
+          "distinct_tasks": 1
+        },
+        "30": {
+          "replays": 29,
+          "seconds": 20.53,
+          "validated_units": 1,
+          "distinct_tasks": 1
+        },
+        "60": {
+          "replays": 60,
+          "seconds": 37.3,
+          "validated_units": 4,
+          "distinct_tasks": 3
+        },
+        "120": {
+          "replays": 119,
+          "seconds": 75.44,
+          "validated_units": 9,
+          "distinct_tasks": 6
+        }
+      }
+    }
+  ],
+  "curves": {
+    "exhaustive[no-mech]": [
+      {
+        "replays": 2,
+        "seconds": 0.66,
+        "validated_units": 0,
+        "distinct_tasks": 0
+      },
+      {
+        "replays": 4,
+        "seconds": 1.33,
+        "validated_units": 0,
+        "distinct_tasks": 0
+      },
+      {
+        "replays": 9,
+        "seconds": 4.36,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 11,
+        "seconds": 5.85,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 13,
+        "seconds": 7.32,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 15,
+        "seconds": 7.93,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 17,
+        "seconds": 9.23,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 19,
+        "seconds": 10.53,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 21,
+        "seconds": 12.92,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 23,
+        "seconds": 15.35,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 25,
+        "seconds": 17.23,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 27,
+        "seconds": 18.9,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 29,
+        "seconds": 20.53,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 31,
+        "seconds": 20.97,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 33,
+        "seconds": 22.32,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 35,
+        "seconds": 23.66,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 37,
+        "seconds": 24.59,
+        "validated_units": 1,
+        "distinct_tasks": 1
+      },
+      {
+        "replays": 42,
+        "seconds": 26.97,
+        "validated_units": 2,
+        "distinct_tasks": 2
+      },
+      {
+        "replays": 47,
+        "seconds": 29.34,
+        "validated_units": 3,
+        "distinct_tasks": 2
+      },
+      {
+        "replays": 49,
+        "seconds": 30.85,
+        "validated_units": 3,
+        "distinct_tasks": 2
+      },
+      {
+        "replays": 51,
+        "seconds": 31.78,
+        "validated_units": 3,
+        "distinct_tasks": 2
+      },
+      {
+        "replays": 53,
+        "seconds": 33.2,
+        "validated_units": 3,
+        "distinct_tasks": 2
+      },
+      {
+        "replays": 58,
+        "seconds": 36.63,
+        "validated_units": 4,
+        "distinct_tasks": 3
+      },
+      {
+        "replays": 60,
+        "seconds": 37.3,
+        "validated_units": 4,
+        "distinct_tasks": 3
+      },
+      {
+        "replays": 62,
+        "seconds": 37.99,
+        "validated_units": 4,
+        "distinct_tasks": 3
+      },
+      {
+        "replays": 64,
+        "seconds": 39.42,
+        "validated_units": 4,
+        "distinct_tasks": 3
+      },
+      {
+        "replays": 69,
+        "seconds": 42.84,
+        "validated_units": 5,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 71,
+        "seconds": 43.52,
+        "validated_units": 5,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 73,
+        "seconds": 44.19,
+        "validated_units": 5,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 75,
+        "seconds": 46.15,
+        "validated_units": 5,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 77,
+        "seconds": 48.11,
+        "validated_units": 5,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 82,
+        "seconds": 51.2,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 84,
+        "seconds": 52.71,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 86,
+        "seconds": 53.34,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 88,
+        "seconds": 54.67,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 90,
+        "seconds": 56.15,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 92,
+        "seconds": 58.15,
+        "validated_units": 6,
+        "distinct_tasks": 4
+      },
+      {
+        "replays": 97,
+        "seconds": 64.51,
+        "validated_units": 7,
+        "distinct_tasks": 5
+      },
+      {
+        "replays": 99,
+        "seconds": 67.46,
+        "validated_units": 7,
+        "distinct_tasks": 5
+      },
+      {
+        "replays": 104,
+        "seconds": 68.57,
+        "validated_units": 8,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 109,
+        "seconds": 69.68,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 111,
+        "seconds": 71.06,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 113,
+        "seconds": 72.02,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 115,
+        "seconds": 72.98,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 117,
+        "seconds": 74.12,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 119,
+        "seconds": 75.44,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 121,
+        "seconds": 76.75,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 123,
+        "seconds": 78.49,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 125,
+        "seconds": 79.67,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 127,
+        "seconds": 80.86,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 129,
+        "seconds": 82.32,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 131,
+        "seconds": 83.02,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 133,
+        "seconds": 84.5,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 135,
+        "seconds": 85.19,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      },
+      {
+        "replays": 137,
+        "seconds": 85.88,
+        "validated_units": 9,
+        "distinct_tasks": 6
+      }
+    ]
+  }
+}

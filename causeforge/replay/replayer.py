@@ -116,7 +116,14 @@ class Replayer:
         snapshots: list[Snapshot],
         intervention: Intervention,
         n_repro: int = 3,
+        control_cache: Optional[dict] = None,
+        early_stop_repro: bool = False,
     ) -> CausalUnit:
+        """``control_cache`` (M2 mechanism): memoizes the determinism-control
+        branch per (episode, step) so multiple candidates targeting the same
+        fork point pay for it once.  ``early_stop_repro`` (M2 mechanism):
+        abandon remaining repro runs at the first non-flip, since
+        REPRODUCIBLE requires n/n anyway."""
         assert episode.outcome is not None, "episode must be verified before replay"
         unit = CausalUnit(
             episode_id=episode.id,
@@ -126,10 +133,16 @@ class Replayer:
         )
         snap = self._snapshot_for(snapshots, episode, intervention.target_step)
 
-        # Branch A: determinism control.
-        control = self._run_branch(
-            episode, intervention.target_step, snap.tree_digest, unit.cost
-        )
+        # Branch A: determinism control (memoized across candidates).
+        cache_key = (episode.id, intervention.target_step)
+        if control_cache is not None and cache_key in control_cache:
+            control = control_cache[cache_key]
+        else:
+            control = self._run_branch(
+                episode, intervention.target_step, snap.tree_digest, unit.cost
+            )
+            if control_cache is not None:
+                control_cache[cache_key] = control
         unit.original_replay_match = control.deterministic_match
         unit.control_digest_match = control.digest_match_fraction
         if not control.deterministic_match:
@@ -149,14 +162,17 @@ class Replayer:
         unit.tier = EvidenceTier.COUNTERFACTUAL_VALIDATED
 
         # Reproducibility runs: fresh forks, same intervention.
-        flips = 1
+        flips, runs = 1, 1
         for _ in range(max(0, n_repro - 1)):
             rec = self._run_branch(
                 episode, intervention.target_step, snap.tree_digest, unit.cost, intervention
             )
+            runs += 1
             if (not episode.outcome.success) and rec.outcome.success:
                 flips += 1
-        unit.repro_runs = n_repro
+            elif early_stop_repro:
+                break
+        unit.repro_runs = n_repro if flips == runs else runs
         unit.repro_flips = flips
         if flips == n_repro:
             unit.tier = EvidenceTier.REPRODUCIBLE

@@ -22,7 +22,8 @@ def _print_report(report: dict) -> None:
           f"({report['failed_episodes']} failed)")
     print(f"candidates screened : {report['candidates_screened']}")
     print(f"units by tier       : {report['units_by_tier']}")
-    print(f"determinism control : {'OK' if report['determinism_control_ok'] else 'MISMATCH'}"
+    det = report["determinism_control_ok"]
+    print(f"determinism control : {'n/a' if det is None else 'OK' if det else 'MISMATCH'}"
           + (f"  (digest match {report['control_digest_match_rate']:.1%})"
              if report.get("control_digest_match_rate") is not None else ""))
     print(f"FLIP REPRO RATE     : {rate if rate is None else f'{rate:.1%}'} "
@@ -61,6 +62,16 @@ def main(argv: list[str] | None = None) -> int:
     p_bench.add_argument("--env-root", default="bench_envs")
     p_bench.add_argument("--out", default="bench_envs/certificate.json")
 
+    p_live = sub.add_parser("collect-depmig", help="live collection on the depmig bench")
+    p_live.add_argument("--base-url", default="http://127.0.0.1:8010/v1")
+    p_live.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
+    p_live.add_argument("--out", default="runs/depmig")
+    p_live.add_argument("--repro", type=int, default=3)
+    p_live.add_argument("--max-steps", type=int, default=10)
+    p_live.add_argument("--env-root", default="bench_envs")
+    p_live.add_argument("--fixer-candidates", type=int, default=1)
+    p_live.add_argument("--tasks", nargs="*", default=None, help="subset of task ids")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "demo":
@@ -90,6 +101,25 @@ def main(argv: list[str] | None = None) -> int:
         print_certificate(cert)
         print(f"certificate: {args.out}")
         return 0 if cert["valid"] else 1
+
+    if args.cmd == "collect-depmig":
+        from causeforge.pipeline_depmig import run_depmig
+        report = run_depmig(
+            Path(args.out), base_url=args.base_url, model=args.model,
+            n_repro=args.repro, max_steps=args.max_steps,
+            task_ids=args.tasks, env_root=Path(args.env_root),
+            fixer_candidates=args.fixer_candidates,
+        )
+        _print_report(report)
+        extra = (f"agent solved       : {report['agent_solved']}/{report['episodes']} "
+                 f"(seal violations: {report['seal_violations']})")
+        print(extra)
+        for key in sorted(report["breakdown"]):
+            b = report["breakdown"][key]
+            print(f"  {key:<18} candidates={b['candidates']} flipped={b['flipped']} "
+                  f"repro={b['repro_flips']}/{b['repro_runs']}")
+        rate = report.get("flip_repro_rate")
+        return 0 if (rate is None or rate >= 0.9) else 1
 
     if args.cmd == "regress":
         test_file = Path(args.run_dir) / "exports" / "test_regression.py"

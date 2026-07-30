@@ -58,6 +58,11 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_exp = sub.add_parser("export", help="export a run to a training-stack format")
+    p_exp.add_argument("--run", default="runs/depmig-7b")
+    p_exp.add_argument("--format", choices=["trl-sft", "trl-dpo", "verl"], required=True)
+    p_exp.add_argument("--out", default=None)
+
     p_acq = sub.add_parser("acquire-eval", help="M2: cost-per-unit curves across policies")
     p_acq.add_argument("--base", default="runs/depmig-7b")
     p_acq.add_argument("--pool", nargs="*", default=[])
@@ -96,6 +101,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
+        return 0
+
+    if args.cmd == "export":
+        from causeforge.compiler.adapters import ADAPTERS
+        from causeforge.run_store import RunStore
+        store = RunStore(Path(args.run))
+        suffix = "" if args.format == "verl" else ".jsonl"
+        out = Path(args.out) if args.out else Path(args.run) / "exports" / f"{args.format}{suffix}"
+        path = ADAPTERS[args.format](store.load_units(), store.load_episodes(), out)
+        n = sum(1 for _ in open(path, "rb"))
+        print(f"{args.format}: {path} ({'parquet' if path.suffix == '.parquet' else f'{n} rows'})")
         return 0
 
     if args.cmd == "acquire-eval":

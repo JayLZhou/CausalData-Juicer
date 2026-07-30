@@ -1,0 +1,97 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 30,
+  "failed_episodes": 19,
+  "agent_solved": 11,
+  "seal_violations": 0,
+  "candidates_screened": 29,
+  "units_by_tier": {
+    "SUGGESTED": 24,
+    "MINIMAL": 5
+  },
+  "validated_units": 5,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "15/15 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 6,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    },
+    "tier:T1": {
+      "candidates": 12,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "tier:T2": {
+      "candidates": 11,
+      "flipped": 3,
+      "repro_flips": 9,
+      "repro_runs": 9
+    },
+    "tier:T3": {
+      "candidates": 6,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:numpy": {
+      "candidates": 2,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:sqlalchemy": {
+      "candidates": 5,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:click": {
+      "candidates": 8,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "family:networkx": {
+      "candidates": 8,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    }
+  },
+  "slicing": {
+    "atoms_before": 5,
+    "atoms_after": 5
+  },
+  "cost": {
+    "llm_calls": 156,
+    "tokens_in": 95451,
+    "tokens_out": 7976,
+    "tool_calls": 389,
+    "replay_runs": 73,
+    "wall_time_s": 83.81,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 2.9,
+  "exports": {
+    "sft": "runs/depmig-7b/exports/sft.jsonl",
+    "dpo": "runs/depmig-7b/exports/dpo.jsonl",
+    "memory": "runs/depmig-7b/exports/memory.jsonl",
+    "regression": "runs/depmig-7b/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct"
+  },
+  "wall_time_total_s": 259.51
+}

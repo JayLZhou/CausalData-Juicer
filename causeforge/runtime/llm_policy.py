@@ -73,8 +73,9 @@ class LLMPolicy:
         for step in history:
             messages.append({"role": "assistant",
                              "content": json.dumps(step.action.model_dump(), ensure_ascii=False)})
+            # Keep the tail: pytest puts the informative part at the end.
             messages.append({"role": "user",
-                             "content": f"Observation: {step.observation[:self.obs_limit]}"})
+                             "content": f"Observation: {step.observation[-self.obs_limit:]}"})
         return messages
 
     def next_action(

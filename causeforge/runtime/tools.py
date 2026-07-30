@@ -24,6 +24,9 @@ class Tool:
     name: str
     side_effect: SideEffectClass
     fn: Callable[..., str]  # fn(workspace: Path, **args) -> observation
+    # Maps the observation to its determinism-digest basis.  Lets a tool
+    # show rich output to the agent while keeping digests stable.
+    normalize: Callable[[str], str] | None = None
 
 
 @dataclass
@@ -59,6 +62,8 @@ class ToolExecutor:
         ledger.charge_tool(time.monotonic() - t0)
         if tool.side_effect == SideEffectClass.EXTERNAL_SIDE_EFFECT:
             norm = EXTERNAL_OBS_PLACEHOLDER
+        elif tool.normalize is not None:
+            norm = tool.normalize(obs)
         else:
             norm = obs
         return obs, digest_of({"tool": call.tool, "obs": norm})
@@ -82,22 +87,32 @@ def _read_file(workspace: Path, path: str) -> str:
 
 
 _PYTEST_SUMMARY = re.compile(r"(\d+) (passed|failed|error)")
+_TIMING = re.compile(r"\b\d+\.\d+s\b")
 
 
 def _run_pytest(workspace: Path, timeout: int = 60) -> str:
+    """Full (time-stripped) pytest output so the agent can actually debug,
+    with a stable summary line at the end for the determinism digest."""
     from causeforge.runtime.envs import resolve_python
 
     proc = subprocess.run(
-        [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=no",
+        [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=short",
          "-o", "addopts=", "-o", "testpaths=", "--rootdir=.", "."],
         cwd=workspace, capture_output=True, text=True, timeout=timeout,
     )
-    out = proc.stdout + proc.stderr
+    out = _TIMING.sub("Xs", proc.stdout + proc.stderr)
     counts = {"passed": 0, "failed": 0, "error": 0}
     for n, kind in _PYTEST_SUMMARY.findall(out):
         counts[kind] += int(n)
-    # Normalized, time-free summary => deterministic observation digests.
-    return f"exit={proc.returncode} passed={counts['passed']} failed={counts['failed'] + counts['error']}"
+    summary = f"exit={proc.returncode} passed={counts['passed']} failed={counts['failed'] + counts['error']}"
+    body = out.strip()[-4000:]
+    return f"{body}\n[{summary}]"
+
+
+def _pytest_digest_basis(obs: str) -> str:
+    # Digest only the bracketed summary line — tracebacks may contain
+    # absolute paths that differ across sandbox forks.
+    return obs.rsplit("[", 1)[-1].rstrip("]\n")
 
 
 def _send_report(workspace: Path, message: str) -> str:
@@ -110,6 +125,7 @@ def default_registry() -> ToolRegistry:
     reg = ToolRegistry()
     reg.register(Tool("write_file", SideEffectClass.REVERSIBLE, _write_file))
     reg.register(Tool("read_file", SideEffectClass.PURE, _read_file))
-    reg.register(Tool("run_pytest", SideEffectClass.IDEMPOTENT, _run_pytest))
+    reg.register(Tool("run_pytest", SideEffectClass.IDEMPOTENT, _run_pytest,
+                      normalize=_pytest_digest_basis))
     reg.register(Tool("send_report", SideEffectClass.EXTERNAL_SIDE_EFFECT, _send_report))
     return reg

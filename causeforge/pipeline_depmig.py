@@ -55,6 +55,9 @@ def run_depmig(
     task_ids: list[str] | None = None,
     env_root: Path = Path("bench_envs"),
     fixer_candidates: int = 1,
+    fixer_base_url: str | None = None,
+    fixer_model: str | None = None,
+    llm_cache: Path | None = None,
 ) -> dict:
     t_start = time.monotonic()
     run_dir = Path(run_dir)
@@ -67,7 +70,13 @@ def run_depmig(
     sandbox = LocalSandbox(store.blobs, run_dir / "scratch")
     replayer = Replayer(registry, sandbox, verifier)
     mgr = EnvManager(env_root)
-    llm = DiskCachedLLM(OpenAICompatClient(base_url, model), run_dir / "llm_cache")
+    cache_dir = Path(llm_cache) if llm_cache else run_dir / "llm_cache"
+    llm = DiskCachedLLM(OpenAICompatClient(base_url, model), cache_dir)
+    fixer_llm = llm
+    if fixer_model and fixer_model != model:
+        fixer_llm = DiskCachedLLM(
+            OpenAICompatClient(fixer_base_url or base_url, fixer_model), cache_dir
+        )
 
     tasks: list[tuple[DepMigTask, Path]] = []
     for family, family_tasks in enabled_families():
@@ -82,6 +91,7 @@ def run_depmig(
 
     fingerprint = env_fingerprint(registry, WORKLOAD_ID)
     fingerprint["agent_model"] = model
+    fingerprint["fixer_model"] = fixer_model or model
 
     # 1) live collection
     episodes: list[Episode] = []
@@ -108,7 +118,7 @@ def run_depmig(
     failures = [ep for ep in episodes if ep.outcome and not ep.outcome.success]
 
     # 2) fixer candidates (cached LLM), effect-signature dedup in screener
-    screener = Screener(sources=[FixerLLMSource(llm, candidates_per_failure=fixer_candidates)])
+    screener = Screener(sources=[FixerLLMSource(fixer_llm, candidates_per_failure=fixer_candidates)])
     candidates = screener.screen(episodes)
 
     # 3) paired replay + repro + slicing

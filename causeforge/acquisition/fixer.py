@@ -25,7 +25,11 @@ You are a senior engineer reviewing a failed coding-agent run.
 You will get the task brief, the last file the agent wrote, and the failing
 test output. Reply with EXACTLY one JSON object containing the corrected,
 complete file: {"tool": "write_file", "args": {"path": "<same path>", "content": "<full corrected content>"}}
-Do not change the path unless the path itself is the bug. No other text."""
+Do not change the path unless the path itself is the bug. No other text.
+Constraint: ONLY the packages named in the task brief plus the standard
+library are installed — importing any other third-party module (e.g. a
+companion package) will fail. Prefer rewriting the code to use what is
+available."""
 
 
 def last_write_step(episode: Episode) -> int | None:

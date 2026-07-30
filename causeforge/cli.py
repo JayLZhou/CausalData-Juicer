@@ -70,6 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     p_live.add_argument("--max-steps", type=int, default=10)
     p_live.add_argument("--env-root", default="bench_envs")
     p_live.add_argument("--fixer-candidates", type=int, default=1)
+    p_live.add_argument("--fixer-base-url", default=None)
+    p_live.add_argument("--fixer-model", default=None)
+    p_live.add_argument("--llm-cache", default=None, help="shared cache dir (reuse across runs)")
     p_live.add_argument("--tasks", nargs="*", default=None, help="subset of task ids")
 
     args = parser.parse_args(argv)
@@ -109,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
             n_repro=args.repro, max_steps=args.max_steps,
             task_ids=args.tasks, env_root=Path(args.env_root),
             fixer_candidates=args.fixer_candidates,
+            fixer_base_url=args.fixer_base_url, fixer_model=args.fixer_model,
+            llm_cache=Path(args.llm_cache) if args.llm_cache else None,
         )
         _print_report(report)
         extra = (f"agent solved       : {report['agent_solved']}/{report['episodes']} "

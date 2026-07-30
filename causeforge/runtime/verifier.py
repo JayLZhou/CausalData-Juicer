@@ -32,5 +32,5 @@ class PytestVerifier:
             counts[kind] += int(n)
         failed = counts["failed"] + counts["error"]
         success = proc.returncode == 0 and counts["passed"] > 0
-        tail = "\n".join(out.strip().splitlines()[-6:])
+        tail = "\n".join(out.strip().splitlines()[-30:])[-3000:]
         return Outcome(success=success, passed=counts["passed"], failed=failed, detail=tail)

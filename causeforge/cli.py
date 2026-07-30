@@ -57,6 +57,10 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_bench = sub.add_parser("bench-build", help="build + validate the depmig bench")
+    p_bench.add_argument("--env-root", default="bench_envs")
+    p_bench.add_argument("--out", default="bench_envs/certificate.json")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "demo":
@@ -71,6 +75,21 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
         return 0
+
+    if args.cmd == "bench-build":
+        import tempfile
+
+        from causeforge.workloads.depmig.build import (
+            build_and_validate,
+            print_certificate,
+            save_certificate,
+        )
+        with tempfile.TemporaryDirectory(prefix="cf-bench-") as scratch:
+            cert = build_and_validate(Path(args.env_root), Path(scratch))
+        save_certificate(cert, Path(args.out))
+        print_certificate(cert)
+        print(f"certificate: {args.out}")
+        return 0 if cert["valid"] else 1
 
     if args.cmd == "regress":
         test_file = Path(args.run_dir) / "exports" / "test_regression.py"

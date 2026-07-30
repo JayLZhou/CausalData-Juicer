@@ -31,7 +31,7 @@ class TaskEnv:
 
 class EnvManager:
     def __init__(self, root: Path):
-        self.root = Path(root)
+        self.root = Path(root).resolve()  # pointers must survive any cwd
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _python_of(self, env_dir: Path) -> Path:

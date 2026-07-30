@@ -118,7 +118,9 @@ def run_depmig(
     failures = [ep for ep in episodes if ep.outcome and not ep.outcome.success]
 
     # 2) fixer candidates (cached LLM), effect-signature dedup in screener
-    screener = Screener(sources=[FixerLLMSource(fixer_llm, candidates_per_failure=fixer_candidates)])
+    screening_cost = CostLedger()
+    screener = Screener(sources=[FixerLLMSource(
+        fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost)])
     candidates = screener.screen(episodes)
 
     # 3) paired replay + repro + slicing
@@ -141,6 +143,7 @@ def run_depmig(
     repro_runs = sum(u.repro_runs for u in flipped)
     repro_flips = sum(u.repro_flips for u in flipped)
     total_cost = CostLedger()
+    total_cost.merge(screening_cost)
     for ep in episodes:
         total_cost.merge(ep.cost)
     for u in units:

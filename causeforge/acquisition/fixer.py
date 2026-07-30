@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from causeforge.runtime.llm import LLMClient
 from causeforge.runtime.llm_policy import extract_action
 from causeforge.sdk.schemas import (
+    CostLedger,
     Episode,
     Intervention,
     InterventionType,
@@ -44,6 +45,7 @@ class FixerLLMSource:
     llm: LLMClient
     candidates_per_failure: int = 1
     name: str = "fixer-llm"
+    ledger: CostLedger | None = None  # screening cost is acquisition cost
 
     def propose(self, episode: Episode) -> list[Intervention]:
         k = last_write_step(episode)
@@ -65,6 +67,8 @@ class FixerLLMSource:
                 {"role": "user", "content": f"Give an alternative fix (variant {i})."}
             ]
             resp = self.llm.complete(msgs)
+            if self.ledger is not None and not resp.cached:
+                self.ledger.charge_llm(resp.tokens_in, resp.tokens_out, dollars=resp.dollars)
             action = extract_action(resp.text)
             if not action or action.get("tool") != "write_file":
                 continue

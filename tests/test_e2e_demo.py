@@ -14,6 +14,7 @@ def test_demo_end_to_end(tmp_path):
     assert report["failed_episodes"] == 6
     assert report["candidates_screened"] == 7
     assert report["determinism_control_ok"] is True
+    assert report["control_digest_match_rate"] == 1.0  # instrument upper bound on toy
 
     # Kill line #1: flip reproducibility on the deterministic subset >= 90%.
     assert report["flip_repro_rate"] >= 0.9

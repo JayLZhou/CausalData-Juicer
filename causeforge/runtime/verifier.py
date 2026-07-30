@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -18,9 +17,11 @@ class PytestVerifier:
         self.timeout = timeout
 
     def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome:
+        from causeforge.runtime.envs import resolve_python
+
         t0 = time.monotonic()
         proc = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=line",
+            [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=line",
              "-o", "addopts=", "-o", "testpaths=", "--rootdir=.", "."],
             cwd=workspace, capture_output=True, text=True, timeout=self.timeout,
         )

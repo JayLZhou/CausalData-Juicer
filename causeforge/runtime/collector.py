@@ -72,8 +72,8 @@ class Collector:
                 llm=llm,
                 wall_time_s=time.monotonic() - t0,
             )
-            if llm is not None:
-                episode.cost.charge_llm(llm.tokens_in, llm.tokens_out)
+            if llm is not None and not llm.cached:
+                episode.cost.charge_llm(llm.tokens_in, llm.tokens_out, dollars=llm.dollars)
             episode.steps.append(step)
 
         episode.outcome = self.verifier.evaluate(workspace, episode.cost)

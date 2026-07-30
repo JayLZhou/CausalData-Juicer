@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -86,8 +85,10 @@ _PYTEST_SUMMARY = re.compile(r"(\d+) (passed|failed|error)")
 
 
 def _run_pytest(workspace: Path, timeout: int = 60) -> str:
+    from causeforge.runtime.envs import resolve_python
+
     proc = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=no",
+        [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=no",
          "-o", "addopts=", "-o", "testpaths=", "--rootdir=.", "."],
         cwd=workspace, capture_output=True, text=True, timeout=timeout,
     )

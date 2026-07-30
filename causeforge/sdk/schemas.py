@@ -97,6 +97,8 @@ class LLMRecord(BaseModel):
     response: str
     tokens_in: int = 0
     tokens_out: int = 0
+    cached: bool = False  # served from disk cache: charged zero new cost
+    dollars: float = 0.0
 
 
 class Step(BaseModel):
@@ -187,6 +189,7 @@ class ReplayRecord(BaseModel):
     outcome: Outcome
     obs_digests: list[str] = Field(default_factory=list)
     deterministic_match: Optional[bool] = None  # original branch only
+    digest_match_fraction: Optional[float] = None  # per-step match rate, original branch
 
 
 class CausalUnit(BaseModel):
@@ -200,6 +203,7 @@ class CausalUnit(BaseModel):
     intervened_outcome: Optional[Outcome] = None
     flipped: bool = False
     original_replay_match: Optional[bool] = None
+    control_digest_match: Optional[float] = None  # step-level rate on the control branch
     repro_runs: int = 0
     repro_flips: int = 0
     tier: EvidenceTier = EvidenceTier.SUGGESTED

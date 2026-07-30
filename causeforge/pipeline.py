@@ -102,6 +102,11 @@ def run_demo(run_dir: Path, n_repro: int = 3, keep_workspaces: bool = False) -> 
         "flip_repro_rate": flip_repro_rate,
         "flip_repro_detail": f"{repro_flips}/{repro_runs} intervened replays flipped",
         "determinism_control_ok": all(u.original_replay_match for u in units),
+        "control_digest_match_rate": (
+            round(sum(u.control_digest_match for u in units if u.control_digest_match is not None)
+                  / max(1, sum(1 for u in units if u.control_digest_match is not None)), 4)
+            if any(u.control_digest_match is not None for u in units) else None
+        ),
         "slicing": {
             "atoms_before": sum(u.atoms_before_slicing for u in validated),
             "atoms_after": sum(u.atoms_after_slicing for u in validated),

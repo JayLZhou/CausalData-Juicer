@@ -22,7 +22,9 @@ def _print_report(report: dict) -> None:
           f"({report['failed_episodes']} failed)")
     print(f"candidates screened : {report['candidates_screened']}")
     print(f"units by tier       : {report['units_by_tier']}")
-    print(f"determinism control : {'OK' if report['determinism_control_ok'] else 'MISMATCH'}")
+    print(f"determinism control : {'OK' if report['determinism_control_ok'] else 'MISMATCH'}"
+          + (f"  (digest match {report['control_digest_match_rate']:.1%})"
+             if report.get("control_digest_match_rate") is not None else ""))
     print(f"FLIP REPRO RATE     : {rate if rate is None else f'{rate:.1%}'} "
           f"({report['flip_repro_detail']})  [kill line: >= 90%]")
     sl = report["slicing"]

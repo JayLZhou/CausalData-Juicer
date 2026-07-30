@@ -71,6 +71,8 @@ class Replayer:
         record = ReplayRecord(branch=branch, outcome=outcome, obs_digests=obs_digests)
         if intervention is None:
             recorded = [s.obs_digest for s in episode.steps[from_step:]]
+            matches = sum(1 for a, b in zip(obs_digests, recorded) if a == b)
+            record.digest_match_fraction = matches / len(recorded) if recorded else 1.0
             record.deterministic_match = (
                 obs_digests == recorded
                 and episode.outcome is not None
@@ -129,6 +131,7 @@ class Replayer:
             episode, intervention.target_step, snap.tree_digest, unit.cost
         )
         unit.original_replay_match = control.deterministic_match
+        unit.control_digest_match = control.digest_match_fraction
         if not control.deterministic_match:
             unit.tier = EvidenceTier.SUGGESTED
             return unit

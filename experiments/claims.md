@@ -4,7 +4,8 @@
 
 | # | Claim | 实验 | 阈值 / 判死线 | 状态 |
 |---|---|---|---|---|
-| A1 | 确定性子集上 flip 可复现 | `causeforge demo`（toy workload, n_repro=3） | ≥ 90%，否则停下修 determinism | ✅ **100% (18/18)** toy 上界, 2026-07-29；✅ **100% (15/15)** live 真实开奖（depmig 30 任务, Qwen2.5-7B agent+fixer）, 2026-07-30 → `experiments/results/depmig-7b-qwen7b-fixer7b.json`；✅ **100% (9/9 + 6/6)** pandas 家族（跨解释器 py3.11 底座）, 2026-07-31 → `experiments/results/depmig-7b-pandas{,-f14b}.json` |
+| A1 | 确定性子集上 flip 可复现 | `causeforge demo`（toy workload, n_repro=3） | ≥ 90%，否则停下修 determinism | ✅ **100% (18/18)** toy 上界, 2026-07-29；✅ **100% (15/15)** live 真实开奖（depmig 30 任务, Qwen2.5-7B agent+fixer）, 2026-07-30 → `experiments/results/depmig-7b-qwen7b-fixer7b.json`；✅ **100% (9/9 + 6/6)** pandas 家族（跨解释器 py3.11 底座）；✅ **100% (6/6)** 14B-agent 配置, 2026-07-31 → `experiments/results/depmig-7b-pandas{,-f14b},depmig-14b-agent}.json` |
+| A11 | agent 强度与失败画像 | 同一 36 任务, 7B vs 14B agent | 观察性结论 | ✅ 2026-07-31：14B 解 27/36 vs 7B 13/36；**14B 失败集 ⊂ 7B 失败集**（无 14B-only 失败）→ agent 多样性非覆盖杠杆（与 fixer 来源多样性相反），"采集用中档模型"决策获反向验证；9 个双双失败任务为 bench 硬核（含全部存活 T3） |
 | A2 | 非修复候选不会被误验证 | t09 双候选对照 | 化妆候选必须停留在 SUGGESTED | ✅ 1/1 rejected |
 | A3 | 切片剔除非因果原子且不降级 | t06（因果行+化妆行） | 2 atoms → 1 atom，切片后再验证仍 flip | ✅ |
 | A4 | EXTERNAL 副作用零真实重放 | t08 + 执行器门控单测 | replay 模式下 0 次真实执行 | ✅ (`test_external_tool_is_mocked_in_replay*`) |

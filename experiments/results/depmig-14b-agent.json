@@ -1,0 +1,92 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-14B-Instruct",
+  "episodes": 36,
+  "failed_episodes": 9,
+  "agent_solved": 27,
+  "seal_violations": 0,
+  "candidates_screened": 15,
+  "units_by_tier": {
+    "SUGGESTED": 13,
+    "MINIMAL": 2
+  },
+  "validated_units": 2,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "6/6 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 5,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "tier:T1": {
+      "candidates": 1,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "tier:T2": {
+      "candidates": 9,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "tier:T3": {
+      "candidates": 5,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:click": {
+      "candidates": 4,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:networkx": {
+      "candidates": 2,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:pandas": {
+      "candidates": 4,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    }
+  },
+  "slicing": {
+    "atoms_before": 2,
+    "atoms_after": 2
+  },
+  "cost": {
+    "llm_calls": 227,
+    "tokens_in": 149544,
+    "tokens_out": 12672,
+    "tool_calls": 327,
+    "replay_runs": 36,
+    "wall_time_s": 69.21,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 3.31,
+  "exports": {
+    "sft": "runs/depmig-14b/exports/sft.jsonl",
+    "dpo": "runs/depmig-14b/exports/dpo.jsonl",
+    "memory": "runs/depmig-14b/exports/memory.jsonl",
+    "regression": "runs/depmig-14b/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-14B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-7B-Instruct"
+  },
+  "wall_time_total_s": 393.31
+}

@@ -38,6 +38,8 @@ grounded in execution — which is why everyone is building it now:
 | Repair data for code agents | does this patch actually flip the failing test? | patch–outcome mining (our bench domain) | validated correction / DPO pairs |
 | Process supervision for structured generation | which clause breaks or repairs execution? | CAPER (Text-to-SQL) | clause-level PRM labels |
 | Supervision recycled from failures | what goal did this failure *actually* achieve? | HER-style relabeling | hindsight SFT rows |
+| Credit & blame in multi-agent systems | which agent's message, if changed, would have flipped the team outcome? | COMA-lineage counterfactual baselines; LLM-MAS failure attribution & message-credit ablations | per-agent / per-message credit, blame labels |
+| Skill & memory libraries | does this recovery, replayed from the failure state, actually flip it — and does it transfer? | failure→recovery mining; skill libraries with counterfactual validation | validated skills, failure→recovery units |
 | Robustness & regression labels | what is the smallest perturbation that breaks a success? | stress testing (v2 here) | criticality labels, adversarial suites |
 
 Strip away the rows and one act remains: **fork a state, run an alternative,

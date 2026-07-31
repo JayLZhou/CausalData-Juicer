@@ -45,7 +45,11 @@ group-relative advantages (TreeRL, Tree-GRPO, ARPO) and per-step
 counterfactual credit (CCPO, RTMC, AT2PO); code agents mine which patch
 flips which test; Text-to-SQL systems perturb clauses against an executor
 (CAPER); hindsight relabeling recycles failures into supervision for the
-goals they did reach. Different tasks, one underlying act: fork a state, run
+goals they did reach; multi-agent systems attribute team outcomes to
+individual agents or messages via counterfactual removal or edits
+(COMA-lineage baselines, LLM-MAS failure attribution); and skill
+libraries increasingly validate a recovery by replaying it from the
+failure state before admitting it as a skill. Different tasks, one underlying act: fork a state, run
 an alternative, compare outcomes, keep the difference. What is missing is
 shared machinery that makes those comparisons valid, affordable and durable.
 A concrete story shows why that machinery is the hard part.

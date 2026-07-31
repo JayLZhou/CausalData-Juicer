@@ -296,4 +296,156 @@ def build_tasks() -> list[DepMigTask]:
         },
     ))
 
+    tasks.append(DepMigTask(
+        id="p07_field_regex", family=FAMILY, tier=1,
+        description="A signup form model using Field(regex=).",
+        migration_points=["Field(regex=) removed (-> pattern=)"],
+        files={
+            "form.py": (
+                "from pydantic import BaseModel, Field\n"
+                "\n"
+                "\n"
+                "class Signup(BaseModel):\n"
+                "    email: str = Field(regex=r'^[^@\\s]+@[^@\\s]+$')\n"
+                "\n"
+                "\n"
+                "def signup(email):\n"
+                "    return Signup(email=email)\n"
+            ),
+            "test_form.py": (
+                "import pytest\n"
+                "from pydantic import ValidationError\n"
+                "\n"
+                "from form import signup\n"
+                "\n"
+                "\n"
+                "def test_valid_email():\n"
+                "    assert signup('a@b.io').email == 'a@b.io'\n"
+                "\n"
+                "\n"
+                "def test_invalid_email():\n"
+                "    with pytest.raises(ValidationError):\n"
+                "        signup('not-an-email')\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="p08_conlist", family=FAMILY, tier=2,
+        description="Batch models constraining list sizes via conlist(min_items/max_items).",
+        migration_points=["conlist(min_items=/max_items=) removed (-> min_length=/max_length=, two models)"],
+        files={
+            "batches.py": (
+                "from typing import List\n"
+                "\n"
+                "from pydantic import BaseModel, conlist\n"
+                "\n"
+                "\n"
+                "class Batch(BaseModel):\n"
+                "    items: conlist(int, min_items=1, max_items=3)\n"
+                "\n"
+                "\n"
+                "class TagSet(BaseModel):\n"
+                "    tags: conlist(str, min_items=1)\n"
+                "\n"
+                "\n"
+                "def make_batch(items):\n"
+                "    return Batch(items=list(items))\n"
+                "\n"
+                "\n"
+                "def make_tags(tags):\n"
+                "    return TagSet(tags=list(tags))\n"
+            ),
+            "test_batches.py": (
+                "import pytest\n"
+                "from pydantic import ValidationError\n"
+                "\n"
+                "from batches import make_batch, make_tags\n"
+                "\n"
+                "\n"
+                "def test_ok():\n"
+                "    assert make_batch([1, 2]).items == [1, 2]\n"
+                "    assert make_tags(['x']).tags == ['x']\n"
+                "\n"
+                "\n"
+                "def test_too_many():\n"
+                "    with pytest.raises(ValidationError):\n"
+                "        make_batch([1, 2, 3, 4])\n"
+                "\n"
+                "\n"
+                "def test_empty_tags():\n"
+                "    with pytest.raises(ValidationError):\n"
+                "        make_tags([])\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="p09_settings_optionals", family=FAMILY, tier=2,
+        description="A service config stack combining BaseSettings and Optional-default fields.",
+        migration_points=["BaseSettings import moved", "Optional[T] needs explicit defaults (two files)"],
+        files={
+            "conf.py": (
+                "from typing import Optional\n"
+                "\n"
+                "from pydantic import BaseSettings\n"
+                "\n"
+                "\n"
+                "class ServiceConf(BaseSettings):\n"
+                "    name: str = 'svc'\n"
+                "    region: Optional[str]\n"
+                "    replicas: int = 1\n"
+            ),
+            "boot.py": (
+                "from conf import ServiceConf\n"
+                "\n"
+                "\n"
+                "def boot(**overrides):\n"
+                "    conf = ServiceConf(**overrides)\n"
+                "    return f'{conf.name}@{conf.region or \"local\"} x{conf.replicas}'\n"
+            ),
+            "test_boot.py": (
+                "from boot import boot\n"
+                "\n"
+                "\n"
+                "def test_defaults():\n"
+                "    assert boot() == 'svc@local x1'\n"
+                "\n"
+                "\n"
+                "def test_overrides():\n"
+                "    assert boot(region='eu', replicas=3) == 'svc@eu x3'\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="p10_json_lines", family=FAMILY, tier=3,
+        description="An audit sink writing models as JSON lines with a byte-exact contract.",
+        migration_points=[
+            "v2 .json() drops separator spaces — restore the contracted v1 formatting (silent output change)",
+        ],
+        files={
+            "audit.py": (
+                "from pydantic import BaseModel\n"
+                "\n"
+                "\n"
+                "class Event(BaseModel):\n"
+                "    kind: str\n"
+                "    count: int\n"
+                "\n"
+                "\n"
+                "def sink(events):\n"
+                "    return [e.json() for e in events]\n"
+            ),
+            "test_audit.py": (
+                "from audit import Event, sink\n"
+                "\n"
+                "\n"
+                "def test_exact_lines():\n"
+                "    lines = sink([Event(kind='login', count=2)])\n"
+                "    assert lines == ['{\"kind\": \"login\", \"count\": 2}']\n"
+            ),
+        },
+    ))
+
     return tasks

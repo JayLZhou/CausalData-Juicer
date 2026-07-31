@@ -230,4 +230,128 @@ def build_tasks() -> list[DepMigTask]:
         },
     ))
 
+    tasks.append(DepMigTask(
+        id="k07_log_summary", family=FAMILY, tier=1,
+        description="A monitoring hook logging graphs via nx.info.",
+        migration_points=["nx.info removed"],
+        files={
+            "monitor.py": (
+                "import networkx as nx\n"
+                "\n"
+                "\n"
+                "def log_line(edges):\n"
+                "    graph = nx.Graph(edges)\n"
+                "    return f'[graph] {nx.info(graph)}'\n"
+            ),
+            "test_monitor.py": (
+                "from monitor import log_line\n"
+                "\n"
+                "\n"
+                "def test_log_line():\n"
+                "    out = log_line([(1, 2), (2, 3)])\n"
+                "    assert out.startswith('[graph] ') and len(out) > 10\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="k08_jit_cache", family=FAMILY, tier=2,
+        description="A JSON cache layer built on the removed JIT format plus nx.info.",
+        migration_points=["nx.jit_data/jit_graph removed", "nx.info removed"],
+        files={
+            "cache.py": (
+                "import networkx as nx\n"
+                "\n"
+                "\n"
+                "def dump(graph):\n"
+                "    return {'payload': nx.jit_data(graph), 'summary': nx.info(graph)}\n"
+                "\n"
+                "\n"
+                "def load(entry):\n"
+                "    return nx.jit_graph(entry['payload'])\n"
+            ),
+            "test_cache.py": (
+                "import networkx as nx\n"
+                "\n"
+                "from cache import dump, load\n"
+                "\n"
+                "\n"
+                "def test_roundtrip_with_summary():\n"
+                "    entry = dump(nx.path_graph(3))\n"
+                "    assert isinstance(entry['summary'], str)\n"
+                "    assert sorted(load(entry).nodes()) == [0, 1, 2]\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="k09_ordered_store", family=FAMILY, tier=2,
+        description="An ordered-graph store persisting via gpickle across two modules.",
+        migration_points=["nx.OrderedGraph removed", "gpickle helpers removed"],
+        files={
+            "graphs.py": (
+                "import networkx as nx\n"
+                "\n"
+                "\n"
+                "def ordered_from(edges):\n"
+                "    graph = nx.OrderedGraph()\n"
+                "    graph.add_edges_from(edges)\n"
+                "    return graph\n"
+            ),
+            "store.py": (
+                "import networkx as nx\n"
+                "\n"
+                "from graphs import ordered_from\n"
+                "\n"
+                "\n"
+                "def save(edges, path):\n"
+                "    nx.write_gpickle(ordered_from(edges), path)\n"
+                "\n"
+                "\n"
+                "def node_order(path):\n"
+                "    return list(nx.read_gpickle(path).nodes())\n"
+            ),
+            "test_store.py": (
+                "from store import node_order, save\n"
+                "\n"
+                "\n"
+                "def test_order_survives_roundtrip(tmp_path):\n"
+                "    target = tmp_path / 'g.gpickle'\n"
+                "    save([(9, 1), (1, 5)], target)\n"
+                "    assert node_order(target) == [9, 1, 5]\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="k10_dag_export", family=FAMILY, tier=2,
+        description="A DAG exporter combining OrderedDiGraph and the JIT JSON format.",
+        migration_points=["nx.OrderedDiGraph removed", "nx.jit_data/jit_graph removed"],
+        files={
+            "dag.py": (
+                "import networkx as nx\n"
+                "\n"
+                "\n"
+                "def export(pairs):\n"
+                "    graph = nx.OrderedDiGraph()\n"
+                "    graph.add_edges_from(pairs)\n"
+                "    return nx.jit_data(graph)\n"
+                "\n"
+                "\n"
+                "def restore(data):\n"
+                "    return nx.jit_graph(data, create_using=nx.DiGraph())\n"
+            ),
+            "test_dag.py": (
+                "from dag import export, restore\n"
+                "\n"
+                "\n"
+                "def test_roundtrip_directed():\n"
+                "    data = export([('a', 'b'), ('b', 'c')])\n"
+                "    graph = restore(data)\n"
+                "    assert graph.is_directed()\n"
+                "    assert list(graph.successors('b')) == ['c']\n"
+            ),
+        },
+    ))
+
     return tasks

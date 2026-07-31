@@ -259,4 +259,162 @@ def build_tasks() -> list[DepMigTask]:
         },
     ))
 
+    tasks.append(DepMigTask(
+        id="c07_progress_width", family=FAMILY, tier=1,
+        description="A progress renderer sized via click.get_terminal_size.",
+        migration_points=["click.get_terminal_size removed (-> shutil)"],
+        files={
+            "progress.py": (
+                "import click\n"
+                "\n"
+                "\n"
+                "def bar(fraction):\n"
+                "    width, _ = click.get_terminal_size()\n"
+                "    width = min(width, 20)\n"
+                "    filled = int(round(width * fraction))\n"
+                "    return '#' * filled + '-' * (width - filled)\n"
+            ),
+            "test_progress.py": (
+                "from progress import bar\n"
+                "\n"
+                "\n"
+                "def test_full_and_empty():\n"
+                "    assert set(bar(1.0)) == {'#'}\n"
+                "    assert set(bar(0.0)) == {'-'}\n"
+                "\n"
+                "\n"
+                "def test_length_stable():\n"
+                "    assert len(bar(0.5)) == len(bar(0.0)) <= 20\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="c08_group_callback", family=FAMILY, tier=2,
+        description="A non-chained group post-processing results via resultcallback, dispatched from get_os_args.",
+        migration_points=["Group.resultcallback removed (-> result_callback)",
+                          "click.get_os_args removed"],
+        files={
+            "runner.py": (
+                "import click\n"
+                "\n"
+                "\n"
+                "@click.group()\n"
+                "def cli():\n"
+                "    pass\n"
+                "\n"
+                "\n"
+                "@cli.resultcallback()\n"
+                "def stamp(result, **kwargs):\n"
+                "    click.echo(f'result={result}')\n"
+                "\n"
+                "\n"
+                "@cli.command(name='count')\n"
+                "@click.argument('items', nargs=-1)\n"
+                "def count(items):\n"
+                "    return len(items)\n"
+                "\n"
+                "\n"
+                "def argv():\n"
+                "    return click.get_os_args()\n"
+            ),
+            "test_runner.py": (
+                "from click.testing import CliRunner\n"
+                "\n"
+                "from runner import argv, cli\n"
+                "\n"
+                "\n"
+                "def test_callback_stamps_result():\n"
+                "    result = CliRunner().invoke(cli, ['count', 'a', 'b'])\n"
+                "    assert result.exit_code == 0\n"
+                "    assert 'result=2' in result.output\n"
+                "\n"
+                "\n"
+                "def test_argv_shape():\n"
+                "    assert isinstance(argv(), list)\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="c09_deploy_tool", family=FAMILY, tier=2,
+        description="A deploy CLI mixing completion helpers and terminal sizing across modules.",
+        migration_points=["autocompletion= removed", "click.get_terminal_size removed (second module)"],
+        files={
+            "targets.py": (
+                "TARGETS = ['blue', 'green', 'canary']\n"
+                "\n"
+                "\n"
+                "def complete_target(ctx, args, incomplete):\n"
+                "    return [t for t in TARGETS if t.startswith(incomplete)]\n"
+            ),
+            "deploy.py": (
+                "import click\n"
+                "\n"
+                "from targets import complete_target\n"
+                "\n"
+                "\n"
+                "def headline(text):\n"
+                "    width, _ = click.get_terminal_size()\n"
+                "    return text[: max(10, min(width, 30))]\n"
+                "\n"
+                "\n"
+                "@click.command()\n"
+                "@click.option('--target', autocompletion=complete_target, default='blue')\n"
+                "def deploy(target):\n"
+                "    click.echo(headline(f'deploying {target}'))\n"
+            ),
+            "test_deploy.py": (
+                "from click.testing import CliRunner\n"
+                "\n"
+                "from deploy import deploy\n"
+                "\n"
+                "\n"
+                "def test_deploy_default():\n"
+                "    result = CliRunner().invoke(deploy, [])\n"
+                "    assert result.exit_code == 0\n"
+                "    assert 'deploying blue' in result.output\n"
+                "\n"
+                "\n"
+                "def test_deploy_canary():\n"
+                "    result = CliRunner().invoke(deploy, ['--target', 'canary'])\n"
+                "    assert 'deploying canary' in result.output\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="c10_cache_flag_help", family=FAMILY, tier=3,
+        description="A build tool whose docs pin '[default: False]' for the cache flag.",
+        migration_points=[
+            "boolean-flag help renders the flag name in click 8 — restore the contracted [default: False] (silent output change)",
+        ],
+        files={
+            "build.py": (
+                "import click\n"
+                "\n"
+                "\n"
+                "@click.command()\n"
+                "@click.option('--cache/--no-cache', default=False, help='reuse build cache',\n"
+                "              show_default=True)\n"
+                "def build(cache):\n"
+                "    click.echo(f'cache={cache}')\n"
+            ),
+            "test_build.py": (
+                "from click.testing import CliRunner\n"
+                "\n"
+                "from build import build\n"
+                "\n"
+                "\n"
+                "def test_runs():\n"
+                "    assert CliRunner().invoke(build, []).output.strip() == 'cache=False'\n"
+                "\n"
+                "\n"
+                "def test_help_contract():\n"
+                "    out = CliRunner().invoke(build, ['--help']).output\n"
+                "    assert '[default: False]' in out\n"
+            ),
+        },
+    ))
+
     return tasks

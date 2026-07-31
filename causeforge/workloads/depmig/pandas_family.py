@@ -234,4 +234,122 @@ def build_tasks() -> list[DepMigTask]:
         },
     ))
 
+    tasks.append(DepMigTask(
+        id="d07_series_append", family=FAMILY, tier=1,
+        description="A metric accumulator built on Series.append.",
+        migration_points=["Series.append removed (-> pd.concat)"],
+        files={
+            "acc.py": (
+                "import pandas as pd\n"
+                "\n"
+                "\n"
+                "def accumulate(chunks):\n"
+                "    total = pd.Series(dtype='int64')\n"
+                "    for chunk in chunks:\n"
+                "        total = total.append(pd.Series(chunk), ignore_index=True)\n"
+                "    return total.tolist()\n"
+            ),
+            "test_acc.py": (
+                "from acc import accumulate\n"
+                "\n"
+                "\n"
+                "def test_accumulate():\n"
+                "    assert accumulate([[1, 2], [3]]) == [1, 2, 3]\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="d08_mad", family=FAMILY, tier=1,
+        description="A dispersion report using DataFrame.mad.",
+        migration_points=["DataFrame.mad removed (compose from mean of abs deviations)"],
+        files={
+            "spread.py": (
+                "import pandas as pd\n"
+                "\n"
+                "\n"
+                "def mad_by_column(data):\n"
+                "    df = pd.DataFrame(data)\n"
+                "    return dict(df.mad())\n"
+            ),
+            "test_spread.py": (
+                "from spread import mad_by_column\n"
+                "\n"
+                "\n"
+                "def test_mad():\n"
+                "    assert mad_by_column({'x': [1.0, 3.0]}) == {'x': 1.0}\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="d09_csv_squeeze", family=FAMILY, tier=2,
+        description="A CSV loader relying on read_csv(squeeze=) and DataFrame.iteritems.",
+        migration_points=["read_csv(squeeze=) removed (-> .squeeze('columns'))",
+                          "DataFrame.iteritems removed (-> items)"],
+        files={
+            "loader.py": (
+                "import pandas as pd\n"
+                "\n"
+                "\n"
+                "def load_column(path):\n"
+                "    return pd.read_csv(path, squeeze=True).tolist()\n"
+                "\n"
+                "\n"
+                "def column_names(path):\n"
+                "    return [name for name, _ in pd.read_csv(path).iteritems()]\n"
+            ),
+            "test_loader.py": (
+                "from loader import column_names, load_column\n"
+                "\n"
+                "\n"
+                "def test_single_column(tmp_path):\n"
+                "    p = tmp_path / 'one.csv'\n"
+                "    p.write_text('v\\n1\\n2\\n')\n"
+                "    assert load_column(p) == [1, 2]\n"
+                "\n"
+                "\n"
+                "def test_names(tmp_path):\n"
+                "    p = tmp_path / 'two.csv'\n"
+                "    p.write_text('a,b\\n1,2\\n')\n"
+                "    assert column_names(p) == ['a', 'b']\n"
+            ),
+        },
+    ))
+
+    tasks.append(DepMigTask(
+        id="d10_pivot_combo", family=FAMILY, tier=2,
+        description="A two-module report combining df.iteritems and Series.append.",
+        migration_points=["DataFrame.iteritems removed", "Series.append removed (second module)"],
+        files={
+            "shape.py": (
+                "import pandas as pd\n"
+                "\n"
+                "\n"
+                "def widths(data):\n"
+                "    df = pd.DataFrame(data)\n"
+                "    return {name: len(col) for name, col in df.iteritems()}\n"
+            ),
+            "merge.py": (
+                "import pandas as pd\n"
+                "\n"
+                "\n"
+                "def concat_series(a, b):\n"
+                "    return pd.Series(a).append(pd.Series(b), ignore_index=True).tolist()\n"
+            ),
+            "test_combo.py": (
+                "from merge import concat_series\n"
+                "from shape import widths\n"
+                "\n"
+                "\n"
+                "def test_widths():\n"
+                "    assert widths({'a': [1, 2], 'b': [3, 4]}) == {'a': 2, 'b': 2}\n"
+                "\n"
+                "\n"
+                "def test_concat():\n"
+                "    assert concat_series([1], [2, 3]) == [1, 2, 3]\n"
+            ),
+        },
+    ))
+
     return tasks

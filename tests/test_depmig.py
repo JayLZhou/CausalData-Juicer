@@ -10,24 +10,26 @@ from causeforge.workloads.depmig.build import all_tasks, enabled_families
 from causeforge.workloads.depmig import pandas_family
 
 CORE = {"pydantic", "numpy", "sqlalchemy", "click", "networkx"}
-N_FAMILIES = 5 + int(pandas_family.available())
 
 
 def test_bench_shape():
     tasks = all_tasks()
-    assert len(tasks) == 6 * N_FAMILIES
-    assert len({t.id for t in tasks}) == 6 * N_FAMILIES
+    assert len(tasks) == len({t.id for t in tasks})  # unique ids
     families = Counter(t.family.name for t in tasks)
     assert set(families) >= CORE
-    assert all(n == 6 for n in families.values())
+    assert all(n >= 6 for n in families.values())
+    if pandas_family.available():
+        assert families["pandas"] >= 6
 
 
-def test_tier_distribution():
-    tiers = Counter(t.tier for t in all_tasks())
-    pandas_on = int(pandas_family.available())
-    assert tiers[1] == 10 + 2 * pandas_on
-    assert tiers[2] == 16 + 3 * pandas_on
-    assert tiers[3] == 4 + pandas_on  # networkx has no T3 (documented there)
+def test_tier_coverage_per_family():
+    by_family: dict[str, Counter] = {}
+    for t in all_tasks():
+        by_family.setdefault(t.family.name, Counter())[t.tier] += 1
+    for name, tiers in by_family.items():
+        assert tiers[1] >= 1 and tiers[2] >= 1, name
+        if name != "networkx":  # documented: no silent-semantics break found there
+            assert tiers[3] >= 1, name
 
 
 def test_all_tasks_hermetic():

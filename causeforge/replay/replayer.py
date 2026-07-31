@@ -52,8 +52,11 @@ class Replayer:
         tree_digest: str,
         ledger: CostLedger,
         intervention: Optional[Intervention] = None,
+        prep=None,  # callable(workspace) applied after fork, e.g. env-pointer override (M4)
     ) -> ReplayRecord:
         workspace = self.sandbox.materialize(tree_digest)
+        if prep is not None:
+            prep(workspace)
         executor = ToolExecutor(self.registry, mode="replay")
         obs_digests: list[str] = []
         try:
@@ -118,6 +121,7 @@ class Replayer:
         n_repro: int = 3,
         control_cache: Optional[dict] = None,
         early_stop_repro: bool = False,
+        prep=None,
     ) -> CausalUnit:
         """``control_cache`` (M2 mechanism): memoizes the determinism-control
         branch per (episode, step) so multiple candidates targeting the same
@@ -139,7 +143,7 @@ class Replayer:
             control = control_cache[cache_key]
         else:
             control = self._run_branch(
-                episode, intervention.target_step, snap.tree_digest, unit.cost
+                episode, intervention.target_step, snap.tree_digest, unit.cost, prep=prep
             )
             if control_cache is not None:
                 control_cache[cache_key] = control
@@ -151,7 +155,8 @@ class Replayer:
 
         # Branch B: intervened, first validation run.
         first = self._run_branch(
-            episode, intervention.target_step, snap.tree_digest, unit.cost, intervention
+            episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
+            prep=prep,
         )
         unit.intervened_outcome = first.outcome
         flipped_once = (not episode.outcome.success) and first.outcome.success
@@ -165,7 +170,8 @@ class Replayer:
         flips, runs = 1, 1
         for _ in range(max(0, n_repro - 1)):
             rec = self._run_branch(
-                episode, intervention.target_step, snap.tree_digest, unit.cost, intervention
+                episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
+                prep=prep,
             )
             runs += 1
             if (not episode.outcome.success) and rec.outcome.success:

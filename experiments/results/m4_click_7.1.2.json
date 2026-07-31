@@ -1,0 +1,69 @@
+{
+  "event": {
+    "family": "click",
+    "new_pin": "click==7.1.2"
+  },
+  "units_total": 9,
+  "selective": {
+    "mode": "selective",
+    "considered": 9,
+    "revalidated": 4,
+    "confirmed": 0,
+    "demoted": [
+      {
+        "unit_id": "cu_f532ffe076df",
+        "task_id": "c04_resultcallback",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_4c239944daec",
+        "task_id": "c04_resultcallback",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_48b86da852b2",
+        "task_id": "c01_terminal_size",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_e6b11e7d1d86",
+        "task_id": "c01_terminal_size",
+        "reason": "control-drift"
+      }
+    ],
+    "replays": 2,
+    "seconds": 0.63
+  },
+  "full": {
+    "mode": "full",
+    "considered": 9,
+    "revalidated": 9,
+    "confirmed": 5,
+    "demoted": [
+      {
+        "unit_id": "cu_f532ffe076df",
+        "task_id": "c04_resultcallback",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_4c239944daec",
+        "task_id": "c04_resultcallback",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_48b86da852b2",
+        "task_id": "c01_terminal_size",
+        "reason": "control-drift"
+      },
+      {
+        "unit_id": "cu_e6b11e7d1d86",
+        "task_id": "c01_terminal_size",
+        "reason": "control-drift"
+      }
+    ],
+    "replays": 16,
+    "seconds": 10.94
+  },
+  "replay_ratio": 8.0,
+  "demotion_agreement": true
+}

@@ -58,6 +58,15 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_rev = sub.add_parser("revalidate", help="M4: selective revalidation under a version event")
+    p_rev.add_argument("--base", default="runs/depmig-7b")
+    p_rev.add_argument("--pool", nargs="*", default=[])
+    p_rev.add_argument("--family", required=True)
+    p_rev.add_argument("--pin", required=True, help='e.g. "pydantic==2.11.7"')
+    p_rev.add_argument("--env-root", default="bench_envs")
+    p_rev.add_argument("--repro", type=int, default=2)
+    p_rev.add_argument("--out", default=None)
+
     p_exp = sub.add_parser("export", help="export a run to a training-stack format")
     p_exp.add_argument("--run", default="runs/depmig-7b")
     p_exp.add_argument("--format", choices=["trl-sft", "trl-dpo", "verl"], required=True)
@@ -102,6 +111,26 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
         return 0
+
+    if args.cmd == "revalidate":
+        from causeforge.maintenance.revalidate import run_version_event
+        report = run_version_event(Path(args.base), [Path(p) for p in args.pool],
+                                   args.family, args.pin, Path(args.env_root),
+                                   n_repro=args.repro)
+        out = Path(args.out or f"experiments/results/m4_{args.family}_{args.pin.split('==')[-1]}.json")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+        print(f"event: {report['event']['family']} -> {report['event']['new_pin']} "
+              f"({report['units_total']} units in corpus)")
+        for mode in ("selective", "full"):
+            m = report[mode]
+            demos = ", ".join(f"{d['task_id']}[{d['reason']}]" for d in m["demoted"]) or "none"
+            print(f"  {mode:<10} revalidated={m['revalidated']:<3} confirmed={m['confirmed']:<3} "
+                  f"replays={m['replays']:<4} demoted: {demos}")
+        print(f"  replay ratio (full/selective): {report['replay_ratio']}x   "
+              f"demotion agreement: {'OK' if report['demotion_agreement'] else 'MISSED'}")
+        print(f"saved: {out}")
+        return 0 if report["demotion_agreement"] else 1
 
     if args.cmd == "export":
         from causeforge.compiler.adapters import ADAPTERS

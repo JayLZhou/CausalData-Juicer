@@ -24,3 +24,15 @@ def test_stamp_and_selective_revalidation():
 
     drifted = dict(fp, python="9.9.9")
     assert needs_revalidation(unit, drifted) == ["python"]
+
+
+def test_revalidation_scope_is_the_intersection():
+    unit = stamp(_unit(), {"family": "pydantic", "env:pydantic": "aaa",
+                           "fixer_model": "qwen-7b"})
+    # event tracks env components only; other families' drift is invisible
+    current = {"env:pydantic": "aaa", "env:click": "changed!"}
+    assert needs_revalidation(unit, current) == []
+    # my own family drifting does trigger
+    assert needs_revalidation(unit, {"env:pydantic": "bbb"}) == ["env:pydantic"]
+    # production metadata outside the event scope never triggers
+    assert needs_revalidation(unit, {"env:pydantic": "aaa"}) == []

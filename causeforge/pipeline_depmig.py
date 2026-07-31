@@ -79,6 +79,7 @@ def run_depmig(
         )
 
     tasks: list[tuple[DepMigTask, Path]] = []
+    env_freezes: dict[str, str] = {}  # family -> pip-freeze digest
     for family, family_tasks in enabled_families():
         python = None
         for task in family_tasks:
@@ -86,6 +87,9 @@ def run_depmig(
                 continue
             if python is None:
                 python = mgr.ensure(family.new_env())
+                from causeforge.sdk.schemas import digest_of
+                env_freezes[family.name] = digest_of(
+                    mgr.provenance(family.new_env()).get("frozen", []))
             tasks.append((task, python))
     task_by_id = {t.id: t for t, _ in tasks}
 
@@ -129,7 +133,9 @@ def run_depmig(
         unit = replayer.paired_replay(ep, snapshots, iv, n_repro=n_repro)
         if unit.tier >= EvidenceTier.REPRODUCIBLE:
             unit = minimize_unit(replayer, ep, snapshots, unit)
-        stamp(unit, fingerprint)
+        family = task_by_id[ep.task_id].family.name
+        stamp(unit, {**fingerprint, "family": family,
+                     f"env:{family}": env_freezes.get(family, "")})
         units.append(unit)
 
     exports = compile_all(units, episodes, run_dir / "exports")

@@ -1,0 +1,27 @@
+{
+  "event": {
+    "family": "pydantic",
+    "new_pin": "pydantic==2.11.7"
+  },
+  "units_total": 9,
+  "selective": {
+    "mode": "selective",
+    "considered": 9,
+    "revalidated": 2,
+    "confirmed": 2,
+    "demoted": [],
+    "replays": 5,
+    "seconds": 2.98
+  },
+  "full": {
+    "mode": "full",
+    "considered": 9,
+    "revalidated": 9,
+    "confirmed": 9,
+    "demoted": [],
+    "replays": 24,
+    "seconds": 14.22
+  },
+  "replay_ratio": 4.8,
+  "demotion_agreement": true
+}

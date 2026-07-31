@@ -32,5 +32,14 @@ def stamp(unit: CausalUnit, fingerprint: dict) -> CausalUnit:
 
 
 def needs_revalidation(unit: CausalUnit, current: dict) -> list[str]:
-    """Components whose version drifted since the unit was validated."""
-    return [k for k, v in current.items() if unit.provenance.get(k) != v]
+    """Components whose version drifted since the unit was validated.
+
+    A unit's provenance is its *dependency claim*; ``current`` describes
+    the world for the components the maintenance event tracks.  Only the
+    intersection is compared: a component the unit never depended on
+    (another family's env) or one outside the event's scope (production
+    metadata like which fixer produced the unit) cannot trigger
+    revalidation — that asymmetry is what makes it selective.
+    """
+    return [k for k in unit.provenance
+            if k in current and current[k] != unit.provenance[k]]

@@ -10,20 +10,20 @@ k09_ordered_store k10_dag_export"
 
 echo "== launching eval server (GPU 1, :8013, base + 2 LoRA) =="
 CUDA_VISIBLE_DEVICES=1 HF_HOME=/home/jovyan/buckets/hf_cache nohup \
-  /home/jovyan/envs/graphrag/bin/vllm serve Qwen/Qwen2.5-7B-Instruct --port 8013 \
+  /home/jovyan/envs/graphrag/bin/vllm serve Qwen/Qwen2.5-7B-Instruct --port 8014 \
   --enable-lora --max-lora-rank 16 \
   --lora-modules validated=experiments/c1_adapters/validated \
                  suggested=experiments/c1_adapters/suggested \
   --gpu-memory-utilization 0.9 --max-model-len 8192 --disable-log-requests \
   > /home/jovyan/buckets/vllm_8013.log 2>&1 &
-until curl -s http://127.0.0.1:8013/v1/models | grep -q validated; do sleep 5; done
+until curl -s http://127.0.0.1:8014/v1/models | grep -q validated; do sleep 5; done
 echo "eval server ready"
 
 for MODEL in Qwen/Qwen2.5-7B-Instruct validated suggested; do
   SAFE=$(echo "$MODEL" | tr '/' '_')
   echo "== arm: $MODEL =="
   .venv/bin/python -m causeforge collect-depmig \
-    --out "runs/c1-eval-$SAFE" --base-url http://127.0.0.1:8013/v1 \
+    --out "runs/c1-eval-$SAFE" --base-url http://127.0.0.1:8014/v1 \
     --model "$MODEL" --fixer-candidates 0 \
     --tasks $HOLDOUT 2>&1 | grep -E "solved|FLIP" || true
 done

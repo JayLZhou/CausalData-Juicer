@@ -20,6 +20,8 @@
 | A14 | 剩余失败的抵抗类型判定 | k=8 加密重采样定点 11 个未覆盖任务 | 采样受限 vs 方法受限分界 | ✅ 2026-07-31：**88 连抽零翻转**——n06 属采样饥饿（多抽即破），这 11 个（json 格式类 T3 为主）系方法/能力受限，对 7B 随机 + 14B 确定性全阶梯免疫；最终失败转化定格 24/35 → `runs/depmig-resample-k8` |
 | B1 | 已发表管线可在本抽象上短代码复现 | `examples/case_step_dpo.py`：tree-sampling → step-DPO 对 + PRM 标签 | ≤100 行 | ✅ **76 行**, 2026-07-30：19 失败 ep × 3 分支采样 → 46 分支、7 翻转、12 个同状态步级 DPO 对；副产物：重采样翻转 3 个 fixer 池全灭的任务（k02/k06/s02），失败覆盖 6/19→**9/19**——A10 推广为"候选**来源**多样性 ≻ 模型强度"；**案例 #2** `examples/case_credit_ate.py`（**53 行**, 离线零重放）：CCPO 式反事实步级信用（ATE = P(success\|do(a′)) − P(success\|a)）直接从存储的 paired outcomes 编译，9 单元 → 信用标注轨迹（HER relabel 可作第三案例，非必需） |
 | B2 | 训练栈直接可摄入 | `causeforge export --format trl-sft/trl-dpo/verl` | 格式与 TRL/verl 契约一致（含 parquet 回读测试） | ✅ 2026-07-30, 45 tests |
+| B3 | HER relabel 可作纯观察性算子表达 | `examples/case_her_relabel.py` | ≤50 行、零重放零 LLM | ✅ **43 行**, 2026-08-01：34 个失败轨迹重标注为"达成之目标"的 OBSERVED 级监督 → `experiments/results/her_sft.jsonl` |
+| B4 | 多层 rollout-tree 信用分配（Tree-GRPO 家族核心）可表达 | `examples/case_rollout_tree.py` | ≤100 行、真实执行的树 + 组相对优势 | ✅ **78 行**, 2026-08-01：深度 2 反事实树（L1 温度采样、L2 以**已执行分支的失败输出**为条件精修），12 节点 / 5 成功 / 3 个非零组相对优势 → `experiments/results/tree_credit.jsonl`。**README 五行"已发表家族"对照表至此全部兑现**（step-DPO、tree-credit、ATE、PRM、HER） |
 | C1 (RQ1) | causal 数据 beat 零成本修正对 | matched-token LoRA 对照（validated 43 行 vs suggested 38 行, 同配方同种子, 跨家族留出 16 任务） | 输了 → 当天转线（库定位下已降级为加分项） | ◐ **低功率 null**, 2026-08-01：base 6/16、validated 5/16、suggested 5/16，**15/16 任务三臂结局逐一相同**（唯一差异 s04 为双臂同丢, 属小数据 SFT 漂移）；validated 与 suggested **完全打平**——判死线 #2 未触发（要求"输给基线", 实为零可检测效应）。结论：~40 行语料低于 SFT 效应检测阈值；复验条件：语料 ≥10×（~500 units）或改用任务型定向评估；C 链按库定位维持加分项 → `experiments/results/c1/` |
 
 ## 记录规则

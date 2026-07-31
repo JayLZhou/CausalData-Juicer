@@ -1,6 +1,6 @@
-from causeforge.maintenance.provenance import env_fingerprint, needs_revalidation, stamp
-from causeforge.runtime.tools import default_registry
-from causeforge.sdk.schemas import CausalUnit, Intervention, InterventionType, Outcome, ToolCall
+from causal_data_juicer.maintenance.provenance import env_fingerprint, needs_revalidation, stamp
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.sdk.schemas import CausalUnit, Intervention, InterventionType, Outcome, ToolCall
 
 
 def _unit():

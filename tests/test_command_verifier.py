@@ -1,9 +1,9 @@
 """CommandVerifier: the generality escape hatch — any executable
 workload becomes verifiable, and therefore flip-attributable."""
-from causeforge.runtime.agent import ScriptedPolicy, ScriptedStep
-from causeforge.runtime.collector import Collector
-from causeforge.runtime.verifier import CommandVerifier
-from causeforge.sdk.schemas import (
+from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
+from causal_data_juicer.runtime.collector import Collector
+from causal_data_juicer.runtime.verifier import CommandVerifier
+from causal_data_juicer.sdk.schemas import (
     ArgEdit,
     CostLedger,
     EvidenceTier,

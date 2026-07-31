@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from causeforge.compiler.adapters import export_trl_dpo, export_trl_sft, export_verl
-from causeforge.sdk.schemas import (
+from causal_data_juicer.compiler.adapters import export_trl_dpo, export_trl_sft, export_verl
+from causal_data_juicer.sdk.schemas import (
     CausalUnit,
     Episode,
     EvidenceTier,

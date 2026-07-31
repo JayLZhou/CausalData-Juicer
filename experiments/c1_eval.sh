@@ -2,7 +2,7 @@
 # C1 evaluation: base vs validated-LoRA vs suggested-LoRA agent solve
 # rate on the held-out families (sqlalchemy + networkx, 16 tasks).
 set -e
-cd /home/jovyan/causeforge
+cd /home/jovyan/CausalData-Juicer
 HOLDOUT="s01_select_list s02_table_names s03_engine_execute s04_bind_autoload \
 s05_session_raw_sql s06_autocommit k01_info k02_gpickle k03_ordered_graph \
 k04_jit k05_persist_pipeline k06_report_tool k07_log_summary k08_jit_cache \
@@ -22,7 +22,7 @@ echo "eval server ready"
 for MODEL in Qwen/Qwen2.5-7B-Instruct validated suggested; do
   SAFE=$(echo "$MODEL" | tr '/' '_')
   echo "== arm: $MODEL =="
-  .venv/bin/python -m causeforge collect-depmig \
+  .venv/bin/python -m causal_data_juicer collect-depmig \
     --out "runs/c1-eval-$SAFE" --base-url http://127.0.0.1:8014/v1 \
     --model "$MODEL" --fixer-candidates 0 \
     --tasks $HOLDOUT 2>&1 | grep -E "solved|FLIP" || true

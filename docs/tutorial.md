@@ -26,16 +26,16 @@ ws = Path("tutorial-ws"); ws.mkdir(exist_ok=True)
 ## 2. Record an episode
 
 The agent below is scripted (deterministic); a live LLM agent
-(`causeforge.runtime.llm_policy.LLMPolicy`) records through the exact same
+(`causal_data_juicer.runtime.llm_policy.LLMPolicy`) records through the exact same
 interface. Note the bug: it returns `x + x + x`.
 
 ```python
-from causeforge.runtime.agent import ScriptedPolicy, ScriptedStep
-from causeforge.runtime.collector import Collector
-from causeforge.runtime.tools import default_registry
-from causeforge.runtime.verifier import PytestVerifier
-from causeforge.store.blob import BlobStore
-from causeforge.sdk.schemas import ToolCall
+from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
+from causal_data_juicer.runtime.collector import Collector
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.store.blob import BlobStore
+from causal_data_juicer.sdk.schemas import ToolCall
 
 blobs = BlobStore(Path("tutorial-blobs"))
 collector = Collector(default_registry(), blobs, PytestVerifier())
@@ -58,9 +58,9 @@ snapshot twice: the **control branch** must reproduce the recorded failure
 **intervened branch** runs, then the flip is reproduced n times.
 
 ```python
-from causeforge.replay.replayer import Replayer
-from causeforge.replay.sandbox import LocalSandbox
-from causeforge.sdk.schemas import ArgEdit, Intervention, InterventionType
+from causal_data_juicer.replay.replayer import Replayer
+from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.sdk.schemas import ArgEdit, Intervention, InterventionType
 
 replayer = Replayer(default_registry(), LocalSandbox(blobs, Path("tutorial-scratch")),
                     PytestVerifier())
@@ -79,19 +79,19 @@ outcome, reproducibly* — with the evidence tier attached.
 ## 4. Compile training data
 
 ```python
-from causeforge.compiler.exports import compile_all
+from causal_data_juicer.compiler.exports import compile_all
 paths = compile_all([unit], [episode], Path("tutorial-exports"))
 print(open(paths["dpo"]).read())   # prompt / chosen / rejected / evidence_tier
 ```
 
-`causeforge export --format trl-dpo|trl-sft|verl` produces trainer-native
+`causal_data_juicer export --format trl-dpo|trl-sft|verl` produces trainer-native
 formats from any run directory.
 
 ## 5. Where to go next
 
 - **Candidate sources**: instead of a hand-written fix, plug an LLM fixer,
   temperature resampling, or validation-in-the-loop refinement
-  (`causeforge collect-depmig --sources fixer,fixer-tests,resample --refine-rounds 3`).
+  (`causal_data_juicer collect-depmig --sources fixer,fixer-tests,resample --refine-rounds 3`).
 - **Any executable workload**: swap `PytestVerifier` for
   `CommandVerifier(["make", "test"])` — success is exit code 0.
 - **Budgets**: wrap validation in `AcquisitionEngine` with a `Budget` and a

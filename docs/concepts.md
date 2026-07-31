@@ -3,7 +3,7 @@
 ## Five objects
 
 Everything in the engine is built from five schema objects
-(`causeforge.sdk.schemas`):
+(`causal_data_juicer.sdk.schemas`):
 
 | Object | What it is |
 |---|---|
@@ -35,7 +35,7 @@ data cannot exceed OBSERVED).
 
 ## The four-question fit test
 
-Can CauseForge reproduce your data-construction method? Ask:
+Can CausalData-Juicer reproduce your data-construction method? Ask:
 
 1. **Does state fit in a snapshot?** Filesystem + declared state: yes.
    Mid-flight processes, remote service state: no.
@@ -48,7 +48,7 @@ Can CauseForge reproduce your data-construction method? Ask:
    Any command works (`CommandVerifier`, success = exit 0). Human or LLM
    judges can plug in, but the evidence tier stays lower.
 
-Four yeses ≈ a ~100-line case study. Note the boundary: CauseForge reproduces
+Four yeses ≈ a ~100-line case study. Note the boundary: CausalData-Juicer reproduces
 papers' *data engines*, not their gradient updates — outputs export straight
 into TRL/verl for training.
 

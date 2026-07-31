@@ -1,4 +1,4 @@
-from causeforge.sdk.schemas import (
+from causal_data_juicer.sdk.schemas import (
     ArgEdit,
     CostLedger,
     EvidenceTier,

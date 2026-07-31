@@ -2,40 +2,40 @@
 
 ## Core schemas
 
-::: causeforge.sdk.schemas
+::: causal_data_juicer.sdk.schemas
     options:
       members: [Episode, Snapshot, Intervention, Outcome, CausalUnit, EvidenceTier, SideEffectClass, CostLedger]
 
 ## Recording
 
-::: causeforge.runtime.collector
+::: causal_data_juicer.runtime.collector
 
-::: causeforge.runtime.verifier
+::: causal_data_juicer.runtime.verifier
 
 ## Replay
 
-::: causeforge.replay.replayer
+::: causal_data_juicer.replay.replayer
 
 ## Acquisition
 
-::: causeforge.acquisition.engine
+::: causal_data_juicer.acquisition.engine
 
-::: causeforge.acquisition.policies
+::: causal_data_juicer.acquisition.policies
 
-::: causeforge.acquisition.budget
+::: causal_data_juicer.acquisition.budget
 
 ## Slicing
 
-::: causeforge.slicing.ddmin
+::: causal_data_juicer.slicing.ddmin
 
 ## Compilation
 
-::: causeforge.compiler.exports
+::: causal_data_juicer.compiler.exports
 
-::: causeforge.compiler.adapters
+::: causal_data_juicer.compiler.adapters
 
 ## Maintenance
 
-::: causeforge.maintenance.provenance
+::: causal_data_juicer.maintenance.provenance
 
-::: causeforge.maintenance.revalidate
+::: causal_data_juicer.maintenance.revalidate

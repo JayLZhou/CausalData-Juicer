@@ -1,4 +1,4 @@
-# CauseForge 设计文档（M0/M1）
+# CausalData-Juicer 设计文档（M0/M1）
 
 > A Budgeted Interventional Data Engine for Agent Improvement
 > 本文是 README 主张的展开：抽象定义、闭环各阶段的语义、以及 M1 实现的落地决策。
@@ -78,7 +78,7 @@ M1 版本：只选失败 episode，从 `CandidateSource` 收集候选干预，�
 
 ### 3.6 维护（maintenance/provenance.py）
 
-每个 unit 打上环境指纹（causeforge 版本、python、平台、工具注册表 digest、workload digest）。`needs_revalidation(unit, current_env)` 返回漂移分量清单——M4 的 selective revalidation 在此钩子上展开。
+每个 unit 打上环境指纹（causal_data_juicer 版本、python、平台、工具注册表 digest、workload digest）。`needs_revalidation(unit, current_env)` 返回漂移分量清单——M4 的 selective revalidation 在此钩子上展开。
 
 ## 4. 存储（store/blob.py、run_store.py）
 

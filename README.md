@@ -1,6 +1,6 @@
 <div align="center">
 
-# CauseForge
+# CausalData-Juicer
 
 **A Budgeted Interventional Data Engine for Agent Improvement**
 
@@ -11,12 +11,12 @@
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen.svg)](tests/)
 
-[English] | [[中文](README_ZH.md)] · [Operator Zoo](#-operator-zoo) · [Settings](#%EF%B8%8F-supported-settings) · [Why CauseForge](#-why-causeforge) · [How it works](#-how-it-works)
+[English] | [[中文](README_ZH.md)] · [Applications](#-application-scenarios) · [Operator Zoo](#-operator-zoo) · [Settings](#%EF%B8%8F-supported-settings) · [Why CausalData-Juicer](#-why-causal_data_juicer) · [How it works](#-how-it-works)
 
 </div>
 
 Experience systems store what agents *happened to try*;
-**CauseForge actively acquires the causal experience agents *should learn from*** —
+**CausalData-Juicer actively acquires the causal experience agents *should learn from*** —
 fork a recorded trajectory, apply an intervention, replay original and intervened
 branches as a matched pair, verify the outcome **flips**, slice to the minimal
 causal core, compile training-ready assets. An evidence tier rides on every row:
@@ -43,6 +43,19 @@ unit = replayer.paired_replay(episode, snapshots, iv)   # control + branch + n×
 if unit.flipped:
     export(unit)          # -> SFT / DPO / PRM / memory / regression / verl / TRL
 ```
+
+## 🎯 Application scenarios
+
+| Scenario | You bring | You get |
+|---|---|---|
+| **Agent self-improvement** | your agent's failed trajectories + a replayable env | validated SFT/DPO correction pairs mined from your own failures — certified to flip outcomes, not just look plausible |
+| **RL / preference-data engine** | tasks + verifier + any chat endpoint | step-level DPO pairs, PRM labels, tree credit — exported trainer-native (TRL, verl parquet) |
+| **Agent regression testing & version evaluation** | a run directory | *executable* counterfactual suites: on every model/prompt/dependency upgrade, replay and check the flips still hold |
+| **Dependency-migration / code-maintenance bots** | a repo + its test suite | failure→recovery memory units and correction pairs for real breaking changes (our certified 52-task bench domain) |
+| **Structured-generation process supervision** (Text-to-SQL etc.) | queries + an executor | clause/segment-level criticality labels in both directions (see the CAPER case) |
+| **Data freshness operations** | long-lived data assets + version events | provenance-driven selective revalidation: re-check only what a dependency change can touch, demote what went stale |
+| **Agent memory / skill libraries** | failed + repaired episodes | failure→recovery units with evidence tiers, ready for retrieval |
+| **Method research** | a new paper's data-construction idea | a same-day ~100-line reproduction under one metered roof — compare strategies at matched budgets |
 
 ## 🧩 Operator Zoo
 
@@ -107,9 +120,9 @@ slicing minimizes over; a SQL clause, a config line, a code hunk).
 | **Side effects** | tools declare `PURE / IDEMPOTENT / REVERSIBLE / TRANSACTIONAL / EXTERNAL_SIDE_EFFECT`; external effects are dry-run mocked during replay, never re-executed |
 | **Workload** | a 52-task dependency-migration bench (6 real breaking-change families), every task certified pass-on-old / fail-on-new, hermetic, sealed, anti-cheat verified |
 
-## 🏆 Why CauseForge
+## 🏆 Why CausalData-Juicer
 
-| | Data-Juicer family | **CauseForge** |
+| | Data-Juicer family | **CausalData-Juicer** |
 |---|---|---|
 | Input | corpora you already have | a replayable execution environment |
 | Core act | operator transforms (filter/dedup/synthesize) | fork / intervene / paired counterfactual replay |
@@ -125,13 +138,13 @@ in the [claims ledger](experiments/claims.md) — nulls included, on the front p
 ## 🔬 How it works
 
 **The vision, implemented as a loop** — the system *decides which executions to
-run*: [`Collector`](causeforge/runtime/collector.py) snapshots the workspace at
+run*: [`Collector`](causal_data_juicer/runtime/collector.py) snapshots the workspace at
 every step boundary while recording actions/observations/LLM calls → candidate
 sources propose alternative actions → the replayer validates → slicing
 minimizes → compilers materialize. Nothing is trusted because it looks
 plausible; everything is trusted because it was **executed twice and compared**.
 
-**Validation, concretely** ([`replay/replayer.py`](causeforge/causeforge/replay/replayer.py)):
+**Validation, concretely** ([`replay/replayer.py`](causal_data_juicer/causal_data_juicer/replay/replayer.py)):
 restore the pre-step snapshot; run the **control branch** with the recorded
 actions — its per-step observation digests and final outcome must match the
 recording (environment drifted? the unit is *refused*, spend stops); run the
@@ -139,7 +152,7 @@ recording (environment drifted? the unit is *refused*, spend stops); run the
 forks; ddmin re-validates the minimal atom set. Anti-cheat seals (test files
 byte-identical) and CI negative controls guard the instrument itself.
 
-**The budget, and why it exists** ([`acquisition/`](causeforge/causeforge/acquisition/)):
+**The budget, and why it exists** ([`acquisition/`](causal_data_juicer/causal_data_juicer/acquisition/)):
 every token, second and dollar charges a `CostLedger` from line one; `Budget`
 is a hard ceiling, not advice. The always-on mechanism layer (control-branch
 memoization, early repro stop, full LLM caching) measured **26% replay savings
@@ -154,8 +167,8 @@ and to vanish when they're not. Every unit carries its own acquisition cost, so
 git clone https://github.com/JayLZhou/CausalData-Juicer.git && cd CausalData-Juicer
 python3 -m venv .venv && .venv/bin/pip install -e .
 
-.venv/bin/python -m causeforge demo              # end-to-end loop, one command
-.venv/bin/python -m causeforge regress runs/demo # replay exported counterfactual cases
+.venv/bin/python -m causal_data_juicer demo              # end-to-end loop, one command
+.venv/bin/python -m causal_data_juicer regress runs/demo # replay exported counterfactual cases
 .venv/bin/python -m pytest tests/
 ```
 
@@ -190,8 +203,8 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 Apache-2.0.
 
 ```bibtex
-@misc{causeforge2026,
-  title  = {CauseForge: A Budgeted Interventional Data Engine for Agent Improvement},
+@misc{causal_data_juicer2026,
+  title  = {CausalData-Juicer: A Budgeted Interventional Data Engine for Agent Improvement},
   author = {Zhou, Yingli},
   year   = {2026},
   url    = {https://github.com/JayLZhou/CausalData-Juicer}

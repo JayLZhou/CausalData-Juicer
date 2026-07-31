@@ -1,9 +1,9 @@
-# CauseForge
+# CausalData-Juicer
 
 **A budgeted interventional data engine for agent improvement.**
 *One counterfactual execution machine — any causal data-construction strategy in ~100 lines.*
 
-Experience systems store what agents *happened to try*; CauseForge actively
+Experience systems store what agents *happened to try*; CausalData-Juicer actively
 acquires the causal experience agents *should learn from*: fork a recorded
 trajectory, apply an intervention, replay original and intervened branches as
 a matched pair, verify the outcome **flips**, slice the intervention to its

@@ -1,7 +1,7 @@
 import json
 
-from causeforge.compiler.observational import compile_observational
-from causeforge.runtime.import_trace import load_generic_traces
+from causal_data_juicer.compiler.observational import compile_observational
+from causal_data_juicer.runtime.import_trace import load_generic_traces
 
 TRACES = [
     {"task_id": "ok1", "description": "add numbers", "success": True,

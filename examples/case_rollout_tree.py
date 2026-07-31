@@ -14,16 +14,16 @@ import argparse
 import json
 from pathlib import Path
 
-from causeforge.acquisition.fixer import last_write_step, propose_refinement
-from causeforge.acquisition.resample import ResampleSource
-from causeforge.compiler.common import render_action, write_jsonl
-from causeforge.replay.replayer import Replayer
-from causeforge.replay.sandbox import LocalSandbox
-from causeforge.runtime.llm import DiskCachedLLM, OpenAICompatClient
-from causeforge.runtime.tools import default_registry
-from causeforge.runtime.verifier import PytestVerifier
-from causeforge.run_store import RunStore
-from causeforge.sdk.schemas import CostLedger
+from causal_data_juicer.acquisition.fixer import last_write_step, propose_refinement
+from causal_data_juicer.acquisition.resample import ResampleSource
+from causal_data_juicer.compiler.common import render_action, write_jsonl
+from causal_data_juicer.replay.replayer import Replayer
+from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.sdk.schemas import CostLedger
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", default="runs/depmig-7b")

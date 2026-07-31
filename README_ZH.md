@@ -1,4 +1,4 @@
-# CauseForge
+# CausalData-Juicer
 
 > **A Budgeted Interventional Data Engine for Agent Improvement**
 > 在有限执行预算下，主动获取、验证并持续维护真正改变 Agent 任务结果的因果数据。
@@ -10,18 +10,18 @@
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e .
-.venv/bin/python -m causeforge demo             # 一条命令端到端 demo
-.venv/bin/python -m causeforge report runs/demo
-.venv/bin/python -m causeforge regress runs/demo  # 重放导出的反事实回归用例
+.venv/bin/python -m causal_data_juicer demo             # 一条命令端到端 demo
+.venv/bin/python -m causal_data_juicer report runs/demo
+.venv/bin/python -m causal_data_juicer regress runs/demo  # 重放导出的反事实回归用例
 .venv/bin/python -m pytest tests/
 ```
 
 ## 这是什么
 
-Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、冗余的，且随模型/prompt/工具/环境升级迅速失效。现有系统的共同点是**被动处理已经产生的日志**（存储、打分、切分、导出）。CauseForge 做的是另一件事：
+Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、冗余的，且随模型/prompt/工具/环境升级迅速失效。现有系统的共同点是**被动处理已经产生的日志**（存储、打分、切分、导出）。CausalData-Juicer 做的是另一件事：
 
 > Experience systems store what agents happened to try;
-> **CauseForge actively acquires the causal experience that agents should learn from.**
+> **CausalData-Juicer actively acquires the causal experience that agents should learn from.**
 
 系统主动决定：在哪条轨迹的哪个状态、施加什么类型的干预、fork 环境做成对反事实重放、验证结果是否真的翻转、提取最小因果单元，并物化为四类资产：
 
@@ -39,9 +39,9 @@ Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、冗余�
 电梯稿可以这么讲，但精确的定位是站在 Data-Juicer 一族没有的那根轴上：
 
 > Data-Juicer refines the data you already have;
-> **CauseForge decides which executions to run to create the data you're missing — and proves each unit actually changed the outcome.**
+> **CausalData-Juicer decides which executions to run to create the data you're missing — and proves each unit actually changed the outcome.**
 
-| | Data-Juicer 家族（DJ 2.0 / Sandbox / Trinity-RFT） | CauseForge |
+| | Data-Juicer 家族（DJ 2.0 / Sandbox / Trinity-RFT） | CausalData-Juicer |
 |---|---|---|
 | 输入 | 已存在的语料 / 经验数据 | 可重放的 Agent 执行环境 |
 | 核心动作 | 算子变换：清洗、过滤、去重、合成 | fork / 干预 / 成对反事实重放 |
@@ -59,7 +59,7 @@ Agent 在执行中产生大量轨迹，但原始 trace 是观察性的、冗余�
 
 ```text
 DJ 算子:          Dataset → Dataset                # 纯变换，花 CPU/GPU 时间
-CauseForge 算子:  (Units, Env, Budget) → Units'    # 可花真实执行预算，可提升证据等级
+CausalData-Juicer 算子:  (Units, Env, Budget) → Units'    # 可花真实执行预算，可提升证据等级
 ```
 
 Budget 分两层，这是库的核心卖点（tree-search 造数据家族的头号痛点就是 rollout 成本）：
@@ -86,9 +86,9 @@ Budget 分两层，这是库的核心卖点（tree-search 造数据家族的头�
 
 ## 库定位：N 篇论文的手搓循环 → 一个公共底座
 
-2024–2026 已成型一个方法家族：从分支 / 反事实 rollout 造训练信号（MCTS→step-level DPO 对、TreeRL / Tree-GRPO / ARPO、rollout-tree 信用分配 RTMC / AT2PO、CCPO 的 SCM+ATE 信用、CriticSearch……）。每篇都在手搓同一个循环：**分支 → rollout → 比较 → 步级信号 → 编译**。CauseForge 的库主张：这个家族共享一个底座，我们把它做成库。
+2024–2026 已成型一个方法家族：从分支 / 反事实 rollout 造训练信号（MCTS→step-level DPO 对、TreeRL / Tree-GRPO / ARPO、rollout-tree 信用分配 RTMC / AT2PO、CCPO 的 SCM+ATE 信用、CriticSearch……）。每篇都在手搓同一个循环：**分支 → rollout → 比较 → 步级信号 → 编译**。CausalData-Juicer 的库主张：这个家族共享一个底座，我们把它做成库。
 
-| 已发表方法家族 | 在 CauseForge 中的表达 |
+| 已发表方法家族 | 在 CausalData-Juicer 中的表达 |
 |---|---|
 | MCTS → step-level DPO 对 | fork + paired replay + DPO 编译算子 |
 | Rollout-tree 信用分配（Tree-GRPO / RTMC / AT2PO） | shared-prefix trace DAG + paired outcomes |
@@ -130,13 +130,13 @@ Agent Execution → Trace Collection → Candidate Screening
 
 - [x] **M0** 设计文档（[docs/design.md](docs/design.md)）
 - [x] **M1 竖切面**：schemas → collector → 本地环境 snapshot/restore → paired replay → pytest verifier → 四种 export → 玩具 demo 端到端跑通。实测：flip 可复现率 18/18 = 100%（玩具上界）、9 episodes、7→6 causal atoms（ddmin 切片）、cost ~2.2s/unit、判死线进 CI（`tests/test_e2e_demo.py`）。M1.5 需补报：live agent 下的对照支 digest 匹配率
-- [x] **M1.5 workload**：depmig mini-bench 30 任务 / 5 家族（pydantic、numpy、sqlalchemy、click、networkx），pass-old/fail-new 双向认证 30/30（`causeforge bench-build`）；live 采集（7B agent + 异构 fixer 池）flip 可复现率 **100% (15/15)**、digest 匹配率 **100%**、agent 解题 11/30 零作弊。发现：候选**来源**多样性 ≻ 模型强度（失败转化 6/19→9/19）。Docker 缺席，venv 隔离降级方案落地；pandas 家族（py3.11 底座）为 stretch
-- [x] **M2 预算层 + 获取优化器**：机制层（对照支 memoization + 复现早停）实测省 **26%** replay；策略层（exhaustive/random/adaptive 可插拔 + matched-budget 曲线 `causeforge acquire-eval`）在 55 候选规模下为诚实 null（全部收敛，放大条件已记录）
-- [x] **M3 存储与调度**：内容寻址隐式 trace DAG（共享 **2.3×**、省 56.6% 字节）；checkpoint placement（every/every_k/first）+ 前缀重执行 fork（状态重建 digest 等价）；fork 加速 **298.6×** vs 全量重放（`causeforge storage-bench`）
-- [x] **M4 保鲜维护**：按家族依赖声明的 provenance + selective revalidation（`causeforge revalidate`）；两次真实版本事件：pydantic 升级 **4.8×**、click 回滚 **8.0×** 节省，降级集 selective≡full 零漏报（回滚事件演示 control-drift 失效类）
-- [x] **案例研究（证据链 B）**：`examples/case_step_dpo.py`（**76 行**：tree-sampling→步级 DPO+PRM，live 跑通）、`examples/case_credit_ate.py`（**53 行**：CCPO 式反事实步级信用，离线零重放）；TRL-SFT/TRL-DPO/verl-parquet 导出（`causeforge export`）
+- [x] **M1.5 workload**：depmig mini-bench 30 任务 / 5 家族（pydantic、numpy、sqlalchemy、click、networkx），pass-old/fail-new 双向认证 30/30（`causal_data_juicer bench-build`）；live 采集（7B agent + 异构 fixer 池）flip 可复现率 **100% (15/15)**、digest 匹配率 **100%**、agent 解题 11/30 零作弊。发现：候选**来源**多样性 ≻ 模型强度（失败转化 6/19→9/19）。Docker 缺席，venv 隔离降级方案落地；pandas 家族（py3.11 底座）为 stretch
+- [x] **M2 预算层 + 获取优化器**：机制层（对照支 memoization + 复现早停）实测省 **26%** replay；策略层（exhaustive/random/adaptive 可插拔 + matched-budget 曲线 `causal_data_juicer acquire-eval`）在 55 候选规模下为诚实 null（全部收敛，放大条件已记录）
+- [x] **M3 存储与调度**：内容寻址隐式 trace DAG（共享 **2.3×**、省 56.6% 字节）；checkpoint placement（every/every_k/first）+ 前缀重执行 fork（状态重建 digest 等价）；fork 加速 **298.6×** vs 全量重放（`causal_data_juicer storage-bench`）
+- [x] **M4 保鲜维护**：按家族依赖声明的 provenance + selective revalidation（`causal_data_juicer revalidate`）；两次真实版本事件：pydantic 升级 **4.8×**、click 回滚 **8.0×** 节省，降级集 selective≡full 零漏报（回滚事件演示 control-drift 失效类）
+- [x] **案例研究（证据链 B）**：`examples/case_step_dpo.py`（**76 行**：tree-sampling→步级 DPO+PRM，live 跑通）、`examples/case_credit_ate.py`（**53 行**：CCPO 式反事实步级信用，离线零重放）；TRL-SFT/TRL-DPO/verl-parquet 导出（`causal_data_juicer export`）
 - [ ] **训练 pilot（RQ1，加分项）**：五组 matched-token 对照，同一基座同一 LoRA 配置
-- [ ] **(v2) CauseForge Sandbox**：小成本下游代理信号（LoRA 探针 / memory 命中率 / regression 通过率）反馈校准 acquisition optimizer——把 TransferEstimate 从静态启发式变成自校准闭环。与 DJ Sandbox 平行："他们 co-develop 数据配方与模型，我们 co-develop 干预策略与 Agent"。依赖 M1–M4 全部就位，v1 冻结
+- [ ] **(v2) CausalData-Juicer Sandbox**：小成本下游代理信号（LoRA 探针 / memory 命中率 / regression 通过率）反馈校准 acquisition optimizer——把 TransferEstimate 从静态启发式变成自校准闭环。与 DJ Sandbox 平行："他们 co-develop 数据配方与模型，我们 co-develop 干预策略与 Agent"。依赖 M1–M4 全部就位，v1 冻结
 - [ ] 论文骨架与 claim 表随 M1 起步并行推进（[experiments/claims.md](experiments/claims.md)）
 
 ## 判死线（提前写死，不许恋战）
@@ -162,7 +162,7 @@ Agent Execution → Trace Collection → Candidate Screening
 ## 规划的仓库结构
 
 ```text
-causeforge/
+causal_data_juicer/
 ├── sdk/            # schemas（四个核心抽象 = 论文 Contribution 1）
 ├── runtime/        # collector、agent adapter
 ├── store/          # trace DAG、blob store、checkpoint policy   (M3)

@@ -1,5 +1,5 @@
 """Case study #5 (evidence chain B): CAPER's clause-aligned process
-supervision (arXiv:2606.03327) on CauseForge's public API.
+supervision (arXiv:2606.03327) on CausalData-Juicer's public API.
 
 CAPER builds Text-to-SQL clause-level PRM labels by counterfactually
 perturbing SQL clauses and executing the result.  Expressed here:
@@ -16,16 +16,16 @@ from pathlib import Path
 
 from caper_workload import REPAIR, STRESS
 
-from causeforge.compiler.common import write_jsonl
-from causeforge.replay.replayer import Replayer
-from causeforge.replay.sandbox import LocalSandbox
-from causeforge.runtime.agent import ScriptedPolicy, ScriptedStep
-from causeforge.runtime.collector import Collector
-from causeforge.runtime.tools import default_registry
-from causeforge.runtime.verifier import PytestVerifier
-from causeforge.sdk.schemas import ArgEdit, CostLedger, Intervention, InterventionType, LinePatch, ToolCall
-from causeforge.slicing.ddmin import minimize_unit
-from causeforge.store.blob import BlobStore
+from causal_data_juicer.compiler.common import write_jsonl
+from causal_data_juicer.replay.replayer import Replayer
+from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
+from causal_data_juicer.runtime.collector import Collector
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.sdk.schemas import ArgEdit, CostLedger, Intervention, InterventionType, LinePatch, ToolCall
+from causal_data_juicer.slicing.ddmin import minimize_unit
+from causal_data_juicer.store.blob import BlobStore
 
 OUT = Path("runs/case_caper")
 blobs = BlobStore(OUT / "blobs")

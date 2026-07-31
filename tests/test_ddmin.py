@@ -1,4 +1,4 @@
-from causeforge.slicing.ddmin import ddmin
+from causal_data_juicer.slicing.ddmin import ddmin
 
 
 def test_ddmin_single_causal_atom():

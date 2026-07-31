@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from causeforge.replay.replayer import Replayer
-from causeforge.replay.sandbox import LocalSandbox
-from causeforge.runtime.collector import Collector
-from causeforge.runtime.tools import default_registry
-from causeforge.runtime.verifier import PytestVerifier
-from causeforge.store.blob import BlobStore
+from causal_data_juicer.replay.replayer import Replayer
+from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.runtime.collector import Collector
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.store.blob import BlobStore
 
 
 @pytest.fixture

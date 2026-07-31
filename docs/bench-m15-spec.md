@@ -45,16 +45,16 @@
 
 1. **测试零网络**：测试套件不 import requests/httpx/socket 网络调用；bench 构建时静态扫描强制。
 2. **测试确定性**：禁 `time.time()`/无种子随机/依赖 dict 遍历顺序的断言；有随机的一律 `seed=0`。
-3. **环境不可变**：任务 venv 由 EnvManager 一次性构建（构建期允许网络装包），episode 与 replay 期间只读。venv 在 workspace **外**，workspace 内只有指针文件 `.causeforge_env.json`（进 snapshot，几十字节）。
+3. **环境不可变**：任务 venv 由 EnvManager 一次性构建（构建期允许网络装包），episode 与 replay 期间只读。venv 在 workspace **外**，workspace 内只有指针文件 `.causal_data_juicer_env.json`（进 snapshot，几十字节）。
 4. **依赖锁死**：全部 `==` pin，构建后记录 `pip freeze` 进 bench 的 provenance。
 5. **无外部资产**：所有任务 repo 手写自建（README 纪律），迁移点参照各库官方 migration guide；PyMigBench 只作灵感来源，不直接搬代码。
 
 ## 5. Verifier 契约
 
-- 判定：任务 venv 的解释器执行 `pytest -q`（经 `.causeforge_env.json` 指针解析），exit 0 且 passed ≥ 1 → success。
+- 判定：任务 venv 的解释器执行 `pytest -q`（经 `.causal_data_juicer_env.json` 指针解析），exit 0 且 passed ≥ 1 → success。
 - 防作弊，success 还需同时满足：
   - 测试文件内容 digest 与任务定义一致（agent 改测试 = 直接 fail）；
-  - `.causeforge_env.json` 未被篡改；
+  - `.causal_data_juicer_env.json` 未被篡改；
   - 源码中不得出现 `pytest.skip` / `sys.exit` 注入（静态扫描）。
 - Outcome 记录 passed/failed 计数 + 规范化摘要（沿用 M1 的 time-free 归一化）。
 
@@ -71,7 +71,7 @@
 ## 7. 目录与实现顺序
 
 ```text
-causeforge/workloads/depmig/
+causal_data_juicer/workloads/depmig/
 ├── families/{pydantic,numpy,sqlalchemy,click,networkx}/   # 每任务一个目录：src/ + tests/ + task.json
 ├── build.py       # 静态扫描（密闭性）+ EnvManager 构建 + provenance 冻结
 └── loader.py      # 产出 ToyTask 同构的 Task 对象（同一 Collector/Replayer 直接吃）

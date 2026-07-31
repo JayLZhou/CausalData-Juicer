@@ -1,8 +1,8 @@
 import json
 
-from causeforge.runtime.llm import DiskCachedLLM, LLMResponse
-from causeforge.runtime.llm_policy import LLMPolicy, extract_action
-from causeforge.sdk.schemas import Step, ToolCall
+from causal_data_juicer.runtime.llm import DiskCachedLLM, LLMResponse
+from causal_data_juicer.runtime.llm_policy import LLMPolicy, extract_action
+from causal_data_juicer.sdk.schemas import Step, ToolCall
 
 
 class FakeClient:

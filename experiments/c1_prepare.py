@@ -17,10 +17,10 @@ import json
 import random
 from pathlib import Path
 
-from causeforge.compiler.common import render_context
-from causeforge.interventions.apply import apply_intervention
-from causeforge.run_store import RunStore
-from causeforge.sdk.schemas import EvidenceTier
+from causal_data_juicer.compiler.common import render_context
+from causal_data_juicer.interventions.apply import apply_intervention
+from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.sdk.schemas import EvidenceTier
 
 RUNS = ["depmig-7b", "depmig-7b-fixer14b", "depmig-7b-pandas", "depmig-7b-pandas-f14b",
         "depmig-14b", "depmig-7b-ext", "depmig-7b-ext-f14b", "depmig-full-pool",

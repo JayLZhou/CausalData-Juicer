@@ -1,9 +1,9 @@
 """End-to-end demo pipeline test: the M1 kill-line check in CI form."""
 import json
 
-from causeforge.pipeline import run_demo
-from causeforge.run_store import RunStore
-from causeforge.sdk.schemas import EvidenceTier
+from causal_data_juicer.pipeline import run_demo
+from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.sdk.schemas import EvidenceTier
 
 
 def test_demo_end_to_end(tmp_path):

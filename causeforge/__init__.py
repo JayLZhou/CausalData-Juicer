@@ -1,17 +1,13 @@
-"""CauseForge: a budgeted interventional data engine for agent improvement."""
+"""Deprecated compatibility shim: the package is now `causal_data_juicer`.
 
-from causeforge.sdk.schemas import (  # noqa: F401
-    CausalUnit,
-    CostLedger,
-    Episode,
-    EvidenceTier,
-    Intervention,
-    InterventionType,
-    Outcome,
-    SideEffectClass,
-    Snapshot,
-    Step,
-    ToolCall,
-)
+Old imports (`from causeforge.x import Y`) keep working by aliasing the
+module tree; new code should import `causal_data_juicer` directly.
+"""
+import sys as _sys
+import warnings as _warnings
 
-__version__ = "0.1.0"
+import causal_data_juicer as _pkg
+
+_warnings.warn("`causeforge` is renamed to `causal_data_juicer`; "
+               "update your imports.", DeprecationWarning, stacklevel=2)
+_sys.modules[__name__] = _pkg

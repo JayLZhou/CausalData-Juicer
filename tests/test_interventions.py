@@ -1,11 +1,11 @@
 import pytest
 
-from causeforge.interventions.apply import (
+from causal_data_juicer.interventions.apply import (
     apply_intervention,
     intervention_atoms,
     rebuild_from_atoms,
 )
-from causeforge.sdk.schemas import (
+from causal_data_juicer.sdk.schemas import (
     ArgEdit,
     Intervention,
     InterventionType,

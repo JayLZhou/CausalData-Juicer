@@ -13,8 +13,8 @@ gate, not assumed.  Two properties pin down exactly what that gate does:
    its pass/fail summary, so cosmetic nondeterminism cannot poison a
    unit whose outcome is deterministic.
 """
-from causeforge.runtime.agent import ScriptedPolicy, ScriptedStep
-from causeforge.sdk.schemas import (
+from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
+from causal_data_juicer.sdk.schemas import (
     ArgEdit,
     EvidenceTier,
     Intervention,

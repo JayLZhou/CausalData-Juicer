@@ -1,14 +1,14 @@
 """M2 budget/policy/engine tests with a stub replayer (no real replays)."""
-from causeforge.acquisition.budget import Budget
-from causeforge.acquisition.engine import AcquisitionEngine
-from causeforge.acquisition.policies import (
+from causal_data_juicer.acquisition.budget import Budget
+from causal_data_juicer.acquisition.engine import AcquisitionEngine
+from causal_data_juicer.acquisition.policies import (
     AdaptivePolicy,
     Candidate,
     ExhaustivePolicy,
     RandomPolicy,
     make_policy,
 )
-from causeforge.sdk.schemas import (
+from causal_data_juicer.sdk.schemas import (
     CausalUnit,
     CostLedger,
     Episode,

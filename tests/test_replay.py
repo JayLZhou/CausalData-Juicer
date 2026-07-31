@@ -1,6 +1,6 @@
 """Collector + replay engine tests on a minimal 2-step task."""
-from causeforge.runtime.agent import ScriptedPolicy, ScriptedStep
-from causeforge.sdk.schemas import (
+from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
+from causal_data_juicer.sdk.schemas import (
     ArgEdit,
     EvidenceTier,
     Intervention,

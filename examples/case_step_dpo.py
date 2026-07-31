@@ -1,6 +1,6 @@
 """Case study (evidence chain B): the tree-sampling -> step-level DPO
 pipeline family (MCTS-DPO / TreeRL-style data construction), expressed
-on CauseForge's public API in under 100 lines.
+on CausalData-Juicer's public API in under 100 lines.
 
 For each failed episode: fork the pre-step snapshot, sample K alternative
 actions from the live policy at temperature>0, replay every branch, and
@@ -13,16 +13,16 @@ import argparse
 import json
 from pathlib import Path
 
-from causeforge.acquisition.fixer import last_write_step
-from causeforge.compiler.common import render_action, render_context, write_jsonl
-from causeforge.replay.replayer import Replayer
-from causeforge.replay.sandbox import LocalSandbox
-from causeforge.runtime.llm import DiskCachedLLM, OpenAICompatClient
-from causeforge.runtime.llm_policy import extract_action
-from causeforge.runtime.tools import default_registry
-from causeforge.runtime.verifier import PytestVerifier
-from causeforge.run_store import RunStore
-from causeforge.sdk.schemas import Intervention, InterventionType, ToolCall
+from causal_data_juicer.acquisition.fixer import last_write_step
+from causal_data_juicer.compiler.common import render_action, render_context, write_jsonl
+from causal_data_juicer.replay.replayer import Replayer
+from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
+from causal_data_juicer.runtime.llm_policy import extract_action
+from causal_data_juicer.runtime.tools import default_registry
+from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.sdk.schemas import Intervention, InterventionType, ToolCall
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", default="runs/depmig-7b")

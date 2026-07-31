@@ -13,10 +13,10 @@ Run:  .venv/bin/python examples/case_her_relabel.py
 import json
 from pathlib import Path
 
-from causeforge.acquisition.fixer import last_write_step
-from causeforge.compiler.common import render_context, write_jsonl
-from causeforge.run_store import RunStore
-from causeforge.sdk.schemas import EvidenceTier
+from causal_data_juicer.acquisition.fixer import last_write_step
+from causal_data_juicer.compiler.common import render_context, write_jsonl
+from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.sdk.schemas import EvidenceTier
 
 RUNS = ["depmig-7b", "depmig-7b-pandas", "depmig-7b-ext"]
 OUT = Path("runs/case_her/her_sft.jsonl")

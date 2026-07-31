@@ -19,7 +19,7 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 .venv/bin/python -m pytest tests/     # must stay green
 ```
 
-Bench work: `causeforge bench-build` must report a valid certificate
+Bench work: `causal_data_juicer bench-build` must report a valid certificate
 (pass-on-old / fail-on-new for every task) before a new task ships — probe
 your breaking change empirically first; several "well-known" breaks turned
 out to be shimmed.
@@ -29,6 +29,6 @@ out to be shimmed.
 - A new candidate source (implement `propose(episode) -> list[Intervention]`).
 - A new verifier (implement `evaluate(workspace, ledger) -> Outcome`).
 - A trace adapter for your agent framework (see
-  `causeforge/runtime/import_trace.py` for the target schema).
+  `causal_data_juicer/runtime/import_trace.py` for the target schema).
 - A case study reproducing a published data-construction method on the
   public API (≤100 lines; see `examples/`).

@@ -1,6 +1,6 @@
 """Case study #2 (evidence chain B): counterfactual step-credit
 (CCPO-style ATE / rollout-tree credit assignment), expressed on
-CauseForge's stored artifacts in ~50 lines — fully offline, zero replay.
+CausalData-Juicer's stored artifacts in ~50 lines — fully offline, zero replay.
 
 For every causal unit, the paired outcomes ARE the two arms of a
 per-step effect estimate: the control branch reproduces the original
@@ -18,9 +18,9 @@ import argparse
 import json
 from pathlib import Path
 
-from causeforge.compiler.common import render_action, write_jsonl
-from causeforge.maintenance.revalidate import load_pooled_units
-from causeforge.sdk.schemas import EvidenceTier
+from causal_data_juicer.compiler.common import render_action, write_jsonl
+from causal_data_juicer.maintenance.revalidate import load_pooled_units
+from causal_data_juicer.sdk.schemas import EvidenceTier
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", default="runs/depmig-7b")

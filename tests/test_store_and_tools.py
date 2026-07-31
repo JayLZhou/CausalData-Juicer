@@ -1,8 +1,8 @@
 import pytest
 
-from causeforge.runtime.tools import EXTERNAL_OBS_PLACEHOLDER, ToolExecutor
-from causeforge.sdk.schemas import CostLedger, ToolCall
-from causeforge.store.blob import BlobStore, tree_digest
+from causal_data_juicer.runtime.tools import EXTERNAL_OBS_PLACEHOLDER, ToolExecutor
+from causal_data_juicer.sdk.schemas import CostLedger, ToolCall
+from causal_data_juicer.store.blob import BlobStore, tree_digest
 
 
 def test_tree_digest_deterministic_and_ignores_caches(tmp_path):

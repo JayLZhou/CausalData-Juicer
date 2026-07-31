@@ -1,0 +1,46 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 16,
+  "failed_episodes": 10,
+  "agent_solved": 6,
+  "seal_violations": 0,
+  "candidates_screened": 0,
+  "units_by_tier": {},
+  "validated_units": 0,
+  "flip_repro_rate": null,
+  "flip_repro_detail": "0/0 intervened replays flipped",
+  "determinism_control_ok": null,
+  "control_digest_match_rate": null,
+  "breakdown": {},
+  "slicing": {
+    "atoms_before": 0,
+    "atoms_after": 0
+  },
+  "cost": {
+    "llm_calls": 92,
+    "tokens_in": 52696,
+    "tokens_out": 4463,
+    "tool_calls": 108,
+    "replay_runs": 0,
+    "wall_time_s": 24.13,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": null,
+  "exports": {
+    "sft": "runs/c1-eval-Qwen_Qwen2.5-7B-Instruct/exports/sft.jsonl",
+    "dpo": "runs/c1-eval-Qwen_Qwen2.5-7B-Instruct/exports/dpo.jsonl",
+    "memory": "runs/c1-eval-Qwen_Qwen2.5-7B-Instruct/exports/memory.jsonl",
+    "regression": "runs/c1-eval-Qwen_Qwen2.5-7B-Instruct/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-7B-Instruct"
+  },
+  "wall_time_total_s": 96.33
+}

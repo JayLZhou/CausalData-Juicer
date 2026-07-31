@@ -1,0 +1,104 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 52,
+  "failed_episodes": 35,
+  "agent_solved": 17,
+  "seal_violations": 0,
+  "candidates_screened": 109,
+  "units_by_tier": {
+    "SUGGESTED": 127,
+    "MINIMAL": 29
+  },
+  "validated_units": 29,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "87/87 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 28,
+      "flipped": 3,
+      "repro_flips": 9,
+      "repro_runs": 9
+    },
+    "tier:T1": {
+      "candidates": 37,
+      "flipped": 13,
+      "repro_flips": 39,
+      "repro_runs": 39
+    },
+    "tier:T2": {
+      "candidates": 80,
+      "flipped": 14,
+      "repro_flips": 42,
+      "repro_runs": 42
+    },
+    "tier:T3": {
+      "candidates": 39,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "family:numpy": {
+      "candidates": 4,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    },
+    "family:sqlalchemy": {
+      "candidates": 9,
+      "flipped": 4,
+      "repro_flips": 12,
+      "repro_runs": 12
+    },
+    "family:click": {
+      "candidates": 59,
+      "flipped": 4,
+      "repro_flips": 12,
+      "repro_runs": 12
+    },
+    "family:networkx": {
+      "candidates": 29,
+      "flipped": 6,
+      "repro_flips": 18,
+      "repro_runs": 18
+    },
+    "family:pandas": {
+      "candidates": 27,
+      "flipped": 11,
+      "repro_flips": 33,
+      "repro_runs": 33
+    }
+  },
+  "slicing": {
+    "atoms_before": 29,
+    "atoms_after": 29
+  },
+  "cost": {
+    "llm_calls": 220,
+    "tokens_in": 124283,
+    "tokens_out": 21208,
+    "tool_calls": 1082,
+    "replay_runs": 277,
+    "wall_time_s": 264.22,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 3.46,
+  "exports": {
+    "sft": "runs/depmig-kitchen-sink/exports/sft.jsonl",
+    "dpo": "runs/depmig-kitchen-sink/exports/dpo.jsonl",
+    "memory": "runs/depmig-kitchen-sink/exports/memory.jsonl",
+    "regression": "runs/depmig-kitchen-sink/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-14B-Instruct"
+  },
+  "wall_time_total_s": 694.77
+}

@@ -1,0 +1,74 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 6,
+  "failed_episodes": 4,
+  "agent_solved": 2,
+  "seal_violations": 0,
+  "candidates_screened": 6,
+  "units_by_tier": {
+    "SUGGESTED": 4,
+    "MINIMAL": 2
+  },
+  "validated_units": 2,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "6/6 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pandas": {
+      "candidates": 6,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "tier:T1": {
+      "candidates": 1,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    },
+    "tier:T2": {
+      "candidates": 4,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    },
+    "tier:T3": {
+      "candidates": 1,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    }
+  },
+  "slicing": {
+    "atoms_before": 2,
+    "atoms_after": 2
+  },
+  "cost": {
+    "llm_calls": 9,
+    "tokens_in": 5890,
+    "tokens_out": 801,
+    "tool_calls": 85,
+    "replay_runs": 18,
+    "wall_time_s": 29.33,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 4.87,
+  "exports": {
+    "sft": "runs/depmig-7b-pandas-f14b/exports/sft.jsonl",
+    "dpo": "runs/depmig-7b-pandas-f14b/exports/dpo.jsonl",
+    "memory": "runs/depmig-7b-pandas-f14b/exports/memory.jsonl",
+    "regression": "runs/depmig-7b-pandas-f14b/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-14B-Instruct"
+  },
+  "wall_time_total_s": 48.76
+}

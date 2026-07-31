@@ -5,3 +5,5 @@ __pycache__/
 .pytest_cache/
 runs/
 bench_envs/
+.venv-train/
+experiments/c1_adapters/

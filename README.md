@@ -23,16 +23,29 @@ causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
-**Counterfactual data construction is everywhere now** — math pipelines
-branch reasoning steps into step-DPO pairs and PRM labels; agent-RL methods
-sample rollout trees for group advantages (TreeRL / Tree-GRPO / ARPO) or
-counterfactual credit (CCPO); code agents mine patch-vs-outcome pairs;
-Text-to-SQL perturbs clauses against an executor (CAPER); HER recycles
-failures. Different tasks, one underlying act: *run an alternative and
-compare outcomes*. What's missing is shared machinery that makes those
-comparisons **valid** (did the environment drift?), **affordable** (what did
-that replay cost?), and **durable** (is the data still true after the next
-upgrade?). That machinery is this repo.
+**Everyone is building counterfactual data now.** Math pipelines branch a
+reasoning step and keep the divergence (step-DPO pairs, PRM labels). Agent-RL
+samples rollout trees for group advantages (TreeRL, Tree-GRPO, ARPO) and
+per-step counterfactual credit (CCPO). Code agents mine which patch flipped
+which test; Text-to-SQL executes perturbed clauses (CAPER); HER turns
+failures into supervision for the goals they *did* reach.
+
+Strip away the domains and one act remains: **fork a state, run an
+alternative, compare outcomes, keep the difference.**
+
+Every team hand-builds that loop — and inherits three questions their ad-hoc
+scripts never answer:
+
+- **Valid?** If the environment drifted between recording and replay, your
+  "counterfactual" is comparing against a ghost.
+- **Affordable?** Every branch is a real execution. Which candidates deserve
+  the spend — and what did each certified pair actually cost?
+- **Durable?** A validated flip is a claim *about an environment*. Which of
+  your rows died when last night's dependency bump landed?
+
+CausalData-Juicer is that loop as infrastructure — one metered, gated,
+versioned counterfactual execution machine — so your method becomes a
+~100-line recipe on top, not a bespoke system underneath.
 
 > **A running example.** Mira's coding agents failed 800 migration tickets
 > the weekend pydantic 2 landed. The logs say what happened — not what would

@@ -23,27 +23,6 @@ causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
-## 🔁 Reproduce a paper's data engine before lunch
-
-| Published strategy | Case study | Lines | Real output |
-|---|---|---|---|
-| MCTS → step-level DPO pairs | [`case_step_dpo.py`](examples/case_step_dpo.py) | 76 | 12 same-state preference pairs |
-| Rollout-tree credit (Tree-GRPO/RTMC) | [`case_rollout_tree.py`](examples/case_rollout_tree.py) | 78 | executed trees + group-relative advantages |
-| Counterfactual credit / ATE (CCPO) | [`case_credit_ate.py`](examples/case_credit_ate.py) | 53 | credit-annotated trajectories, offline |
-| Process-reward labels | byproduct of `case_step_dpo.py` | — | 46 executed-branch PRM labels |
-| HER-style relabeling | [`case_her_relabel.py`](examples/case_her_relabel.py) | 43 | achieved-goal rows, zero replay/LLM |
-| **CAPER clause PRM** (arXiv:2606.03327, *June 2026*) | [`case_caper_clause_prm.py`](examples/case_caper_clause_prm.py) | 77 | clause criticality, both directions, **same-day repro** |
-
-Every case fills one ten-line skeleton:
-
-```python
-episode, snapshots = collector.run_episode(task, workspace, policy)   # record
-iv = Intervention(...)                                  # alternative action, any source
-unit = replayer.paired_replay(episode, snapshots, iv)   # control + branch + n× repro
-if unit.flipped:
-    export(unit)          # -> SFT / DPO / PRM / memory / regression / verl / TRL
-```
-
 ## 🎯 Application scenarios
 
 | Scenario | You bring | You get |
@@ -137,6 +116,16 @@ in the [claims ledger](experiments/claims.md) — nulls included, on the front p
 
 ## 🔬 How it works
 
+Everything below fills one ten-line skeleton:
+
+```python
+episode, snapshots = collector.run_episode(task, workspace, policy)   # record
+iv = Intervention(...)                                  # alternative action, any source
+unit = replayer.paired_replay(episode, snapshots, iv)   # control + branch + n× repro
+if unit.flipped:
+    export(unit)          # -> SFT / DPO / PRM / memory / regression / verl / TRL
+```
+
 **The vision, implemented as a loop** — the system *decides which executions to
 run*: [`Collector`](causal_data_juicer/runtime/collector.py) snapshots the workspace at
 every step boundary while recording actions/observations/LLM calls → candidate
@@ -192,6 +181,17 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 | Checkpoint forking | **298×** vs from-scratch; byte-identical reconstruction |
 | Source science | failure→data conversion 24/35; stochastic sources pierce deterministic-model ceilings |
 | Training value (C1) | honest **underpowered null** at ~40 rows; re-test conditions logged |
+
+## 🔁 Showcase: reproduce a paper's data engine before lunch
+
+| Published strategy | Case study | Lines | Real output |
+|---|---|---|---|
+| MCTS → step-level DPO pairs | [`case_step_dpo.py`](examples/case_step_dpo.py) | 76 | 12 same-state preference pairs |
+| Rollout-tree credit (Tree-GRPO/RTMC) | [`case_rollout_tree.py`](examples/case_rollout_tree.py) | 78 | executed trees + group-relative advantages |
+| Counterfactual credit / ATE (CCPO) | [`case_credit_ate.py`](examples/case_credit_ate.py) | 53 | credit-annotated trajectories, offline |
+| Process-reward labels | byproduct of `case_step_dpo.py` | — | 46 executed-branch PRM labels |
+| HER-style relabeling | [`case_her_relabel.py`](examples/case_her_relabel.py) | 43 | achieved-goal rows, zero replay/LLM |
+| **CAPER clause PRM** (arXiv:2606.03327, *June 2026*) | [`case_caper_clause_prm.py`](examples/case_caper_clause_prm.py) | 77 | clause criticality, both directions, **same-day repro** |
 
 ## 📚 Documentation & License
 

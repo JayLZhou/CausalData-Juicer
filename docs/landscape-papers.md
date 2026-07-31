@@ -41,7 +41,7 @@ paper's official metadata; "arXiv preprint" means no acceptance was found.
 
 | Paper | Venue | Links | Counterfactual data constructed |
 |---|---|---|---|
-| CAPER: Clause-Aligned Process Supervision for Text-to-SQL | arXiv preprint | [arXiv](https://arxiv.org/abs/2606.03327) · official code link 404s (our [77-line reproduction](../examples/case_caper_clause_prm.py)) | counterfactual interventions on SQL ASTs; executed clause variants isolate the culpable clause |
+| CAPER: Clause-Aligned Process Supervision for Text-to-SQL | arXiv preprint | [arXiv](https://arxiv.org/abs/2606.03327) · official code link 404s (our [77-line reproduction](https://github.com/JayLZhou/CausalData-Juicer/blob/main/examples/case_caper_clause_prm.py)) | counterfactual interventions on SQL ASTs; executed clause variants isolate the culpable clause |
 | SQL-R1: Training NL2SQL Reasoning by RL | NeurIPS 2025 | [arXiv](https://arxiv.org/abs/2504.08600) · [code](https://github.com/DataArcTech/SQL-R1) | every rollout executed against the database, scored on result correctness |
 | Reward-SQL: Stepwise Execution-Aware Reasoning and Process-Supervised Rewards | arXiv preprint | [arXiv](https://arxiv.org/abs/2505.04671) · [code](https://github.com/ruc-datalab/RewardSQL) | partial programs (CTE steps) executed to train a process reward model |
 | Arctic-Text2SQL-R1: Simple Rewards, Strong Reasoning | arXiv preprint | [arXiv](https://arxiv.org/abs/2505.20315) · [code](https://github.com/snowflakedb/ArcticTraining) | execution-correctness reward: each generated query run against the DB |

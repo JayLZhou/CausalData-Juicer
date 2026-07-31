@@ -2,6 +2,7 @@
 
 > **A Budgeted Interventional Data Engine for Agent Improvement**
 > 在有限执行预算下，主动获取、验证并持续维护真正改变 Agent 任务结果的因果数据。
+> English: [README.en.md](README.en.md) · License: Apache-2.0
 
 **状态：M1–M4 + B 链完成，证据链 A 全部点亮（A1–A10）。** 48 项测试全绿；live agent（Qwen2.5-7B on vLLM）真实开奖：flip 可复现率 100%（15/15）、对照支 digest 匹配率 100%、机制层省 26% replay、selective revalidation 省 4.8–8.0× 且零漏降级、fork 加速 298×；两个 ≤80 行案例复现已发表管线家族；TRL/verl 导出直通。详细数字与出处见 [experiments/claims.md](experiments/claims.md)。本 README 是项目的合同：主张、路线、判死线都写在这里。
 

@@ -58,6 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_imp = sub.add_parser("import-trace", help="Import Mode: ingest external traces (observational)")
+    p_imp.add_argument("trace_file")
+    p_imp.add_argument("--out", default="runs/imported")
+
     p_sb = sub.add_parser("storage-bench", help="M3: checkpoint placement replay/storage trade-off")
     p_sb.add_argument("--run", default="runs/depmig-7b")
     p_sb.add_argument("--policies", default="every,every_k:2,first")
@@ -116,6 +120,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
+        return 0
+
+    if args.cmd == "import-trace":
+        from causeforge.compiler.observational import compile_observational
+        from causeforge.run_store import RunStore
+        from causeforge.runtime.import_trace import load_generic_traces
+        episodes = load_generic_traces(Path(args.trace_file))
+        ok = sum(1 for ep in episodes if ep.outcome and ep.outcome.success)
+        store = RunStore(Path(args.out))
+        exports = compile_observational(episodes, Path(args.out) / "exports")
+        report = {"mode": "import", "episodes": len(episodes), "successful": ok,
+                  "evidence_ceiling": "OBSERVED",
+                  "exports": {k: str(v) for k, v in exports.items()}}
+        store.save(episodes, [], [], report)
+        print(f"imported {len(episodes)} episodes ({ok} successful) -> {args.out}")
+        for name, path in exports.items():
+            n = sum(1 for _ in open(path))
+            print(f"  {name:<10} {n:>3} rows  {path}   [evidence ceiling: OBSERVED]")
         return 0
 
     if args.cmd == "storage-bench":

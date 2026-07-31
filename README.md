@@ -23,15 +23,25 @@ causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
-**Everyone is building counterfactual data now.** Math pipelines branch a
-reasoning step and keep the divergence (step-DPO pairs, PRM labels). Agent-RL
-samples rollout trees for group advantages (TreeRL, Tree-GRPO, ARPO) and
-per-step counterfactual credit (CCPO). Code agents mine which patch flipped
-which test; Text-to-SQL executes perturbed clauses (CAPER); HER turns
-failures into supervision for the goals they *did* reach.
+**Causal data** for LLM/agent training is data whose labels answer an
+*interventional* question — **"would the outcome have changed under a
+different action?"** — not the observational one ("what happened?"). Each
+counterfactual is one controlled comparison: fork the state, swap one thing,
+execute, diff the outcomes. It is the only way to get credit assignment
+without guessing, preference pairs that aren't stylistic, and process labels
+grounded in execution — which is why everyone is building it now:
 
-Strip away the domains and one act remains: **fork a state, run an
-alternative, compare outcomes, keep the difference.**
+| You want | The counterfactual question | Representative methods | Data produced |
+|---|---|---|---|
+| Step-level credit in reasoning | would the solution still succeed if *this* step changed? | MCTS→step-DPO, PRM construction | step-DPO pairs, PRM labels |
+| Advantage signals for agent RL | how much better is this branch than its siblings from the same state? | TreeRL, Tree-GRPO, ARPO; CCPO, RTMC, AT2PO | group advantages, per-step credit |
+| Repair data for code agents | does this patch actually flip the failing test? | patch–outcome mining (our bench domain) | validated correction / DPO pairs |
+| Process supervision for structured generation | which clause breaks or repairs execution? | CAPER (Text-to-SQL) | clause-level PRM labels |
+| Supervision recycled from failures | what goal did this failure *actually* achieve? | HER-style relabeling | hindsight SFT rows |
+| Robustness & regression labels | what is the smallest perturbation that breaks a success? | stress testing (v2 here) | criticality labels, adversarial suites |
+
+Strip away the rows and one act remains: **fork a state, run an alternative,
+compare outcomes, keep the difference.**
 
 Every team hand-builds that loop — and inherits three questions their ad-hoc
 scripts never answer:

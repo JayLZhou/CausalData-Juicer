@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen.svg)](tests/)
 
-[English] | [[中文](README_ZH.md)] · [Applications](#-application-scenarios) · [Operator Zoo](#-operator-zoo) · [Settings](#%EF%B8%8F-supported-settings) · [Why CausalData-Juicer](#-why-causal_data_juicer) · [How it works](#-how-it-works)
+[English] | [[中文](README_ZH.md)] · [Applications](#-application-scenarios) · [Operator Zoo](#-operator-zoo) · [Settings](#%EF%B8%8F-supported-settings) · [Why CausalData-Juicer](#-why-causaldata-juicer) · [How it works](#-how-it-works)
 
 </div>
 

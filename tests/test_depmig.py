@@ -7,20 +7,27 @@ from causeforge.workloads.depmig.base import scan_hermeticity
 from causeforge.workloads.depmig.build import all_tasks, enabled_families
 
 
+from causeforge.workloads.depmig import pandas_family
+
+CORE = {"pydantic", "numpy", "sqlalchemy", "click", "networkx"}
+N_FAMILIES = 5 + int(pandas_family.available())
+
+
 def test_bench_shape():
     tasks = all_tasks()
-    assert len(tasks) == 30
-    assert len({t.id for t in tasks}) == 30
+    assert len(tasks) == 6 * N_FAMILIES
+    assert len({t.id for t in tasks}) == 6 * N_FAMILIES
     families = Counter(t.family.name for t in tasks)
-    assert set(families) == {"pydantic", "numpy", "sqlalchemy", "click", "networkx"}
+    assert set(families) >= CORE
     assert all(n == 6 for n in families.values())
 
 
 def test_tier_distribution():
     tiers = Counter(t.tier for t in all_tasks())
-    assert tiers[1] == 10
-    assert tiers[2] == 16
-    assert tiers[3] == 4  # networkx has no T3 (documented in its module)
+    pandas_on = int(pandas_family.available())
+    assert tiers[1] == 10 + 2 * pandas_on
+    assert tiers[2] == 16 + 3 * pandas_on
+    assert tiers[3] == 4 + pandas_on  # networkx has no T3 (documented there)
 
 
 def test_all_tasks_hermetic():

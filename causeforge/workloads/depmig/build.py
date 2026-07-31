@@ -30,6 +30,9 @@ def enabled_families():
         sqlalchemy_family,
     )
     modules = [pydantic_family, numpy_family, sqlalchemy_family, click_family, networkx_family]
+    from causeforge.workloads.depmig import pandas_family
+    if pandas_family.available():  # stretch family; needs the py3.11 base
+        modules.append(pandas_family)
     return [(m.FAMILY, m.build_tasks()) for m in modules]
 
 

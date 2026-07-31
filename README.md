@@ -3,7 +3,7 @@
 > **A Budgeted Interventional Data Engine for Agent Improvement**
 > 在有限执行预算下，主动获取、验证并持续维护真正改变 Agent 任务结果的因果数据。
 
-**状态：M1 完成**——竖切面端到端跑通，24 项测试全绿，玩具 workload 上 flip 可复现率 18/18 = 100%（判死线 ≥90% 已固化为 CI 断言）。注意：该数字是缓存/脚本化条件下的仪器上界，真实开奖在 M1.5。代码已与本仓库统一（远端开发机 `/home/jovyan/causeforge` ↔ GitHub `main`）。本 README 是项目的合同：主张、路线、判死线都写在这里。
+**状态：M1–M4 + B 链完成，证据链 A 全部点亮（A1–A10）。** 48 项测试全绿；live agent（Qwen2.5-7B on vLLM）真实开奖：flip 可复现率 100%（15/15）、对照支 digest 匹配率 100%、机制层省 26% replay、selective revalidation 省 4.8–8.0× 且零漏降级、fork 加速 298×；两个 ≤80 行案例复现已发表管线家族；TRL/verl 导出直通。详细数字与出处见 [experiments/claims.md](experiments/claims.md)。本 README 是项目的合同：主张、路线、判死线都写在这里。
 
 ## 快速开始
 
@@ -129,11 +129,11 @@ Agent Execution → Trace Collection → Candidate Screening
 
 - [x] **M0** 设计文档（[docs/design.md](docs/design.md)）
 - [x] **M1 竖切面**：schemas → collector → 本地环境 snapshot/restore → paired replay → pytest verifier → 四种 export → 玩具 demo 端到端跑通。实测：flip 可复现率 18/18 = 100%（玩具上界）、9 episodes、7→6 causal atoms（ddmin 切片）、cost ~2.2s/unit、判死线进 CI（`tests/test_e2e_demo.py`）。M1.5 需补报：live agent 下的对照支 digest 匹配率
-- [ ] **M1.5 workload**：自建 dependency-migration mini-bench（20–50 任务，选真实 breaking change：pydantic v2、pandas 2.x、numpy 2.0 等；PyMigBench 作候选底料）+ Docker 环境适配器
-- [ ] **M2 预算层 + 获取优化器**：机制层（记账/缓存/前缀复用/提前停止）对所有策略生效；默认策略（多保真筛选、adaptive singleton、effect-signature 去重）作为可插拔调度器，产出 cost-per-unit 曲线 vs exhaustive / random / 用户自带策略
-- [ ] **M3 存储与调度**：shared-prefix trace DAG、checkpoint placement。产出 replay 加速数据
-- [ ] **M4 保鲜维护**：全链路 provenance、selective revalidation。用一次真实发生的版本升级做实验
-- [ ] **案例研究（证据链 B）**：用算子抽象复现 2–3 个已发表方法的数据管线；导出 verl/TRL 兼容格式
+- [x] **M1.5 workload**：depmig mini-bench 30 任务 / 5 家族（pydantic、numpy、sqlalchemy、click、networkx），pass-old/fail-new 双向认证 30/30（`causeforge bench-build`）；live 采集（7B agent + 异构 fixer 池）flip 可复现率 **100% (15/15)**、digest 匹配率 **100%**、agent 解题 11/30 零作弊。发现：候选**来源**多样性 ≻ 模型强度（失败转化 6/19→9/19）。Docker 缺席，venv 隔离降级方案落地；pandas 家族（py3.11 底座）为 stretch
+- [x] **M2 预算层 + 获取优化器**：机制层（对照支 memoization + 复现早停）实测省 **26%** replay；策略层（exhaustive/random/adaptive 可插拔 + matched-budget 曲线 `causeforge acquire-eval`）在 55 候选规模下为诚实 null（全部收敛，放大条件已记录）
+- [x] **M3 存储与调度**：内容寻址隐式 trace DAG（共享 **2.3×**、省 56.6% 字节）；checkpoint placement（every/every_k/first）+ 前缀重执行 fork（状态重建 digest 等价）；fork 加速 **298.6×** vs 全量重放（`causeforge storage-bench`）
+- [x] **M4 保鲜维护**：按家族依赖声明的 provenance + selective revalidation（`causeforge revalidate`）；两次真实版本事件：pydantic 升级 **4.8×**、click 回滚 **8.0×** 节省，降级集 selective≡full 零漏报（回滚事件演示 control-drift 失效类）
+- [x] **案例研究（证据链 B）**：`examples/case_step_dpo.py`（**76 行**：tree-sampling→步级 DPO+PRM，live 跑通）、`examples/case_credit_ate.py`（**53 行**：CCPO 式反事实步级信用，离线零重放）；TRL-SFT/TRL-DPO/verl-parquet 导出（`causeforge export`）
 - [ ] **训练 pilot（RQ1，加分项）**：五组 matched-token 对照，同一基座同一 LoRA 配置
 - [ ] **(v2) CauseForge Sandbox**：小成本下游代理信号（LoRA 探针 / memory 命中率 / regression 通过率）反馈校准 acquisition optimizer——把 TransferEstimate 从静态启发式变成自校准闭环。与 DJ Sandbox 平行："他们 co-develop 数据配方与模型，我们 co-develop 干预策略与 Agent"。依赖 M1–M4 全部就位，v1 冻结
 - [ ] 论文骨架与 claim 表随 M1 起步并行推进（[experiments/claims.md](experiments/claims.md)）

@@ -1,5 +1,7 @@
 # CausalData-Juicer
 
+![Overview](assets/overview.png)
+
 **A budgeted interventional data engine for agent improvement.**
 *One counterfactual execution machine — any causal data-construction strategy in ~100 lines.*
 

@@ -15,6 +15,10 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/assets/overview.png" alt="CausalData-Juicer overview: from messy agent trajectories to causally validated training data" width="100%">
+</p>
+
 Experience systems store what agents *happened to try*;
 **CausalData-Juicer actively acquires the causal experience agents *should learn from*** —
 fork a recorded trajectory, apply an intervention, replay original and intervened

@@ -1,0 +1,8 @@
+{"task_id": "sql_avg_salary", "direction": "repair", "clause_line": 2, "clause": "WHERE 1=1", "in_minimal_causal_set": true, "evidence_tier": "MINIMAL"}
+{"task_id": "sql_avg_salary", "direction": "repair", "clause_line": 4, "clause": "HAVING AVG(salary) > 70", "in_minimal_causal_set": true, "evidence_tier": "MINIMAL"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 0, "clause": "SELECT name, price", "critical": true, "evidence": "executed-counterfactual"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 2, "clause": "WHERE cat = 'hw'", "critical": true, "evidence": "executed-counterfactual"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 2, "clause": "WHERE price > 25 AND cat = 'hw'", "critical": false, "evidence": "executed-counterfactual"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 4, "clause": "HAVING COUNT(*) >= 1", "critical": false, "evidence": "executed-counterfactual"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 5, "clause": "ORDER BY name ASC", "critical": false, "evidence": "executed-counterfactual"}
+{"task_id": "sql_expensive_hw", "direction": "stress", "clause_line": 5, "clause": "ORDER BY name DESC", "critical": true, "evidence": "executed-counterfactual"}

@@ -36,6 +36,20 @@ on downstream training value, is pre-registered.
 
 ## 0 A running example
 
+Counterfactual data construction has quietly become the workhorse of
+LLM/agent improvement across domains. Math and reasoning pipelines branch
+solution steps and keep the divergences (MCTS-derived step-level DPO pairs,
+process-reward datasets). Agent RL methods sample rollout trees for
+group-relative advantages (TreeRL, Tree-GRPO, ARPO) or estimate per-step
+counterfactual credit (CCPO's ATE, RTMC, AT2PO). Code-repair agents mine
+patch-vs-outcome pairs; Text-to-SQL systems perturb clauses against an
+executor (CAPER); hindsight relabeling recycles failures into supervision;
+RFT platforms wire experience buffers into training (Trinity-RFT). Different
+tasks, same underlying act: *run an alternative and compare outcomes*. The
+demand is everywhere — what is missing is shared machinery that makes those
+comparisons valid, affordable, and durable. A concrete story shows why that
+machinery is the hard part.
+
 Mira maintains a fleet of coding agents that keep her company's Python
 services on current dependencies. Over one weekend, pydantic 2 lands and her
 7B agent fails 800 migration tickets. The logs are a mountain of *what

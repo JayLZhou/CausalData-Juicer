@@ -23,6 +23,17 @@ causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
+**Counterfactual data construction is everywhere now** — math pipelines
+branch reasoning steps into step-DPO pairs and PRM labels; agent-RL methods
+sample rollout trees for group advantages (TreeRL / Tree-GRPO / ARPO) or
+counterfactual credit (CCPO); code agents mine patch-vs-outcome pairs;
+Text-to-SQL perturbs clauses against an executor (CAPER); HER recycles
+failures. Different tasks, one underlying act: *run an alternative and
+compare outcomes*. What's missing is shared machinery that makes those
+comparisons **valid** (did the environment drift?), **affordable** (what did
+that replay cost?), and **durable** (is the data still true after the next
+upgrade?). That machinery is this repo.
+
 > **A running example.** Mira's coding agents failed 800 migration tickets
 > the weekend pydantic 2 landed. The logs say what happened — not what would
 > have worked. Asking a bigger model for fixes gives plausible patches, some

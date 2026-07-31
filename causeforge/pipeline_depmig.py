@@ -58,9 +58,10 @@ def run_depmig(
     fixer_base_url: str | None = None,
     fixer_model: str | None = None,
     llm_cache: Path | None = None,
-    sources: str = "fixer",  # comma list: fixer, resample
+    sources: str = "fixer",  # comma list: fixer, fixer-tests, resample
     resample_k: int = 3,
     resample_temperature: float = 0.85,
+    refine_rounds: int = 0,  # validation-in-the-loop refinement for unflipped episodes
 ) -> dict:
     t_start = time.monotonic()
     run_dir = Path(run_dir)
@@ -131,6 +132,11 @@ def run_depmig(
         if source_name == "fixer":
             source_objs.append(FixerLLMSource(
                 fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost))
+        elif source_name == "fixer-tests":
+            source_objs.append(FixerLLMSource(
+                fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost,
+                name="fixer-tests",
+                tests_by_task={tid: t.test_files() for tid, t in task_by_id.items()}))
         elif source_name == "resample":
             from causeforge.acquisition.resample import ResampleSource
             resample_llm = DiskCachedLLM(
@@ -143,16 +149,50 @@ def run_depmig(
     screener = Screener(sources=source_objs)
     candidates = screener.screen(episodes)
 
-    # 3) paired replay + repro + slicing
+    # 3) paired replay + repro + slicing (+ optional refinement loop)
     units: list[CausalUnit] = []
-    for ep, iv in candidates:
-        unit = replayer.paired_replay(ep, snapshots, iv, n_repro=n_repro)
+    control_cache: dict = {}
+
+    def validate(ep, iv) -> CausalUnit:
+        unit = replayer.paired_replay(ep, snapshots, iv, n_repro=n_repro,
+                                      control_cache=control_cache)
         if unit.tier >= EvidenceTier.REPRODUCIBLE:
             unit = minimize_unit(replayer, ep, snapshots, unit)
         family = task_by_id[ep.task_id].family.name
         stamp(unit, {**fingerprint, "family": family,
                      f"env:{family}": env_freezes.get(family, "")})
         units.append(unit)
+        return unit
+
+    last_attempt: dict[str, tuple] = {}  # episode_id -> (iv, intervened detail)
+    flipped_eps: set[str] = set()
+    for ep, iv in candidates:
+        unit = validate(ep, iv)
+        if unit.flipped:
+            flipped_eps.add(ep.id)
+        elif unit.intervened_outcome is not None:
+            last_attempt[ep.id] = (iv, unit.intervened_outcome.detail)
+
+    if refine_rounds > 0:
+        from causeforge.acquisition.fixer import propose_refinement
+        eps_by_id = {ep.id: ep for ep in episodes}
+        for ep_id, (iv, detail) in list(last_attempt.items()):
+            if ep_id in flipped_eps:
+                continue
+            ep = eps_by_id[ep_id]
+            tests = task_by_id[ep.task_id].test_files()
+            for round_index in range(1, refine_rounds + 1):
+                revised = propose_refinement(fixer_llm, ep, iv, detail, round_index,
+                                             tests=tests, ledger=screening_cost)
+                if revised is None:
+                    break
+                unit = validate(ep, revised)
+                if unit.flipped:
+                    flipped_eps.add(ep.id)
+                    break
+                if unit.intervened_outcome is None:
+                    break
+                iv, detail = revised, unit.intervened_outcome.detail
 
     exports = compile_all(units, episodes, run_dir / "exports")
 

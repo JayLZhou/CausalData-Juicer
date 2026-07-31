@@ -9,7 +9,7 @@
 [![CI](https://github.com/JayLZhou/CausalData-Juicer/actions/workflows/ci.yml/badge.svg)](https://github.com/JayLZhou/CausalData-Juicer/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-52%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen.svg)](tests/)
 
 [English] | [[中文](README_ZH.md)]
 

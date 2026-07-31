@@ -1,0 +1,41 @@
+site_name: CauseForge
+site_description: A budgeted interventional data engine for agent improvement
+repo_url: https://github.com/JayLZhou/CausalData-Juicer
+repo_name: CausalData-Juicer
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep orange
+      toggle: {icon: material/weather-night, name: dark mode}
+    - scheme: slate
+      primary: deep orange
+      toggle: {icon: material/weather-sunny, name: light mode}
+  features:
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Tutorial: tutorial.md
+  - Concepts: concepts.md
+  - Case studies: cases.md
+  - API reference: api.md
+  - Design: design.md
+  - Migration bench spec: bench-m15-spec.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            docstring_style: google
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - tables

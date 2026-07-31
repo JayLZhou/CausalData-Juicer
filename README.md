@@ -42,6 +42,8 @@ grounded in execution — which is why everyone is building it now:
 | Skill & memory libraries | does this recovery, replayed from the failure state, actually flip it — and does it transfer? | failure→recovery mining; skill libraries with counterfactual validation | validated skills, failure→recovery units |
 | Robustness & regression labels | what is the smallest perturbation that breaks a success? | stress testing (v2 here) | criticality labels, adversarial suites |
 
+*(Every row above is backed by 3–7 verified papers — venues, arXiv and code links — in [docs/landscape-papers.md](docs/landscape-papers.md).)*
+
 Strip away the rows and one act remains: **fork a state, run an alternative,
 compare outcomes, keep the difference.**
 

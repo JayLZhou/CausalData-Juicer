@@ -22,6 +22,7 @@ nav:
   - Tutorial: tutorial.md
   - Concepts: concepts.md
   - Case studies: cases.md
+  - Landscape references: landscape-papers.md
   - API reference: api.md
   - Design: design.md
   - Migration bench spec: bench-m15-spec.md

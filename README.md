@@ -11,74 +11,144 @@
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen.svg)](tests/)
 
-[English] | [[中文](README_ZH.md)]
+[English] | [[中文](README_ZH.md)] · [Operator Zoo](#-operator-zoo) · [Settings](#%EF%B8%8F-supported-settings) · [Why CauseForge](#-why-causeforge) · [How it works](#-how-it-works)
 
 </div>
 
 Experience systems store what agents *happened to try*;
-**CauseForge actively acquires the causal experience agents *should learn from*.**
-
-The engine forks a recorded trajectory at any step, applies an intervention,
-replays original and intervened branches as a matched pair, verifies whether the
-outcome actually **flips**, slices the intervention to its minimal causal core,
-and compiles training-ready assets — with an explicit evidence tier on every row:
+**CauseForge actively acquires the causal experience agents *should learn from*** —
+fork a recorded trajectory, apply an intervention, replay original and intervened
+branches as a matched pair, verify the outcome **flips**, slice to the minimal
+causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
 ## 🔁 Reproduce a paper's data engine before lunch
 
-The 2024–2026 branch-and-rollout family — MCTS→DPO pairs, tree credit
-assignment, counterfactual ATE, process rewards, hindsight relabeling — all
-hand-build the same loop: *branch → execute → compare → label*. CauseForge **is**
-that loop as a library. Every reproduction below runs on the public API,
-end-to-end, with real execution:
-
 | Published strategy | Case study | Lines | Real output |
 |---|---|---|---|
-| MCTS → step-level DPO pairs | [`case_step_dpo.py`](examples/case_step_dpo.py) | 76 | 12 same-state preference pairs (live sampling + replay) |
-| Rollout-tree credit (Tree-GRPO/RTMC) | [`case_rollout_tree.py`](examples/case_rollout_tree.py) | 78 | depth-2 executed trees, group-relative advantages |
-| Counterfactual credit / ATE (CCPO) | [`case_credit_ate.py`](examples/case_credit_ate.py) | 53 | 9 credit-annotated trajectories, offline |
-| Process-reward labels | (byproduct of `case_step_dpo.py`) | — | 46 executed-branch PRM labels |
-| HER-style relabeling | [`case_her_relabel.py`](examples/case_her_relabel.py) | 43 | 34 achieved-goal rows, zero replay, zero LLM |
-| **CAPER clause-level PRM** (arXiv:2606.03327, *June 2026*) | [`case_caper_clause_prm.py`](examples/case_caper_clause_prm.py) | 77 | clause criticality both directions — reproduced **same-day** |
+| MCTS → step-level DPO pairs | [`case_step_dpo.py`](examples/case_step_dpo.py) | 76 | 12 same-state preference pairs |
+| Rollout-tree credit (Tree-GRPO/RTMC) | [`case_rollout_tree.py`](examples/case_rollout_tree.py) | 78 | executed trees + group-relative advantages |
+| Counterfactual credit / ATE (CCPO) | [`case_credit_ate.py`](examples/case_credit_ate.py) | 53 | credit-annotated trajectories, offline |
+| Process-reward labels | byproduct of `case_step_dpo.py` | — | 46 executed-branch PRM labels |
+| HER-style relabeling | [`case_her_relabel.py`](examples/case_her_relabel.py) | 43 | achieved-goal rows, zero replay/LLM |
+| **CAPER clause PRM** (arXiv:2606.03327, *June 2026*) | [`case_caper_clause_prm.py`](examples/case_caper_clause_prm.py) | 77 | clause criticality, both directions, **same-day repro** |
 
-Every case is a filling of one ten-line skeleton:
+Every case fills one ten-line skeleton:
 
 ```python
 episode, snapshots = collector.run_episode(task, workspace, policy)   # record
-iv = Intervention(...)              # an alternative action, from any source:
-                                    #   fixer LLM / temperature resample /
-                                    #   test-aware prompt / clause perturbation
+iv = Intervention(...)                                  # alternative action, any source
 unit = replayer.paired_replay(episode, snapshots, iv)   # control + branch + n× repro
-if unit.flipped:                    # outcome causally attributed, evidence-tiered
-    export(unit)                    # -> SFT / DPO / PRM / memory / regression / verl / TRL
+if unit.flipped:
+    export(unit)          # -> SFT / DPO / PRM / memory / regression / verl / TRL
 ```
 
-**Does your method fit?** Four questions: ① Does state fit in a snapshot
-(filesystem + declared state)? ② Is there a swappable action? ③ Is execution
-(near-)deterministic — a gate *rejects* flaky environments rather than emitting
-false certificates? ④ Is there an automatic verifier? Four yeses ≈ a ~100-line
-case study. (We reproduce papers' *data engines*, not their gradient updates —
-outputs export straight into TRL/verl for that.)
+## 🧩 Operator Zoo
 
-## 📣 News
+Operators extend Data-Juicer's observational signature to an interventional one:
+`(Units, Env, Budget) → Units'`. Three classes form a complete algebra —
+observational ops are free, interventional ops spend real execution budget and
+are the only way to climb the evidence ladder, compile ops materialize views.
 
-- **[2026-08-01]** CAPER (June 2026 paper) reproduced same-day in 77 lines — including the first **stress-direction** demo (pass→fail clause criticality): repair and stress are the same machinery with opposite sign.
-- **[2026-08-01]** Every claims row now has a verdict: **A1–A14, B1–B5 lit; C1 recorded as an honest underpowered null** (validated ties unvalidated exactly at ~40 training rows; re-test conditions logged).
-- **[2026-07-31]** Source science: coverage comes from *heterogeneous candidate sources* (blind/test-aware fixers × temperature resampling × validation-in-the-loop refinement) — the "capability ceiling" proved porous to cheap stochastic sources; failure→data conversion 24/35.
-- **[2026-07-31]** Maintenance under two real version events: selective revalidation **4.8×/8.0×** cheaper, zero missed demotions. Checkpoint forking **298×** faster than from-scratch replay.
-- **[2026-07-30]** Live-agent kill line: flip reproducibility **100%** with real LLM agents on the certified migration bench; control-branch digest match **100%**.
+### Observational (no env, zero budget, ceiling ≤ SUGGESTED)
 
-## ✨ What the engine gives every strategy for free
+| Operator | Module | What it does |
+|---|---|---|
+| `Screener` | `acquisition/screener.py` | select failed episodes, dedupe candidates by effect signature |
+| `load_generic_traces` | `runtime/import_trace.py` | ingest external agent traces (Import Mode) |
+| `compile_bc_sft` / `compile_failure_log` | `compiler/observational.py` | behavior cloning from successes / failure logs, OBSERVED-stamped |
+| `dag_stats` | `store/dag.py` | shared-prefix trace-DAG sharing statistics |
+| HER relabel | `examples/case_her_relabel.py` | failures → supervision for the goal they *did* achieve |
 
-- 🔀 **Paired counterfactual replay** — a determinism control branch guards every claim; flips must reproduce n/n.
-- 🧾 **Evidence tiers on every row** — weak evidence cannot masquerade as causal; ceilings are enforced (Import Mode caps at OBSERVED).
-- 💰 **Budget layer** — token/second/dollar ledgers from line one; control-branch memoization and early stopping (26% replay savings measured); pluggable acquisition policies metered on equal ground.
-- 🛡️ **Side-effect gating** — tools declare `PURE … EXTERNAL_SIDE_EFFECT`; external effects are never re-executed during replay.
-- 🧬 **Provenance & freshness** — per-dependency claims per unit; version events trigger selective revalidation with demotion on staleness.
-- 🧪 **A certified workload** — 52 dependency-migration tasks across 6 families, each certified pass-on-old / fail-on-new, hermetic, sealed, anti-cheat verified.
+### Candidate sources (propose interventions; LLM cost, no execution)
 
-## 🚀 Quick Start
+| Operator | Module | Coverage character |
+|---|---|---|
+| `TableFixSource` | `acquisition/screener.py` | curated / cached fix tables |
+| `FixerLLMSource` | `acquisition/fixer.py` | blind LLM fixer (sees failure output) |
+| `FixerLLMSource(tests_by_task=…)` | `acquisition/fixer.py` | test-aware fixer — reads the sealed spec |
+| `ResampleSource` | `acquisition/resample.py` | temperature resampling of the policy itself — pierces deterministic-model ceilings |
+| `propose_refinement` | `acquisition/fixer.py` | validation-in-the-loop: revises against its own *executed* failure |
+
+### Interventional (need env, spend budget, raise evidence tiers)
+
+| Operator | Module | Tier effect |
+|---|---|---|
+| `Replayer.paired_replay` | `replay/replayer.py` | SUGGESTED → COUNTERFACTUAL-VALIDATED → REPRODUCIBLE |
+| `Replayer.recorded_replay` | `replay/replayer.py` | determinism control (digest-matched) |
+| `Replayer.intervened_flip` | `replay/replayer.py` | single-branch probe (slicing, stress direction) |
+| `minimize_unit` (ddmin) | `slicing/ddmin.py` | REPRODUCIBLE → MINIMAL over intervention atoms |
+| `Replayer.fork_at` | `replay/replayer.py` | fork anywhere from sparse checkpoints (prefix re-execution) |
+| `revalidate` | `maintenance/revalidate.py` | version events: confirm & re-stamp, or demote stale units |
+| `AcquisitionEngine.run` | `acquisition/engine.py` | budgeted scheduling of all of the above |
+
+Intervention types: `ActionReplace` (swap the step's tool call) and
+`ToolArgumentEdit` (`set` whole values or `patch_lines` — line atoms are what
+slicing minimizes over; a SQL clause, a config line, a code hunk).
+
+### Compile (zero budget, tier-preserving)
+
+| Operator | Output |
+|---|---|
+| `compile_sft` / `compile_dpo` / `compile_memory` / `compile_regression` | minimal correction pairs / preference pairs / failure→recovery units / **executable** counterfactual test suites |
+| `export_trl_sft` / `export_trl_dpo` / `export_verl` | TRL messages / TRL DPO / verl parquet, trainer-native |
+| step-DPO, PRM, ATE-credit, tree-credit, clause-PRM | example-level compilers in [`examples/`](examples/) |
+
+## ⚙️ Supported settings
+
+| Dimension | Supported today |
+|---|---|
+| **Environments** | local filesystem sandbox; per-task virtualenv isolation with cross-interpreter bases (tested: py3.11 + py3.12 in one bench); content-addressed snapshots with checkpoint placement (`every` / `every_k:N` / `first`) |
+| **Verifiers** | `PytestVerifier` (parsed counts) and `CommandVerifier` (any command, success = exit 0 — builds, `make test`, SQL runners, linters) |
+| **Agents** | scripted policies and live LLM agents via any OpenAI-compatible endpoint (vLLM, commercial APIs); all responses disk-cached |
+| **Models used in our runs** | Qwen2.5 7B / 14B / 32B-AWQ locally; any chat endpoint works |
+| **Access tiers** | Import Mode (traces only, ceiling OBSERVED) → Tool Replay (tools + verifier) → Snapshot Mode (full engine) |
+| **Side effects** | tools declare `PURE / IDEMPOTENT / REVERSIBLE / TRANSACTIONAL / EXTERNAL_SIDE_EFFECT`; external effects are dry-run mocked during replay, never re-executed |
+| **Workload** | a 52-task dependency-migration bench (6 real breaking-change families), every task certified pass-on-old / fail-on-new, hermetic, sealed, anti-cheat verified |
+
+## 🏆 Why CauseForge
+
+| | Data-Juicer family | **CauseForge** |
+|---|---|---|
+| Input | corpora you already have | a replayable execution environment |
+| Core act | operator transforms (filter/dedup/synthesize) | fork / intervene / paired counterfactual replay |
+| Quality signal | heuristics & model scores (pool-level, observational) | verifier outcome **flips** (unit-level, interventional, reproduced) |
+| Env in the loop | no | **yes — the defining axis** |
+| Staleness | re-run the pipeline | provenance-driven *selective* revalidation |
+
+Plus what no prompt-only system has: **executed feedback** (refinement sees its
+attempt's real failing output), **negative controls in CI** (flaky environments
+are rejected, not certified), **honest accounting** (every number pre-registered
+in the [claims ledger](experiments/claims.md) — nulls included, on the front page).
+
+## 🔬 How it works
+
+**The vision, implemented as a loop** — the system *decides which executions to
+run*: [`Collector`](causeforge/runtime/collector.py) snapshots the workspace at
+every step boundary while recording actions/observations/LLM calls → candidate
+sources propose alternative actions → the replayer validates → slicing
+minimizes → compilers materialize. Nothing is trusted because it looks
+plausible; everything is trusted because it was **executed twice and compared**.
+
+**Validation, concretely** ([`replay/replayer.py`](causeforge/causeforge/replay/replayer.py)):
+restore the pre-step snapshot; run the **control branch** with the recorded
+actions — its per-step observation digests and final outcome must match the
+recording (environment drifted? the unit is *refused*, spend stops); run the
+**intervened branch**; a flip means fail→pass; reproduce it n× from fresh
+forks; ddmin re-validates the minimal atom set. Anti-cheat seals (test files
+byte-identical) and CI negative controls guard the instrument itself.
+
+**The budget, and why it exists** ([`acquisition/`](causeforge/causeforge/acquisition/)):
+every token, second and dollar charges a `CostLedger` from line one; `Budget`
+is a hard ceiling, not advice. The always-on mechanism layer (control-branch
+memoization, early repro stop, full LLM caching) measured **26% replay savings
+at identical output**; pluggable policies allocate the remaining spend —
+measured to matter exactly when budgets are tight (+33% units at 30 replays)
+and to vanish when they're not. Every unit carries its own acquisition cost, so
+*cost-per-validated-unit* is a first-class, reportable number (~3s on our bench).
+
+## 🚀 Quick start
 
 ```bash
 git clone https://github.com/JayLZhou/CausalData-Juicer.git && cd CausalData-Juicer
@@ -99,34 +169,23 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 
 ## 📊 Measured results
 
-Every number is wired to an experiment and a pre-registered threshold in
-[experiments/claims.md](experiments/claims.md) (raw reports in
-[experiments/results/](experiments/results/)) — including the honest nulls.
-
 | Claim | Result |
 |---|---|
 | Flip reproducibility (kill line ≥90%) | **100% across 11 configurations** (toy → live agents → cross-interpreter) |
-| Control-branch digest match | **100%**, with CI-enforced negative controls (flaky envs get rejected) |
+| Control-branch digest match | **100%**, with CI-enforced negative controls |
 | Mechanism-layer savings | **26%** fewer replays, identical output |
-| Budgeted acquisition (295 candidates) | adaptive leads at tight budgets (+33% @30 replays), converges when budget abounds |
-| Selective revalidation (2 real events) | **4.8× / 8.0×** cheaper, zero missed demotions |
-| Checkpoint forking | **298×** vs from-scratch; byte-identical state reconstruction |
-| Source-fidelity science | conversion 24/35; stochastic sources pierce the deterministic-model ceiling |
+| Budgeted acquisition (295 candidates) | adaptive +33% @30 replays; converges when budget abounds |
+| Selective revalidation (2 real version events) | **4.8× / 8.0×** cheaper, zero missed demotions |
+| Checkpoint forking | **298×** vs from-scratch; byte-identical reconstruction |
+| Source science | failure→data conversion 24/35; stochastic sources pierce deterministic-model ceilings |
 | Training value (C1) | honest **underpowered null** at ~40 rows; re-test conditions logged |
 
-## 🎚️ Access tiers
+## 📚 Documentation & License
 
-| Tier | You provide | Operators | Evidence ceiling |
-|---|---|---|---|
-| Import Mode | traces (JSONL) | observational + compile | OBSERVED |
-| Tool Replay | tools + verifier | + local interventions | COUNTERFACTUAL-VALIDATED |
-| Snapshot Mode | replayable env | everything | MINIMAL+ |
-
-## 📚 Documentation
-
-- [Design document](docs/design.md) · [Bench spec](docs/bench-m15-spec.md) · [Claims ledger](experiments/claims.md) · [中文项目合同](README_ZH.md)
-
-## ⚖️ License & Citation
+[Docs site](https://jaylzhou.github.io/CausalData-Juicer/) ·
+[Tutorial](docs/tutorial.md) · [Concepts](docs/concepts.md) ·
+[Design](docs/design.md) · [Bench spec](docs/bench-m15-spec.md) ·
+[Claims ledger](experiments/claims.md) · [中文项目合同](README_ZH.md)
 
 Apache-2.0.
 

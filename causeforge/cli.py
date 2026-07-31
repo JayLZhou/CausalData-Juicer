@@ -58,6 +58,12 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_sb = sub.add_parser("storage-bench", help="M3: checkpoint placement replay/storage trade-off")
+    p_sb.add_argument("--run", default="runs/depmig-7b")
+    p_sb.add_argument("--policies", default="every,every_k:2,first")
+    p_sb.add_argument("--repeats", type=int, default=3)
+    p_sb.add_argument("--out", default="experiments/results/m3_storage_bench.json")
+
     p_rev = sub.add_parser("revalidate", help="M4: selective revalidation under a version event")
     p_rev.add_argument("--base", default="runs/depmig-7b")
     p_rev.add_argument("--pool", nargs="*", default=[])
@@ -111,6 +117,15 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
         return 0
+
+    if args.cmd == "storage-bench":
+        from causeforge.store.bench import print_bench, storage_bench
+        report = storage_bench(Path(args.run), args.policies.split(","), repeats=args.repeats)
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(report, indent=2))
+        print_bench(report)
+        print(f"saved: {args.out}")
+        return 0 if all(r["state_equivalent"] for r in report["policies"]) else 1
 
     if args.cmd == "revalidate":
         from causeforge.maintenance.revalidate import run_version_event

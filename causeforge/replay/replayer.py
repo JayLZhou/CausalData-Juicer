@@ -83,6 +83,35 @@ class Replayer:
             )
         return record
 
+    def fork_at(
+        self,
+        episode: Episode,
+        snapshots: list[Snapshot],
+        step: int,
+        ledger: Optional[CostLedger] = None,
+        prep=None,
+    ):
+        """Materialize the state *before* ``step`` from a possibly sparse
+        checkpoint set: restore the nearest checkpoint at or before the
+        step and re-execute the recorded prefix in between (M3).
+
+        Returns (workspace, prefix_steps_reexecuted).  Caller disposes."""
+        avail = [s for s in snapshots
+                 if s.episode_id == episode.id and s.step_index <= step]
+        if not avail:
+            raise KeyError(f"no checkpoint at or before step {step} for {episode.id}")
+        snap = max(avail, key=lambda s: s.step_index)
+        workspace = self.sandbox.materialize(snap.tree_digest)
+        if prep is not None:
+            prep(workspace)
+        executor = ToolExecutor(self.registry, mode="replay")
+        ledger = ledger if ledger is not None else CostLedger()
+        n = 0
+        for st in episode.steps[snap.step_index:step]:
+            executor.execute(workspace, st.action, ledger)
+            n += 1
+        return workspace, n
+
     def _snapshot_for(self, snapshots: list[Snapshot], episode: Episode, step_index: int) -> Snapshot:
         for s in snapshots:
             if s.episode_id == episode.id and s.step_index == step_index:

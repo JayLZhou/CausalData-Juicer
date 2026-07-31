@@ -1,0 +1,45 @@
+{
+  "run": "runs/depmig-7b",
+  "fork_points": 5,
+  "repeats": 3,
+  "dag": {
+    "snapshot_references": 186,
+    "unique_trees": 81,
+    "sharing_ratio": 2.3,
+    "bytes_logical": 121487,
+    "bytes_physical": 52742,
+    "bytes_saved_pct": 56.6
+  },
+  "policies": [
+    {
+      "policy": "every",
+      "checkpoints_kept": 156,
+      "storage_bytes": 50843,
+      "avg_fork_s": 0.0005,
+      "avg_prefix_steps": 0.0,
+      "state_equivalent": true,
+      "fork_speedup_vs_first": 298.6,
+      "storage_x_vs_first": 2.59
+    },
+    {
+      "policy": "every_k:2",
+      "checkpoints_kept": 87,
+      "storage_bytes": 44403,
+      "avg_fork_s": 0.078,
+      "avg_prefix_steps": 1.0,
+      "state_equivalent": true,
+      "fork_speedup_vs_first": 1.91,
+      "storage_x_vs_first": 2.26
+    },
+    {
+      "policy": "first",
+      "checkpoints_kept": 30,
+      "storage_bytes": 19638,
+      "avg_fork_s": 0.1493,
+      "avg_prefix_steps": 2.2,
+      "state_equivalent": true,
+      "fork_speedup_vs_first": 1.0,
+      "storage_x_vs_first": 1.0
+    }
+  ]
+}

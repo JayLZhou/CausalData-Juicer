@@ -58,6 +58,9 @@ def run_depmig(
     fixer_base_url: str | None = None,
     fixer_model: str | None = None,
     llm_cache: Path | None = None,
+    sources: str = "fixer",  # comma list: fixer, resample
+    resample_k: int = 3,
+    resample_temperature: float = 0.85,
 ) -> dict:
     t_start = time.monotonic()
     run_dir = Path(run_dir)
@@ -123,8 +126,21 @@ def run_depmig(
 
     # 2) fixer candidates (cached LLM), effect-signature dedup in screener
     screening_cost = CostLedger()
-    screener = Screener(sources=[FixerLLMSource(
-        fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost)])
+    source_objs = []
+    for source_name in sources.split(","):
+        if source_name == "fixer":
+            source_objs.append(FixerLLMSource(
+                fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost))
+        elif source_name == "resample":
+            from causeforge.acquisition.resample import ResampleSource
+            resample_llm = DiskCachedLLM(
+                OpenAICompatClient(base_url, model, temperature=resample_temperature),
+                cache_dir)
+            source_objs.append(ResampleSource(resample_llm, k=resample_k,
+                                              ledger=screening_cost))
+        else:
+            raise ValueError(f"unknown candidate source: {source_name}")
+    screener = Screener(sources=source_objs)
     candidates = screener.screen(episodes)
 
     # 3) paired replay + repro + slicing

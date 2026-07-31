@@ -1,0 +1,104 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 52,
+  "failed_episodes": 35,
+  "agent_solved": 17,
+  "seal_violations": 0,
+  "candidates_screened": 110,
+  "units_by_tier": {
+    "SUGGESTED": 87,
+    "MINIMAL": 23
+  },
+  "validated_units": 23,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "69/69 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 17,
+      "flipped": 3,
+      "repro_flips": 9,
+      "repro_runs": 9
+    },
+    "tier:T1": {
+      "candidates": 32,
+      "flipped": 9,
+      "repro_flips": 27,
+      "repro_runs": 27
+    },
+    "tier:T2": {
+      "candidates": 56,
+      "flipped": 14,
+      "repro_flips": 42,
+      "repro_runs": 42
+    },
+    "tier:T3": {
+      "candidates": 22,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:numpy": {
+      "candidates": 3,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:sqlalchemy": {
+      "candidates": 11,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "family:click": {
+      "candidates": 37,
+      "flipped": 5,
+      "repro_flips": 15,
+      "repro_runs": 15
+    },
+    "family:networkx": {
+      "candidates": 23,
+      "flipped": 4,
+      "repro_flips": 12,
+      "repro_runs": 12
+    },
+    "family:pandas": {
+      "candidates": 19,
+      "flipped": 9,
+      "repro_flips": 27,
+      "repro_runs": 27
+    }
+  },
+  "slicing": {
+    "atoms_before": 23,
+    "atoms_after": 23
+  },
+  "cost": {
+    "llm_calls": 177,
+    "tokens_in": 90672,
+    "tokens_out": 16192,
+    "tool_calls": 1111,
+    "replay_runs": 289,
+    "wall_time_s": 264.41,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 3.82,
+  "exports": {
+    "sft": "runs/depmig-full-pool/exports/sft.jsonl",
+    "dpo": "runs/depmig-full-pool/exports/dpo.jsonl",
+    "memory": "runs/depmig-full-pool/exports/memory.jsonl",
+    "regression": "runs/depmig-full-pool/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causeforge": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-14B-Instruct"
+  },
+  "wall_time_total_s": 556.34
+}

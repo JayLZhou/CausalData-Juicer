@@ -105,6 +105,8 @@ def main(argv: list[str] | None = None) -> int:
     p_live.add_argument("--fixer-base-url", default=None)
     p_live.add_argument("--fixer-model", default=None)
     p_live.add_argument("--llm-cache", default=None, help="shared cache dir (reuse across runs)")
+    p_live.add_argument("--sources", default="fixer", help="comma list: fixer,resample")
+    p_live.add_argument("--resample-k", type=int, default=3)
     p_live.add_argument("--tasks", nargs="*", default=None, help="subset of task ids")
 
     args = parser.parse_args(argv)
@@ -219,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
             fixer_candidates=args.fixer_candidates,
             fixer_base_url=args.fixer_base_url, fixer_model=args.fixer_model,
             llm_cache=Path(args.llm_cache) if args.llm_cache else None,
+            sources=args.sources, resample_k=args.resample_k,
         )
         _print_report(report)
         extra = (f"agent solved       : {report['agent_solved']}/{report['episodes']} "

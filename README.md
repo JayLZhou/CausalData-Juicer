@@ -23,6 +23,16 @@ causal core, compile training-ready assets. An evidence tier rides on every row:
 
 `Observed → Suggested → Counterfactual-Validated → Reproducible → Minimal → Training-Validated`
 
+> **A running example.** Mira's coding agents failed 800 migration tickets
+> the weekend pydantic 2 landed. The logs say what happened — not what would
+> have worked. Asking a bigger model for fixes gives plausible patches, some
+> quietly wrong, and nobody can tell which without running them.
+> CausalData-Juicer forks the exact state before each wrong step, tries
+> candidate corrections **for real**, keeps only those that verifiably flip
+> the outcome, and stamps every row with its evidence tier, cost, and the
+> dependency claims under which it stays valid — so the next upgrade
+> revalidates exactly what it touches.
+
 ## 🎯 Application scenarios
 
 | Scenario | You bring | You get |

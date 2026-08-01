@@ -1,0 +1,86 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 10,
+  "failed_episodes": 10,
+  "agent_solved": 0,
+  "seal_violations": 0,
+  "candidates_screened": 13,
+  "units_by_tier": {
+    "SUGGESTED": 33,
+    "MINIMAL": 3
+  },
+  "validated_units": 3,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "9/9 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 13,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "tier:T1": {
+      "candidates": 4,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "tier:T3": {
+      "candidates": 18,
+      "flipped": 0,
+      "repro_flips": 0,
+      "repro_runs": 0
+    },
+    "family:click": {
+      "candidates": 20,
+      "flipped": 2,
+      "repro_flips": 6,
+      "repro_runs": 6
+    },
+    "tier:T2": {
+      "candidates": 14,
+      "flipped": 3,
+      "repro_flips": 9,
+      "repro_runs": 9
+    },
+    "family:networkx": {
+      "candidates": 3,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    }
+  },
+  "slicing": {
+    "atoms_before": 3,
+    "atoms_after": 3
+  },
+  "cost": {
+    "llm_calls": 54,
+    "tokens_in": 44964,
+    "tokens_out": 5708,
+    "tool_calls": 218,
+    "replay_runs": 54,
+    "wall_time_s": 38.32,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 2.39,
+  "exports": {
+    "sft": "runs/depmig-fixer32b/exports/sft.jsonl",
+    "dpo": "runs/depmig-fixer32b/exports/dpo.jsonl",
+    "memory": "runs/depmig-fixer32b/exports/memory.jsonl",
+    "regression": "runs/depmig-fixer32b/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causal_data_juicer": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-32B-Instruct-AWQ"
+  },
+  "wall_time_total_s": 145.46
+}

@@ -58,6 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_mig = sub.add_parser("migrate-run", help="upgrade a run's env pointers to v2 (relocatable)")
+    p_mig.add_argument("run_dir")
+    p_mig.add_argument("--env-root", default="bench_envs")
+
     p_doc = sub.add_parser("doctor", help="environment & endpoint checks")
     p_doc.add_argument("--base-url", default=None)
 
@@ -141,6 +145,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
+        return 0
+
+    if args.cmd == "migrate-run":
+        from causal_data_juicer.migrate import migrate_run
+        print(json.dumps(migrate_run(Path(args.run_dir), Path(args.env_root)), indent=2))
         return 0
 
     if args.cmd == "doctor":

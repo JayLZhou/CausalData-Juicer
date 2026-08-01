@@ -1,0 +1,10 @@
+# Offline end-to-end recipe: the toy demo expressed as a DJ-style pipeline.
+workdir: runs/recipe-demo
+process:
+  - collect_toy: {}
+  - screen_failures: {}
+  - paired_replay: {n_repro: 3}
+  - minimize: {}
+  - export_views: {}
+  - export_trl: {formats: [trl-dpo]}
+  - save_run: {}

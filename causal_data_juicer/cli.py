@@ -58,6 +58,15 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_ops = sub.add_parser("ops", help="list the operator zoo")
+    p_ops.add_argument("--category", default=None,
+                       choices=["observational", "source", "interventional", "compile"])
+
+    p_proc = sub.add_parser("process", help="run a YAML recipe of operators (DJ-style)")
+    p_proc.add_argument("--config", required=True)
+
+    sub.add_parser("verify-claims", help="re-earn the front-page numbers on this machine")
+
     p_mig = sub.add_parser("migrate-run", help="upgrade a run's env pointers to v2 (relocatable)")
     p_mig.add_argument("run_dir")
     p_mig.add_argument("--env-root", default="bench_envs")
@@ -146,6 +155,24 @@ def main(argv: list[str] | None = None) -> int:
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
         return 0
+
+    if args.cmd == "ops":
+        from causal_data_juicer.ops.recipe import list_ops
+        print(list_ops(args.category))
+        return 0
+
+    if args.cmd == "process":
+        from causal_data_juicer.ops.recipe import run_recipe
+        from causal_data_juicer.sdk.schemas import EvidenceTier
+        ctx = run_recipe(Path(args.config))
+        validated = sum(1 for u in ctx.units
+                        if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED)
+        print(f"done: {validated} validated units | exports: {list(ctx.exports)}")
+        return 0
+
+    if args.cmd == "verify-claims":
+        from causal_data_juicer.verify_claims import verify_claims
+        return verify_claims()
 
     if args.cmd == "migrate-run":
         from causal_data_juicer.migrate import migrate_run

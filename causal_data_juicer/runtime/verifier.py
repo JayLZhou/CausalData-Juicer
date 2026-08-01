@@ -55,9 +55,7 @@ class CommandVerifier:
         self.timeout = timeout
 
     def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome:
-        from causal_data_juicer.runtime.envs import resolve_python
-
-        argv = [a.replace("{python}", resolve_python(workspace)) for a in self.command]
+        argv = resolve_command(self.command, workspace)
         t0 = time.monotonic()
         proc = subprocess.run(argv, cwd=workspace, capture_output=True,
                               text=True, timeout=self.timeout)
@@ -67,3 +65,55 @@ class CommandVerifier:
         success = proc.returncode == 0
         return Outcome(success=success, passed=int(success), failed=int(not success),
                        detail=tail)
+
+
+def resolve_command(command: list[str], workspace: Path) -> list[str]:
+    """Expand {python} to the workspace interpreter; if the executable is
+    not on PATH (common in unactivated venvs), fall back to
+    `<python> -m <cmd>` so bare "pytest -q" just works."""
+    import shutil as _shutil
+
+    from causal_data_juicer.runtime.envs import resolve_python
+
+    python = resolve_python(workspace)
+    argv = [a.replace("{python}", python) for a in command]
+    head = argv[0]
+    if "/" not in head and head != python and _shutil.which(head) is None:
+        return [python, "-m", *argv]
+    return argv
+
+
+DEFAULT_SEAL_PATTERNS = ("test_*.py", "*_test.py", "tests/**/*.py", "conftest.py")
+
+
+class SealedVerifier:
+    """Wrap any verifier so protected files (tests, by default) are
+    restored from a pristine baseline before every verification — reward
+    hacking by editing the check itself becomes impossible, and attempts
+    are counted in ``violations``."""
+
+    def __init__(self, inner, baseline_root: Path, patterns=DEFAULT_SEAL_PATTERNS):
+        self.inner = inner
+        self.patterns = patterns
+        self._sealed: dict[str, str] = {}
+        root = Path(baseline_root)
+        for pattern in patterns:
+            for f in root.glob(pattern):
+                if f.is_file():
+                    self._sealed[str(f.relative_to(root))] = f.read_text()
+        self.violations = 0
+
+    def restore(self, workspace: Path) -> int:
+        tampered = 0
+        for rel, content in self._sealed.items():
+            target = Path(workspace) / rel
+            if not target.exists() or target.read_text() != content:
+                tampered += 1
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+        self.violations += tampered
+        return tampered
+
+    def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome:
+        self.restore(workspace)
+        return self.inner.evaluate(workspace, ledger)

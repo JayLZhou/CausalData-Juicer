@@ -26,7 +26,12 @@ or when you cannot make further progress."""
 
 
 def extract_action(text: str) -> Optional[dict]:
-    """First balanced JSON object in the reply (tolerates ``` fences)."""
+    """First balanced JSON object in the reply (tolerates ``` fences and
+    reasoning-model <think> blocks, which are stripped first)."""
+    import re
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    if "<think>" in text:      # unclosed block: reply truncated mid-thought
+        text = text.split("<think>")[0]
     start = text.find("{")
     while start != -1:
         depth, in_str, esc = 0, False, False
@@ -58,17 +63,19 @@ def extract_action(text: str) -> Optional[dict]:
 
 
 class LLMPolicy:
-    def __init__(self, llm: LLMClient, max_steps: int = 12, obs_limit: int = 2000):
+    def __init__(self, llm: LLMClient, max_steps: int = 12, obs_limit: int = 2000,
+                 system_prompt: str = SYSTEM_PROMPT):
         self.llm = llm
         self.max_steps = max_steps
         self.obs_limit = obs_limit
+        self.system_prompt = system_prompt
         self.task_description = ""
 
     def bind_task(self, description: str) -> None:
         self.task_description = description
 
     def _messages(self, history: list[Step]) -> list[dict]:
-        messages = [{"role": "system", "content": SYSTEM_PROMPT},
+        messages = [{"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": f"Task: {self.task_description}"}]
         for step in history:
             messages.append({"role": "assistant",

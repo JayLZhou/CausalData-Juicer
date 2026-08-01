@@ -58,6 +58,24 @@ def main(argv: list[str] | None = None) -> int:
     p_regress = sub.add_parser("regress", help="run exported regression tests")
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
+    p_doc = sub.add_parser("doctor", help="environment & endpoint checks")
+    p_doc.add_argument("--base-url", default=None)
+
+    p_expl = sub.add_parser("explain", help="human-readable report for a run (terminal + HTML)")
+    p_expl.add_argument("run_dir", nargs="?", default="runs/demo")
+    p_expl.add_argument("--html", default=None, help="also write a static HTML report here")
+    p_expl.add_argument("--all", action="store_true", help="include rejected candidates")
+
+    p_run = sub.add_parser("run", help="bring your own repo: collect, fix, validate, report")
+    p_run.add_argument("--repo", required=True)
+    p_run.add_argument("--verify", required=True, help='e.g. "pytest -q" or "make test"')
+    p_run.add_argument("--base-url", default="http://127.0.0.1:8010/v1")
+    p_run.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
+    p_run.add_argument("--out", default=None)
+    p_run.add_argument("--task", default=None, help="task description shown to the agent")
+    p_run.add_argument("--repro", type=int, default=3)
+    p_run.add_argument("--max-steps", type=int, default=10)
+
     p_imp = sub.add_parser("import-trace", help="Import Mode: ingest external traces (observational)")
     p_imp.add_argument("trace_file")
     p_imp.add_argument("--out", default="runs/imported")
@@ -123,6 +141,33 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "report":
         report = json.loads((Path(args.run_dir) / "report.json").read_text())
         _print_report(report)
+        return 0
+
+    if args.cmd == "doctor":
+        from causal_data_juicer.doctor import run_doctor
+        return run_doctor(args.base_url)
+
+    if args.cmd == "explain":
+        from causal_data_juicer.report import explain_html, explain_text
+        print(explain_text(Path(args.run_dir), include_rejected=args.all))
+        if args.html:
+            path = explain_html(Path(args.run_dir), Path(args.html))
+            print(f"\nHTML report: {path}")
+        return 0
+
+    if args.cmd == "run":
+        from causal_data_juicer.pipeline_repo import run_repo
+        from causal_data_juicer.report import explain_html, explain_text
+        out = Path(args.out or f"runs/byo-{Path(args.repo).resolve().name}")
+        report = run_repo(Path(args.repo), args.verify, args.base_url, args.model,
+                          out, task=args.task, n_repro=args.repro,
+                          max_steps=args.max_steps)
+        if report.get("status") == "ok":
+            print()
+            print(explain_text(out))
+            html = explain_html(out, out / "report.html")
+            print(f"\nvalidated units: {report['validated_units']} | "
+                  f"wall time: {report['wall_time_s']}s | HTML report: {html}")
         return 0
 
     if args.cmd == "import-trace":

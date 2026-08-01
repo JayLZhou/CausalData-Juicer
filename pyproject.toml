@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "causal-data-juicer"
 version = "0.1.0"
 description = "A budgeted interventional data engine for agent improvement"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+keywords = ["agents", "counterfactual", "training-data", "causal", "llm"]
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.7",

@@ -24,6 +24,9 @@ nav:
   - The full story: story-migration.md
   - Case studies: cases.md
   - Landscape references: landscape-papers.md
+  - Integrations: integrations.md
+  - FAQ: faq.md
+  - Troubleshooting: troubleshooting.md
   - API reference: api.md
   - Design: design.md
   - Migration bench spec: bench-m15-spec.md

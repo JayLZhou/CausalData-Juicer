@@ -11,10 +11,10 @@ else I execute autonomously and check off with the commit hash.
 | 3 | Zero-config UX: `cdj doctor`, PATH-fallback command resolution, reasoning-model `<think>` handling | clean machine → first causal unit ≤10 min | ✅ `60883cc` |
 | 4 | Result page: `cdj explain` cards + static HTML (which step, diff, why causal, tier, cost) | a non-developer understands one unit | ✅ `60883cc` |
 | 5 | **Proof-by-replay**: relocatable snapshots (pointer v2 + `cdj migrate-run`), committed replay pack reproducing a live case byte-for-byte offline | anyone re-executes our claims without a model | ✅ `6c6f3de` |
-| 6 | The full story doc: one dependency-migration walkthrough with real commands, artifacts, costs (from `runs/depmig-kitchen-sink`) + `cdj verify-claims` scorecard command | every README number has a one-command reproduction entry | ⏳ next |
-| 7 | Bring-your-own-task template: copyable minimal workload + verifier + tool example; `cdj run` polish from story-writing friction | new user integrates one task ≤1 h | ⏳ |
-| 8 | Docs completeness: FAQ + Troubleshooting pages (seeded from the friction log), integrations page (TRL/verl snippets) | no source-diving needed for next steps | ⏳ |
-| 9 | Release engineering: version bump, CHANGELOG 1.0 draft, PyPI packaging dry-run (`python -m build`, twine check), Release notes draft | artifacts build clean locally | ⏳ |
+| 6 | The full story doc + `cdj verify-claims` scorecard (8/8 PASS incl. byte-exact replay pack) | every README number has a one-command reproduction entry | ✅ `dccfd4a`+`4783e66` |
+| 7 | templates/byo-task/ + sealed-files contract documented | new user integrates one task ≤1 h | ✅ `4783e66` |
+| 8 | FAQ + Troubleshooting (from friction log) + Integrations (TRL/verl/DJ/Import) | no source-diving needed | ✅ this commit |
+| 9 | PyPI packaging dry-run: sdist+wheel build, twine check PASS (readme/license/keywords added) | artifacts build clean locally | ✅ this commit |
 | 10 | 🧑 external testers round 1 (3–5 people, observe silently) — I prepare the observation sheet + tasks | completion rate, friction list, time-to-first-unit recorded | blocked on 🧑 |
 | 11 | Fix top-5 frictions from Day 10 | same testers retry measurably faster | blocked on D10 |
 | 12 | 🧑 launch materials: 90s video script + shot list (I write), architecture fig ✅, before/after case ✅, FAQ ✅ | page communicates without narration | I prep, 🧑 records |

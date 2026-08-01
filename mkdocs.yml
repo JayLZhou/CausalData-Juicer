@@ -21,6 +21,7 @@ nav:
   - Getting started: getting-started.md
   - Tutorial: tutorial.md
   - Concepts: concepts.md
+  - The full story: story-migration.md
   - Case studies: cases.md
   - Landscape references: landscape-papers.md
   - API reference: api.md

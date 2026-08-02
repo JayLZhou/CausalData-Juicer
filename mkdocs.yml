@@ -20,7 +20,9 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Tutorial: tutorial.md
+  - Why causal data: why-causal-data.md
   - Concepts: concepts.md
+  - Operator Zoo: operator-zoo.md
   - The full story: story-migration.md
   - Case studies: cases.md
   - Landscape references: landscape-papers.md

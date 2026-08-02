@@ -53,19 +53,46 @@ class Replayer:
         ledger: CostLedger,
         intervention: Optional[Intervention] = None,
         prep=None,  # callable(workspace) applied after fork, e.g. env-pointer override (M4)
+        continuation_policy=None,  # reactive replay: downstream re-generates live
     ) -> ReplayRecord:
         workspace = self.sandbox.materialize(tree_digest)
         if prep is not None:
             prep(workspace)
         executor = ToolExecutor(self.registry, mode="replay")
         obs_digests: list[str] = []
+        live_steps: list = []
         try:
             for step in episode.steps[from_step:]:
                 action = step.action
                 if intervention is not None and step.index == intervention.target_step:
                     action = apply_intervention(step.action, intervention)
-                _, obs_digest = executor.execute(workspace, action, ledger)
+                obs, obs_digest = executor.execute(workspace, action, ledger)
                 obs_digests.append(obs_digest)
+                if (continuation_policy is not None and intervention is not None
+                        and step.index == intervention.target_step):
+                    # Reactive continuation: from here on, downstream agents
+                    # RE-REACT to the intervened state instead of replaying
+                    # recorded actions — the message-credit semantics.
+                    from causal_data_juicer.sdk.schemas import Step as _Step
+                    live_steps.append(_Step(index=step.index, action=action,
+                                            observation=obs, obs_digest=obs_digest))
+                    idx = step.index + 1
+                    while True:
+                        nxt = continuation_policy.next_action(
+                            episode.task_id, idx, live_steps)
+                        if nxt is None:
+                            break
+                        live_action, llm = nxt
+                        live_obs, live_digest = executor.execute(
+                            workspace, live_action, ledger)
+                        if llm is not None and not llm.cached:
+                            ledger.charge_llm(llm.tokens_in, llm.tokens_out,
+                                              dollars=llm.dollars)
+                        live_steps.append(_Step(index=idx, action=live_action,
+                                                observation=live_obs,
+                                                obs_digest=live_digest))
+                        idx += 1
+                    break
             outcome = self.verifier.evaluate(workspace, ledger)
         finally:
             self.sandbox.dispose(workspace)
@@ -151,6 +178,7 @@ class Replayer:
         control_cache: Optional[dict] = None,
         early_stop_repro: bool = False,
         prep=None,
+        continuation_policy=None,
     ) -> CausalUnit:
         """``control_cache`` (M2 mechanism): memoizes the determinism-control
         branch per (episode, step) so multiple candidates targeting the same
@@ -185,7 +213,7 @@ class Replayer:
         # Branch B: intervened, first validation run.
         first = self._run_branch(
             episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
-            prep=prep,
+            prep=prep, continuation_policy=continuation_policy,
         )
         unit.intervened_outcome = first.outcome
         flipped_once = (not episode.outcome.success) and first.outcome.success
@@ -200,7 +228,7 @@ class Replayer:
         for _ in range(max(0, n_repro - 1)):
             rec = self._run_branch(
                 episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
-                prep=prep,
+                prep=prep, continuation_policy=continuation_policy,
             )
             runs += 1
             if (not episode.outcome.success) and rec.outcome.success:

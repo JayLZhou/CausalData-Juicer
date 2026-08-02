@@ -58,7 +58,12 @@ class ToolExecutor:
         if self.mode == "replay" and tool.side_effect == SideEffectClass.EXTERNAL_SIDE_EFFECT:
             obs = f"[dry-run mock] {call.tool} suppressed during replay"
         else:
-            obs = tool.fn(workspace, **call.args)
+            try:
+                obs = tool.fn(workspace, **call.args)
+            except Exception as e:  # tool errors are observations, not crashes —
+                # agents recover from them; paths normalized for digest stability
+                obs = (f"[tool-error] {type(e).__name__}: "
+                       f"{str(e).replace(str(workspace), '<ws>')}")
         ledger.charge_tool(time.monotonic() - t0)
         if tool.side_effect == SideEffectClass.EXTERNAL_SIDE_EFFECT:
             norm = EXTERNAL_OBS_PLACEHOLDER
@@ -82,7 +87,7 @@ def _write_file(workspace: Path, path: str, content: str) -> str:
     return f"wrote {path} ({len(content)} chars)"
 
 
-def _read_file(workspace: Path, path: str) -> str:
+def _read_file(workspace: Path, path: str, **_ignored) -> str:
     return (workspace / path).read_text()
 
 
@@ -90,7 +95,7 @@ _PYTEST_SUMMARY = re.compile(r"(\d+) (passed|failed|error)")
 _TIMING = re.compile(r"\b\d+\.\d+s\b")
 
 
-def _run_pytest(workspace: Path, timeout: int = 60) -> str:
+def _run_pytest(workspace: Path, timeout: int = 60, **_ignored) -> str:
     """Full (time-stripped) pytest output so the agent can actually debug,
     with a stable summary line at the end for the determinism digest."""
     from causal_data_juicer.runtime.envs import resolve_python

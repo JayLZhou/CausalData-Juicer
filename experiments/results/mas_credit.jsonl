@@ -1,0 +1,2 @@
+{"task_id": "mas_parity", "team_failed": false, "message_blamed": false, "credit": 0.0, "control_matched": true, "coder_rereacted": true, "evidence_tier": "SUGGESTED"}
+{"task_id": "mas_convert", "team_failed": true, "message_blamed": true, "credit": 1.0, "control_matched": true, "coder_rereacted": true, "evidence_tier": "REPRODUCIBLE"}

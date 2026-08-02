@@ -1,0 +1,4 @@
+{"doc": "doc1_treaty", "answer_survived_without_it": false, "causal_support": true, "control_matched": true, "expected_essential": true}
+{"doc": "doc2_context", "answer_survived_without_it": true, "causal_support": false, "control_matched": true, "expected_essential": false}
+{"doc": "doc3_distractor", "answer_survived_without_it": true, "causal_support": false, "control_matched": true, "expected_essential": false}
+{"doc": "doc4_distractor", "answer_survived_without_it": true, "causal_support": false, "control_matched": true, "expected_essential": false}

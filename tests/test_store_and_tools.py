@@ -31,12 +31,15 @@ def test_blob_store_roundtrip(tmp_path):
 
 
 def test_write_file_cannot_escape_workspace(registry, tmp_path):
+    """Escapes are refused; the refusal is an observation (agents recover),
+    and nothing lands outside the workspace."""
     executor = ToolExecutor(registry, mode="live")
     ws = tmp_path / "ws"
     ws.mkdir()
     call = ToolCall(tool="write_file", args={"path": "../evil.txt", "content": "x"})
-    with pytest.raises(ValueError):
-        executor.execute(ws, call, CostLedger())
+    obs, _ = executor.execute(ws, call, CostLedger())
+    assert obs.startswith("[tool-error] ValueError")
+    assert not (tmp_path / "evil.txt").exists()
 
 
 def test_external_tool_is_mocked_in_replay_and_digest_is_mode_invariant(registry, tmp_path):

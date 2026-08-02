@@ -1,0 +1,46 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "suggested",
+  "episodes": 16,
+  "failed_episodes": 11,
+  "agent_solved": 5,
+  "seal_violations": 0,
+  "candidates_screened": 0,
+  "units_by_tier": {},
+  "validated_units": 0,
+  "flip_repro_rate": null,
+  "flip_repro_detail": "0/0 intervened replays flipped",
+  "determinism_control_ok": null,
+  "control_digest_match_rate": null,
+  "breakdown": {},
+  "slicing": {
+    "atoms_before": 0,
+    "atoms_after": 0
+  },
+  "cost": {
+    "llm_calls": 97,
+    "tokens_in": 57491,
+    "tokens_out": 4966,
+    "tool_calls": 113,
+    "replay_runs": 0,
+    "wall_time_s": 22.39,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": null,
+  "exports": {
+    "sft": "runs/c1r2-eval-suggested/exports/sft.jsonl",
+    "dpo": "runs/c1r2-eval-suggested/exports/dpo.jsonl",
+    "memory": "runs/c1r2-eval-suggested/exports/memory.jsonl",
+    "regression": "runs/c1r2-eval-suggested/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causal_data_juicer": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "suggested",
+    "fixer_model": "suggested"
+  },
+  "wall_time_total_s": 113.2
+}

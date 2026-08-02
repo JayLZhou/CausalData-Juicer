@@ -24,7 +24,8 @@ from causal_data_juicer.sdk.schemas import EvidenceTier
 
 RUNS = ["depmig-7b", "depmig-7b-fixer14b", "depmig-7b-pandas", "depmig-7b-pandas-f14b",
         "depmig-14b", "depmig-7b-ext", "depmig-7b-ext-f14b", "depmig-full-pool",
-        "depmig-fixer-tests", "depmig-refine", "depmig-kitchen-sink"]
+        "depmig-fixer-tests", "depmig-refine", "depmig-kitchen-sink",
+        "depmig-fixer32b", "depmig-corpus-x3"]
 TRAIN_FAMILIES = {"p": "pydantic", "n": "numpy", "c": "click", "d": "pandas"}
 OUT = Path("experiments/c1_data")
 

@@ -1,13 +1,13 @@
 {
   "validated": {
-    "rows": 43,
-    "tokens_est": 41709
+    "rows": 68,
+    "tokens_est": 61007
   },
   "suggested_matched": {
-    "rows": 38,
-    "tokens_est": 40326
+    "rows": 58,
+    "tokens_est": 58264
   },
-  "suggested_pool": 206,
+  "suggested_pool": 296,
   "train_families": [
     "click",
     "numpy",

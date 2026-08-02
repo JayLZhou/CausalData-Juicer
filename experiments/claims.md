@@ -4,7 +4,8 @@
 
 | # | Claim | 实验 | 阈值 / 判死线 | 状态 |
 |---|---|---|---|---|
-| A1 | 确定性子集上 flip 可复现 | `causal_data_juicer demo`（toy workload, n_repro=3） | ≥ 90%，否则停下修 determinism | ✅ **100% (18/18)** toy 上界, 2026-07-29；✅ **100% (15/15)** live 真实开奖（depmig 30 任务, Qwen2.5-7B agent+fixer）, 2026-07-30 → `experiments/results/depmig-7b-qwen7b-fixer7b.json`；✅ **100% (9/9 + 6/6)** pandas 家族（跨解释器 py3.11 底座）；✅ **100% (6/6)** 14B-agent 配置；✅ **100% (3/3 + 18/18)** 扩容 16 任务双 fixer 配置；✅ **100% (69/69)** 全量 52 任务最大异构池（14B fixer + resample 一等源, 110 候选→23 MINIMAL 单轮）—— 判死线在 **8 种配置**下全部成立 → `experiments/results/depmig-*.json` |
+| A1 | 确定性子集上 flip 可复现 | `causal_data_juicer demo`（toy workload, n_repro=3） | ≥ 90%，否则停下修 determinism | ✅ **100% (18/18)** toy 上界, 2026-07-29；✅ **100% (15/15)** live 真实开奖（depmig 30 任务, Qwen2.5-7B agent+fixer）, 2026-07-30 → `experiments/results/depmig-7b-qwen7b-fixer7b.json`；✅ **100% (9/9 + 6/6)** pandas 家族（跨解释器 py3.11 底座）；✅ **100% (6/6)** 14B-agent 配置；✅ **100% (3/3 + 18/18)** 扩容 16 任务双 fixer 配置；✅ **100% (69/69)** 全量 52 任务最大异构池（14B fixer + resample 一等源, 110 候选→23 MINIMAL 单轮）—— 判死线在 **13 种配置**下全部成立（最大单批 **207/207**, corpus-x3, 2026-08-02） → `experiments/results/depmig-*.json` |
+| A15 | 变体轨迹是语料倍增器 | 52 任务 × 3 提示词变体 episodes（corpus-x3, 32B fixer 全家桶池） | 单位成本不升 | ✅ 2026-08-02：126 episodes / 75 失败 → **单轮 69 MINIMAL units**（此前 12 轮合计 62）；2.83s/unit 与单变体持平；**总语料 102 units / 27 任务**——C1 复验的数据门槛（~100）达成 → `experiments/results/depmig-corpus-x3.json` |
 | A11 | agent 强度与失败画像 | 同一 36 任务, 7B vs 14B agent | 观察性结论 | ✅ 2026-07-31：14B 解 27/36 vs 7B 13/36；**14B 失败集 ⊂ 7B 失败集**（无 14B-only 失败）→ agent 多样性非覆盖杠杆（与 fixer 来源多样性相反），"采集用中档模型"决策获反向验证；9 个双双失败任务为 bench 硬核（含全部存活 T3） |
 | A2 | 非修复候选不会被误验证 | t09 双候选对照 | 化妆候选必须停留在 SUGGESTED | ✅ 1/1 rejected |
 | A3 | 切片剔除非因果原子且不降级 | t06（因果行+化妆行） | 2 atoms → 1 atom，切片后再验证仍 flip | ✅ |

@@ -1,0 +1,98 @@
+{
+  "workload": "depmig-v1",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+  "episodes": 126,
+  "failed_episodes": 75,
+  "agent_solved": 51,
+  "seal_violations": 0,
+  "candidates_screened": 196,
+  "units_by_tier": {
+    "SUGGESTED": 184,
+    "MINIMAL": 69
+  },
+  "validated_units": 69,
+  "flip_repro_rate": 1.0,
+  "flip_repro_detail": "207/207 intervened replays flipped",
+  "determinism_control_ok": true,
+  "control_digest_match_rate": 1.0,
+  "breakdown": {
+    "family:pydantic": {
+      "candidates": 62,
+      "flipped": 15,
+      "repro_flips": 45,
+      "repro_runs": 45
+    },
+    "tier:T1": {
+      "candidates": 67,
+      "flipped": 33,
+      "repro_flips": 99,
+      "repro_runs": 99
+    },
+    "tier:T2": {
+      "candidates": 114,
+      "flipped": 32,
+      "repro_flips": 96,
+      "repro_runs": 96
+    },
+    "tier:T3": {
+      "candidates": 72,
+      "flipped": 4,
+      "repro_flips": 12,
+      "repro_runs": 12
+    },
+    "family:numpy": {
+      "candidates": 1,
+      "flipped": 1,
+      "repro_flips": 3,
+      "repro_runs": 3
+    },
+    "family:sqlalchemy": {
+      "candidates": 20,
+      "flipped": 12,
+      "repro_flips": 36,
+      "repro_runs": 36
+    },
+    "family:click": {
+      "candidates": 112,
+      "flipped": 25,
+      "repro_flips": 75,
+      "repro_runs": 75
+    },
+    "family:networkx": {
+      "candidates": 58,
+      "flipped": 16,
+      "repro_flips": 48,
+      "repro_runs": 48
+    }
+  },
+  "slicing": {
+    "atoms_before": 69,
+    "atoms_after": 69
+  },
+  "cost": {
+    "llm_calls": 811,
+    "tokens_in": 435887,
+    "tokens_out": 62355,
+    "tool_calls": 2244,
+    "replay_runs": 530,
+    "wall_time_s": 455.26,
+    "dollars": 0.0
+  },
+  "cost_per_validated_unit_s": 2.83,
+  "exports": {
+    "sft": "runs/depmig-corpus-x3/exports/sft.jsonl",
+    "dpo": "runs/depmig-corpus-x3/exports/dpo.jsonl",
+    "memory": "runs/depmig-corpus-x3/exports/memory.jsonl",
+    "regression": "runs/depmig-corpus-x3/exports/regression.jsonl"
+  },
+  "provenance": {
+    "causal_data_juicer": "0.1.0",
+    "python": "3.12.11",
+    "platform": "linux",
+    "tool_registry": "68697752d0293914",
+    "workload": "depmig-v1",
+    "agent_model": "Qwen/Qwen2.5-7B-Instruct",
+    "fixer_model": "Qwen/Qwen2.5-32B-Instruct-AWQ"
+  },
+  "wall_time_total_s": 1505.66
+}

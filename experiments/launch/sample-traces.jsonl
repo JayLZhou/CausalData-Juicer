@@ -1,0 +1,3 @@
+{"task_id": "web-nav-1", "description": "book the cheapest flight", "success": false, "outcome_detail": "clicked wrong date picker", "steps": [{"tool": "click", "args": {"selector": "#date"}, "observation": "calendar opened"}, {"tool": "click", "args": {"selector": ".day-32"}, "observation": "error: invalid day"}]}
+{"task_id": "sql-gen-1", "description": "top customers by revenue", "success": true, "steps": [{"tool": "run_sql", "args": {"query": "SELECT ..."}, "observation": "5 rows"}]}
+{"task_id": "code-fix-1", "description": "make lint pass", "success": false, "outcome_detail": "E501 line too long", "steps": [{"tool": "write_file", "args": {"path": "app.py", "content": "..."}, "observation": "wrote app.py"}]}

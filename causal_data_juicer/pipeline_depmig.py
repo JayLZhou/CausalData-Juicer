@@ -62,6 +62,7 @@ def run_depmig(
     resample_k: int = 3,
     resample_temperature: float = 0.85,
     refine_rounds: int = 0,  # validation-in-the-loop refinement for unflipped episodes
+    episode_variants: int = 1,  # >1: extra prompt-perturbed episodes per task
 ) -> dict:
     t_start = time.monotonic()
     run_dir = Path(run_dir)
@@ -105,13 +106,16 @@ def run_depmig(
     episodes: list[Episode] = []
     snapshots: list[Snapshot] = []
     for task, python in tasks:
-        ws = run_dir / "workspaces" / task.id
+      for variant in range(max(1, episode_variants)):
+        ws = run_dir / "workspaces" / (task.id if variant == 0 else f"{task.id}-v{variant}")
         task.setup(ws)
         write_env_pointer(ws, python)
         policy = LLMPolicy(llm, max_steps=max_steps)
-        policy.bind_task(task.agent_prompt())
+        prompt = task.agent_prompt() + ("" if variant == 0
+                                        else f"\n(independent attempt #{variant})")
+        policy.bind_task(prompt)
         episode, snaps = collector.run_episode(
-            task.id, task.agent_prompt(), ws, policy,
+            task.id, prompt, ws, policy,
             workload_id=WORKLOAD_ID, max_steps=max_steps,
         )
         violation = _seal_check(task, ws)

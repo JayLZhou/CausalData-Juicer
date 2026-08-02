@@ -138,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     p_live.add_argument("--llm-cache", default=None, help="shared cache dir (reuse across runs)")
     p_live.add_argument("--sources", default="fixer", help="comma list: fixer,fixer-tests,resample")
     p_live.add_argument("--resample-k", type=int, default=3)
+    p_live.add_argument("--episode-variants", type=int, default=1)
     p_live.add_argument("--refine-rounds", type=int, default=0)
     p_live.add_argument("--tasks", nargs="*", default=None, help="subset of task ids")
 
@@ -305,6 +306,7 @@ def main(argv: list[str] | None = None) -> int:
             llm_cache=Path(args.llm_cache) if args.llm_cache else None,
             sources=args.sources, resample_k=args.resample_k,
             refine_rounds=args.refine_rounds,
+            episode_variants=args.episode_variants,
         )
         _print_report(report)
         extra = (f"agent solved       : {report['agent_solved']}/{report['episodes']} "

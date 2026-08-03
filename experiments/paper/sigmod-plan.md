@@ -30,11 +30,11 @@ intro (C1–C4) and a nine-experiment catalog.
 
 | DJ experiment | Our equivalent | Status |
 |---|---|---|
-| E1/E2 data-recipe quality → model wins (their crown jewel) | (a) validity guarantees as the quality claim (13-config 100% flip-repro, dual-certified bench); (b) C1 training pilot — **honest replicated null**, framed as scale-bounded; (c) **NEW: memory-retrieval eval** — do failure→recovery units, retrieved as memory, raise agent solve rate on similar held-out tasks? Training-free downstream value, runnable on our infra | (a)✅ (b)✅ (c) **to design & run** |
+| E1/E2 data-recipe quality → model wins (their crown jewel) | (a) validity guarantees as the quality claim (13-config 100% flip-repro, dual-certified bench); (b) C1 training pilot — **honest replicated null**, framed as scale-bounded; (c) **NEW: memory-retrieval eval** — do failure→recovery units, retrieved as memory, raise agent solve rate on similar held-out tasks? Training-free downstream value, runnable on our infra | (a)✅ (b)✅ (c)✅ **ran 2026-08-03**: baseline 6/16×2 vs memory 8/16·7/16, robust task-level gains k08/k10, honest loss s04 → claims C2 |
 | E3 end-to-end efficiency vs competitor codebases | vs the "per-paper hand-built loop" = no-mechanism ablation: 137→101 replays (−26%); cost-per-unit ≈3s/$0 | ✅ |
 | E4 context mgmt / op fusion ablations | control-branch memoization + early-stop ablations | ✅ |
 | E5 cache & checkpoint effectiveness | checkpoint placement (298×/1.91× vs from-scratch, byte-identical reconstruction); LLM cache → byte-exact offline replay packs | ✅ |
-| E6 distributed scalability (Ray, 7.91×) | **NEW: worker-scaling curve** for parallel validation (workers = 1/2/4/8) | **run now** |
+| E6 distributed scalability (Ray, 7.91×) | **NEW: worker-scaling curve** for parallel validation (workers = 1/2/4/8) | ✅ 5.3× @ 8 workers, outputs identical at all widths → claims A15 |
 | E7 quality-classifier validation | determinism-gate validation: CI negative controls (flaky env rejected), anti-cheat seals (observed reward hacking caught) | ✅ |
 | E8 operator coverage & usability | zoo (11 registered ops), 9 reproductions ≤110 lines incl. same-day CAPER, YAML recipes, 97-line front page | ✅ |
 | E9 production deployment | gap: no production story yet → industrial section = dogfooding friction log (6 real fixes), external-tester round (D10 protocol ready), ecosystem exports (TRL/verl/DJ) | partial — D10 needs humans |
@@ -46,7 +46,7 @@ intro (C1–C4) and a nine-experiment catalog.
 - [x] Segmented user model with three tiers
 - [x] Open-source release engineering (license, CI, docs site, packaging dry-run)
 - [ ] Deployment/adoption numbers (blocked on launch + testers)
-- [ ] The two new experiments above (worker scaling; memory-retrieval eval)
+- [x] The two new experiments above (worker scaling 5.3× A15; memory-retrieval eval C2)
 
 ## 5 · Honest deltas from the template
 

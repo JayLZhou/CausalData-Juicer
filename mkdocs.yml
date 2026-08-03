@@ -14,6 +14,7 @@ theme:
       toggle: {icon: material/weather-sunny, name: light mode}
   features:
     - navigation.sections
+    - navigation.tabs
     - content.code.copy
 
 nav:
@@ -47,3 +48,6 @@ markdown_extensions:
   - admonition
   - pymdownx.superfences
   - tables
+
+extra_css:
+  - stylesheets/landing.css

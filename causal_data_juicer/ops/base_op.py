@@ -97,7 +97,7 @@ def engine_services(ctx: OpContext) -> dict:
     """Build (once) the engine parts interventional ops need."""
     if "replayer" not in ctx.services:
         from causal_data_juicer.replay.replayer import Replayer
-        from causal_data_juicer.replay.sandbox import LocalSandbox
+        from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
         from causal_data_juicer.runtime.collector import Collector
         from causal_data_juicer.runtime.tools import default_registry
         from causal_data_juicer.runtime.verifier import PytestVerifier
@@ -111,7 +111,7 @@ def engine_services(ctx: OpContext) -> dict:
             "verifier": verifier,
             "blobs": blobs,
             "collector": Collector(registry, blobs, verifier),
-            "replayer": Replayer(registry, LocalSandbox(blobs, ctx.workdir / "scratch"),
+            "replayer": Replayer(registry, UnsafeLocalWorkspace(blobs, ctx.workdir / "scratch"),
                                  verifier),
         })
     return ctx.services

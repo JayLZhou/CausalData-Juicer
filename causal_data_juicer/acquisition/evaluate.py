@@ -20,7 +20,7 @@ from causal_data_juicer.acquisition.budget import Budget
 from causal_data_juicer.acquisition.engine import AcquisitionEngine, AcquisitionResult
 from causal_data_juicer.acquisition.policies import Candidate, make_policy
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
 from causal_data_juicer.run_store import RunStore
@@ -68,7 +68,7 @@ def evaluate(
 ) -> dict:
     base, episodes, snapshots, candidates = load_pooled_candidates(base_dir, pool_dirs)
     scratch = scratch or (Path(base_dir) / "scratch-m2")
-    replayer = Replayer(default_registry(), LocalSandbox(base.blobs, scratch),
+    replayer = Replayer(default_registry(), UnsafeLocalWorkspace(base.blobs, scratch),
                         PytestVerifier(timeout=120))
     engine = AcquisitionEngine(replayer, n_repro=n_repro)
 

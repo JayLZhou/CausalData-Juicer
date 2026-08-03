@@ -79,16 +79,16 @@ class ToolExecutor:
 # ---------------------------------------------------------------------------
 
 def _write_file(workspace: Path, path: str, content: str) -> str:
-    target = (workspace / path).resolve()
-    if workspace.resolve() not in target.parents and target != workspace.resolve():
-        raise ValueError(f"path escapes workspace: {path}")
+    from causal_data_juicer.runtime.paths import resolve_workspace_path
+    target = resolve_workspace_path(workspace, path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content)
     return f"wrote {path} ({len(content)} chars)"
 
 
 def _read_file(workspace: Path, path: str, **_ignored) -> str:
-    return (workspace / path).read_text()
+    from causal_data_juicer.runtime.paths import resolve_workspace_path
+    return resolve_workspace_path(workspace, path, must_exist=True).read_text()
 
 
 _PYTEST_SUMMARY = re.compile(r"(\d+) (passed|failed|error)")

@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
 from causal_data_juicer.sdk.schemas import CausalUnit, CostLedger, Episode, Intervention, Snapshot
@@ -78,7 +78,7 @@ class RunStore:
         intervention = Intervention.model_validate(case["intervention"])
         replayer = Replayer(
             default_registry(),
-            LocalSandbox(self.blobs, Path(scratch)),
+            UnsafeLocalWorkspace(self.blobs, Path(scratch)),
             PytestVerifier(),
         )
         ledger = CostLedger()

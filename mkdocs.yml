@@ -29,6 +29,7 @@ nav:
   - Landscape references: landscape-papers.md
   - Coverage map & gaps: research-gaps.md
   - Integrations: integrations.md
+  - Security model: security.md
   - FAQ: faq.md
   - Troubleshooting: troubleshooting.md
   - API reference: api.md

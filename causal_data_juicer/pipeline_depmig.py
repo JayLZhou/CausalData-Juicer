@@ -21,7 +21,7 @@ from causal_data_juicer.acquisition.screener import Screener
 from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.envs import ENV_POINTER, EnvManager, write_env_pointer
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
@@ -66,14 +66,13 @@ def run_depmig(
     task_hints: dict | None = None,  # task_id -> text appended to the agent prompt (e.g. retrieved memory)
 ) -> dict:
     t_start = time.monotonic()
-    run_dir = Path(run_dir)
-    if run_dir.exists():
-        shutil.rmtree(run_dir)
+    from causal_data_juicer.runtime.rundir import prepare_run_dir
+    run_dir = prepare_run_dir(Path(run_dir))
     store = RunStore(run_dir)
     registry = default_registry()
     verifier = PytestVerifier(timeout=120)
     collector = Collector(registry, store.blobs, verifier)
-    sandbox = LocalSandbox(store.blobs, run_dir / "scratch")
+    sandbox = UnsafeLocalWorkspace(store.blobs, run_dir / "scratch")
     replayer = Replayer(registry, sandbox, verifier)
     mgr = EnvManager(env_root)
     cache_dir = Path(llm_cache) if llm_cache else run_dir / "llm_cache"

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 from causal_data_juicer.interventions.apply import apply_intervention
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.tools import ToolExecutor, ToolRegistry
 from causal_data_juicer.runtime.verifier import PytestVerifier
 from causal_data_juicer.sdk.schemas import (
@@ -36,7 +36,7 @@ class Replayer:
     def __init__(
         self,
         registry: ToolRegistry,
-        sandbox: LocalSandbox,
+        sandbox: UnsafeLocalWorkspace,
         verifier: PytestVerifier,
     ):
         self.registry = registry

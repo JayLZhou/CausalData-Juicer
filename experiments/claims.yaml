@@ -1,0 +1,88 @@
+# Machine-readable claim registry. `cdj verify-claims` executes every
+# `required: true` claim; a required claim that cannot run exits nonzero
+# (strict is the default). Non-required claims cost GPU-hours; their
+# evidence is archived run output whose hash is pinned here.
+commit: 5b571f5f1bdbc4de85fec989cc804cd035b30389
+claims:
+  A1:
+    statement: "flip reproducibility >=90% on a fresh demo run"
+    required: true
+    reproducer: "cdj verify-claims"
+    expected: "flip_repro_rate >= 0.9"
+  A9:
+    statement: "control-branch digest match 100% on that run"
+    required: true
+    reproducer: "cdj verify-claims"
+    expected: "control_digest_match_rate == 1.0"
+  REGR:
+    statement: "exported counterfactual regression suite replays and still flips"
+    required: true
+    reproducer: "cdj verify-claims"
+    expected: "pytest exit 0"
+  A2_A3:
+    statement: "non-fix rejection + minimal slicing (toy E2E)"
+    required: true
+    reproducer: "pytest tests/test_e2e_demo.py"
+    expected: "exit 0"
+  A6_UNIT:
+    statement: "sparse-fork state reconstruction is byte-identical"
+    required: true
+    reproducer: "pytest tests/test_m3_storage.py"
+    expected: "exit 0"
+  A13:
+    statement: "determinism gate rejects outcome-flaky environments"
+    required: true
+    reproducer: "pytest tests/test_negative_control.py"
+    expected: "exit 0"
+  B2:
+    statement: "TRL/verl export formats round-trip"
+    required: true
+    reproducer: "pytest tests/test_adapters.py"
+    expected: "exit 0"
+  B1:
+    statement: "replay pack reproduces the live run byte-for-byte offline"
+    required: true
+    reproducer: "cdj bench-build && cdj verify-claims"
+    expected: "46 branches / 7 flips / 12 pairs"
+  A5:
+    statement: "cost per validated unit ~3s / $0 on local endpoints"
+    required: false
+    reproducer: "archived run: experiments/results/depmig-7b.json"
+    artifact: "experiments/results/depmig-7b.json"
+    artifact_hash: null
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"
+  A7:
+    statement: "budget mechanisms save 26% replays; adaptive leads at tight budgets"
+    required: false
+    reproducer: "archived run: experiments/results/m2_curves_large.json"
+    artifact: "experiments/results/m2_curves_large.json"
+    artifact_hash: "29a7b92cd7203683"
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"
+  A8:
+    statement: "selective revalidation 4.8x/8.0x vs full, zero missed demotions"
+    required: false
+    reproducer: "archived run: experiments/results/m4_pydantic_2.11.7.json"
+    artifact: "experiments/results/m4_pydantic_2.11.7.json"
+    artifact_hash: "9af8f234b14ed696"
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"
+  A15:
+    statement: "parallel validation 5.3x @ 8 workers, outputs identical"
+    required: false
+    reproducer: "archived run: experiments/results/scaling_workers.json"
+    artifact: "experiments/results/scaling_workers.json"
+    artifact_hash: "52d66a57b165af8f"
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"
+  C1:
+    statement: "training pilot: replicated null at 43/68-row scale"
+    required: false
+    reproducer: "archived run: experiments/results/c1/summary.json"
+    artifact: "experiments/results/c1/summary.json"
+    artifact_hash: null
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"
+  C2:
+    statement: "retrieval memory: +2 robust cross-family gains, one robust loss"
+    required: false
+    reproducer: "archived run: experiments/results/memory_retrieval.json"
+    artifact: "experiments/results/memory_retrieval.json"
+    artifact_hash: "420db62567f3e649"
+    environment: "local vLLM endpoints + bench_envs; see experiments/claims.md row"

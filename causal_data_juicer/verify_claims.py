@@ -7,8 +7,10 @@ negative controls re-tripped, the regression suite re-replayed, the replay
 pack re-executed (if its environments exist locally).
 
 Honesty contract of this tool:
-- SKIP is never counted as PASS. A skipped check is reported with its
-  reason and how to un-skip it; `--strict` turns skips into failures.
+- NOT_RUN is a third state, never counted as PASS. A check that cannot
+  run is reported with its reason and how to enable it; strict mode is the
+  DEFAULT — a required claim (per experiments/claims.yaml) left NOT_RUN
+  exits nonzero. `--lenient` downgrades that to a warning.
 - The scorecard states explicitly which ledger rows it does NOT cover.
   Live-scale numbers (multi-config flip-repro sweeps, budget curves,
   revalidation events, source ladders, C-chain) were bought with GPU-hours
@@ -46,7 +48,7 @@ class Scorecard:
     def __init__(self) -> None:
         self.passed: list[str] = []
         self.failed: list[str] = []
-        self.skipped: list[tuple[str, str]] = []
+        self.not_run: list[tuple[str, str]] = []
 
     def row(self, cid: str, desc: str, ok: bool, detail: str = "") -> None:
         mark = "PASS" if ok else "FAIL"
@@ -54,32 +56,34 @@ class Scorecard:
         print(f"  [{mark}] {cid:<6} {desc}" + (f"  ({detail})" if detail else ""))
 
     def skip(self, cid: str, desc: str, reason: str) -> None:
-        self.skipped.append((cid, reason))
-        print(f"  [SKIP] {cid:<6} {desc}  ({reason})")
+        self.not_run.append((cid, reason))
+        print(f"  [NOT_RUN] {cid:<6} {desc}  ({reason})")
 
-    def summary(self, strict: bool) -> int:
+    def summary(self, strict: bool = True) -> int:
         print()
-        print(f"{len(self.passed)} re-earned, {len(self.skipped)} skipped, "
+        print(f"{len(self.passed)} re-earned, {len(self.not_run)} not run, "
               f"{len(self.failed)} failed.")
-        for cid, reason in self.skipped:
-            print(f"  skipped {cid}: {reason}")
+        for cid, reason in self.not_run:
+            print(f"  NOT_RUN {cid}: {reason}")
         print(f"\n{NOT_COVERED}")
         if self.failed:
             print("\nSome claims FAILED to reproduce — that is reportable; "
                   "please open an issue.")
             return 1
-        if self.skipped and strict:
-            print("\n--strict: skipped checks count as failures.")
+        if self.not_run and strict:
+            print("\nstrict (default): required claims left NOT_RUN exit "
+                  "nonzero. Use --lenient to downgrade, or enable the check "
+                  "(see reasons above).")
             return 1
-        if self.skipped:
-            print("\nThe offline-verifiable subset that ran passed. Skipped "
-                  "checks are NOT verified.")
+        if self.not_run:
+            print("\nThe subset that ran passed. NOT_RUN checks are NOT "
+                  "verified — this is not a full reproduction.")
         else:
-            print("\nEvery offline-verifiable check passed on this machine.")
+            print("\nAll required claims executed and passed on this machine.")
         return 0
 
 
-def verify_claims(repo_root: Path | None = None, strict: bool = False) -> int:
+def verify_claims(repo_root: Path | None = None, strict: bool = True) -> int:
     root = Path(repo_root or Path.cwd())
     print("cdj verify-claims — executing, not trusting\n")
     card = Scorecard()

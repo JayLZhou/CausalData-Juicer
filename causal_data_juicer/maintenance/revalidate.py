@@ -130,7 +130,7 @@ def run_version_event(
     env_root: Path,
     n_repro: int = 2,
 ) -> dict:
-    from causal_data_juicer.replay.sandbox import LocalSandbox
+    from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
     from causal_data_juicer.runtime.tools import default_registry
     from causal_data_juicer.runtime.verifier import PytestVerifier
     from causal_data_juicer.workloads.depmig.build import enabled_families
@@ -149,7 +149,7 @@ def run_version_event(
     new_freeze = digest_of(mgr.provenance(new_env).get("frozen", []))
 
     replayer = Replayer(default_registry(),
-                        LocalSandbox(base.blobs, Path(base_dir) / "scratch-m4"),
+                        UnsafeLocalWorkspace(base.blobs, Path(base_dir) / "scratch-m4"),
                         PytestVerifier(timeout=120))
     modes = {}
     for mode in ("selective", "full"):

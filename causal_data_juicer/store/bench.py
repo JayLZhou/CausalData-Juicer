@@ -14,12 +14,12 @@ import time
 from pathlib import Path
 
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
 from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.sdk.schemas import EvidenceTier
-from causal_data_juicer.store.blob import tree_digest
+from causal_data_juicer.store.blob import digests_match
 from causal_data_juicer.store.dag import dag_stats, select_checkpoints, storage_bytes
 
 
@@ -30,7 +30,7 @@ def storage_bench(run_dir: Path, policies: list[str], repeats: int = 3) -> dict:
     units = [u for u in store.load_units()
              if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED]
     replayer = Replayer(default_registry(),
-                        LocalSandbox(store.blobs, Path(run_dir) / "scratch-m3"),
+                        UnsafeLocalWorkspace(store.blobs, Path(run_dir) / "scratch-m3"),
                         PytestVerifier())
     fork_points = [(episodes[u.episode_id], u.effective_intervention().target_step)
                    for u in units]
@@ -53,7 +53,7 @@ def storage_bench(run_dir: Path, policies: list[str], repeats: int = 3) -> dict:
                 if policy != "every":
                     dense = next(s for s in snapshots
                                  if s.episode_id == ep.id and s.step_index == step)
-                    equivalent &= tree_digest(ws) == dense.tree_digest
+                    equivalent &= digests_match(dense.tree_digest, ws)
                 replayer.sandbox.dispose(ws)
         rows.append({
             "policy": policy,

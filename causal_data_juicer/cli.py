@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -44,6 +45,17 @@ def _print_report(report: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    try:
+        return _main(argv)
+    except Exception as e:
+        from causal_data_juicer.runtime.rundir import UnmanagedDirectoryError
+        if isinstance(e, UnmanagedDirectoryError):
+            print(f"error: {e}", file=sys.stderr)
+            return 2
+        raise
+
+
+def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cdj")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -67,8 +79,8 @@ def main(argv: list[str] | None = None) -> int:
 
     p_vc = sub.add_parser("verify-claims",
                           help="re-earn the offline-verifiable claims on this machine (PASS/FAIL/SKIP)")
-    p_vc.add_argument("--strict", action="store_true",
-                      help="skipped checks count as failures (nonzero exit)")
+    p_vc.add_argument("--lenient", action="store_true",
+                      help="do not fail on NOT_RUN checks (strict is the default)")
 
     p_mig = sub.add_parser("migrate-run", help="upgrade a run's env pointers to v2 (relocatable)")
     p_mig.add_argument("run_dir")
@@ -89,6 +101,12 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
     p_run.add_argument("--out", default=None)
     p_run.add_argument("--task", default=None, help="task description shown to the agent")
+    p_run.add_argument("--context-manifest", action="store_true",
+                       help="print exactly which files would enter the LLM prompt, then exit")
+    p_run.add_argument("--unsafe-local-execution", action="store_true",
+                       help="acknowledge that repo code and model-generated patches "
+                            "execute directly on this host (no container isolation yet); "
+                            "see docs/security.md")
     p_run.add_argument("--repro", type=int, default=3)
     p_run.add_argument("--max-steps", type=int, default=10)
 
@@ -177,7 +195,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "verify-claims":
         from causal_data_juicer.verify_claims import verify_claims
-        return verify_claims(strict=args.strict)
+        return verify_claims(strict=not args.lenient)
 
     if args.cmd == "migrate-run":
         from causal_data_juicer.migrate import migrate_run
@@ -197,6 +215,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "run":
+        if args.context_manifest:
+            from causal_data_juicer.runtime.context import context_manifest
+            for name in context_manifest(Path(args.repo)):
+                print(name)
+            return 0
+        if not args.unsafe_local_execution and \
+                os.environ.get("CDJ_UNSAFE_LOCAL_EXECUTION") != "1":
+            print("cdj run executes the repository's verify command AND "
+                  "model-generated patches directly on this host — there is no "
+                  "container isolation yet (see docs/security.md).\n"
+                  "Re-run with --unsafe-local-execution (or set "
+                  "CDJ_UNSAFE_LOCAL_EXECUTION=1) to acknowledge this.")
+            return 2
         from causal_data_juicer.pipeline_repo import run_repo
         from causal_data_juicer.report import explain_html, explain_text
         out = Path(args.out or f"runs/byo-{Path(args.repo).resolve().name}")

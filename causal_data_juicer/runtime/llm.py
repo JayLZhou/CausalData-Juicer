@@ -9,6 +9,8 @@ touches the network and is charged zero new cost by callers (the
 from __future__ import annotations
 
 import json
+import os
+import time
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -77,12 +79,31 @@ class OpenAICompatClient:
 
 
 class DiskCachedLLM:
-    """Content-addressed response cache keyed by (params, messages)."""
+    """Content-addressed response cache keyed by (params, messages).
 
-    def __init__(self, client: LLMClient, cache_dir: Path):
+    Cache entries may embed prompt material (repo context), so the cache
+    directory is created 0700 and entries are written 0600. Controls:
+    ``CDJ_LLM_CACHE=off`` disables caching entirely; ``ttl_seconds``
+    (or ``CDJ_LLM_CACHE_TTL`` seconds) expires old entries; ``clear()``
+    wipes the cache.
+    """
+
+    def __init__(self, client: LLMClient, cache_dir: Path, ttl_seconds: float | None = None):
         self.client = client
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.cache_dir, 0o700)
+        env_ttl = os.environ.get("CDJ_LLM_CACHE_TTL")
+        self.ttl_seconds = ttl_seconds if ttl_seconds is not None else (
+            float(env_ttl) if env_ttl else None)
+        self.disabled = os.environ.get("CDJ_LLM_CACHE", "").lower() in ("off", "0", "false")
+
+    def clear(self) -> int:
+        n = 0
+        for p in self.cache_dir.glob("*.json"):
+            p.unlink(missing_ok=True)
+            n += 1
+        return n
 
     @property
     def model(self) -> str:
@@ -93,13 +114,22 @@ class DiskCachedLLM:
         return digest_of({"params": params, "messages": messages})
 
     def complete(self, messages: list[dict]) -> LLMResponse:
+        if self.disabled:
+            return self.client.complete(messages)
         path = self.cache_dir / f"{self._key(messages)}.json"
         if path.exists():
-            data = json.loads(path.read_text())
-            return LLMResponse(**{**data, "cached": True, "dollars": 0.0})
+            expired = (self.ttl_seconds is not None
+                       and time.time() - path.stat().st_mtime > self.ttl_seconds)
+            if not expired:
+                data = json.loads(path.read_text())
+                return LLMResponse(**{**data, "cached": True, "dollars": 0.0})
+            path.unlink(missing_ok=True)
         resp = self.client.complete(messages)
-        path.write_text(json.dumps({
+        payload = json.dumps({
             "text": resp.text, "tokens_in": resp.tokens_in,
             "tokens_out": resp.tokens_out, "dollars": resp.dollars,
-        }, ensure_ascii=False))
+        }, ensure_ascii=False)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(payload)
         return resp

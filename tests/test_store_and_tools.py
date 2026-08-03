@@ -38,7 +38,7 @@ def test_write_file_cannot_escape_workspace(registry, tmp_path):
     ws.mkdir()
     call = ToolCall(tool="write_file", args={"path": "../evil.txt", "content": "x"})
     obs, _ = executor.execute(ws, call, CostLedger())
-    assert obs.startswith("[tool-error] ValueError")
+    assert obs.startswith("[tool-error] WorkspaceEscapeError")
     assert not (tmp_path / "evil.txt").exists()
 
 

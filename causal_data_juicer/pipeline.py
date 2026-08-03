@@ -17,7 +17,7 @@ from causal_data_juicer.acquisition.screener import Screener, TableFixSource
 from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.agent import ScriptedPolicy
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.tools import default_registry
@@ -30,14 +30,13 @@ from causal_data_juicer.workloads import toy
 
 def run_demo(run_dir: Path, n_repro: int = 3, keep_workspaces: bool = False) -> dict:
     t_start = time.monotonic()
-    run_dir = Path(run_dir)
-    if run_dir.exists():
-        shutil.rmtree(run_dir)
+    from causal_data_juicer.runtime.rundir import prepare_run_dir
+    run_dir = prepare_run_dir(Path(run_dir))
     store = RunStore(run_dir)
     registry = default_registry()
     verifier = PytestVerifier()
     collector = Collector(registry, store.blobs, verifier)
-    sandbox = LocalSandbox(store.blobs, run_dir / "scratch")
+    sandbox = UnsafeLocalWorkspace(store.blobs, run_dir / "scratch")
     replayer = Replayer(registry, sandbox, verifier)
 
     tasks = toy.build_tasks()

@@ -21,7 +21,7 @@ _WORKER = {}
 
 def _init_worker(blobs_root: str, scratch_root: str, verify_argv: list[str] | None):
     from causal_data_juicer.replay.replayer import Replayer
-    from causal_data_juicer.replay.sandbox import LocalSandbox
+    from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
     from causal_data_juicer.runtime.tools import default_registry
     from causal_data_juicer.runtime.verifier import CommandVerifier, PytestVerifier
     from causal_data_juicer.store.blob import BlobStore
@@ -29,7 +29,7 @@ def _init_worker(blobs_root: str, scratch_root: str, verify_argv: list[str] | No
     verifier = CommandVerifier(verify_argv) if verify_argv else PytestVerifier()
     scratch = Path(scratch_root) / f"w{os.getpid()}"
     _WORKER["replayer"] = Replayer(default_registry(),
-                                   LocalSandbox(BlobStore(Path(blobs_root)), scratch),
+                                   UnsafeLocalWorkspace(BlobStore(Path(blobs_root)), scratch),
                                    verifier)
     _WORKER["control_cache"] = {}
 

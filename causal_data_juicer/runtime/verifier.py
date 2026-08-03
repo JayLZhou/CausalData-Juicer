@@ -104,9 +104,10 @@ class SealedVerifier:
         self.violations = 0
 
     def restore(self, workspace: Path) -> int:
+        from causal_data_juicer.runtime.paths import resolve_workspace_path
         tampered = 0
         for rel, content in self._sealed.items():
-            target = Path(workspace) / rel
+            target = resolve_workspace_path(workspace, rel)
             if not target.exists() or target.read_text() != content:
                 tampered += 1
                 target.parent.mkdir(parents=True, exist_ok=True)

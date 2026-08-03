@@ -22,7 +22,7 @@ from causal_data_juicer.acquisition.screener import Screener
 from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
 from causal_data_juicer.runtime.llm_policy import LLMPolicy
@@ -53,23 +53,13 @@ reply {"tool": "done", "args": {}} once the check passes or you cannot progress.
 
 def _repo_context(ws: Path, max_file: int = 4000, max_total: int = 9000) -> str:
     """Inline small file contents so the agent (and its fixer) start with
-    eyes open instead of spelunking — crucial for reasoning models."""
-    parts, total = [], 0
-    for p in sorted(ws.rglob("*")):
-        if not p.is_file() or any(seg in EXCLUDE for seg in p.parts):
-            continue
-        try:
-            txt = p.read_text()
-        except (UnicodeDecodeError, OSError):
-            continue
-        if len(txt) > max_file:
-            continue
-        chunk = f"\n--- {p.relative_to(ws)} ---\n{txt}"
-        if total + len(chunk) > max_total:
-            break
-        parts.append(chunk)
-        total += len(chunk)
-    return "".join(parts)
+    eyes open instead of spelunking — crucial for reasoning models.
+
+    Delegates to runtime.context: extension allowlist, secret-name denylist,
+    no symlink following, entropy/token redaction. What would be sent is
+    inspectable via `cdj run --context-manifest`."""
+    from causal_data_juicer.runtime.context import build_context
+    return build_context(ws, max_file=max_file, max_total=max_total)
 
 
 def _copy_repo(repo: Path, dest: Path) -> None:
@@ -151,9 +141,8 @@ def run_repo(
 ) -> dict:
     t0 = time.monotonic()
     repo = Path(repo).resolve()
-    out = Path(out)
-    if out.exists():
-        shutil.rmtree(out)
+    from causal_data_juicer.runtime.rundir import prepare_run_dir
+    out = prepare_run_dir(Path(out))
     store = RunStore(out)
     verify_argv = shlex.split(verify)
 
@@ -164,7 +153,7 @@ def run_repo(
     verifier = SealedVerifier(CommandVerifier(verify_argv, timeout=300), ws)
     registry = _registry_for(verify_argv, sealed=verifier)
     collector = Collector(registry, store.blobs, verifier)
-    replayer = Replayer(registry, LocalSandbox(store.blobs, out / "scratch"), verifier)
+    replayer = Replayer(registry, UnsafeLocalWorkspace(store.blobs, out / "scratch"), verifier)
 
     baseline = verifier.evaluate(ws, CostLedger())
     if baseline.success:
@@ -172,6 +161,11 @@ def run_repo(
               f"(Stress direction is on the roadmap.)")
         return {"status": "already-passing"}
     print(f"baseline: `{verify}` fails — collecting an agent attempt…")
+
+    from causal_data_juicer.runtime.context import context_manifest
+    manifest = context_manifest(ws)
+    print("context sent to the LLM will include these files "
+          "(allowlisted, secret-scanned): " + (", ".join(manifest) or "<none>"))
 
     llm = DiskCachedLLM(OpenAICompatClient(base_url, model, max_tokens=4096),
                     out / "llm_cache")

@@ -26,9 +26,11 @@ from causal_data_juicer.ops.base_op import OPERATORS, OpContext
 def run_recipe(config_path: Path) -> OpContext:
     config = yaml.safe_load(Path(config_path).read_text())
     workdir = Path(config.get("workdir", "runs/recipe"))
-    if config.get("fresh", True) and workdir.exists():
-        shutil.rmtree(workdir)
-    workdir.mkdir(parents=True, exist_ok=True)
+    if config.get("fresh", True):
+        from causal_data_juicer.runtime.rundir import prepare_run_dir
+        workdir = prepare_run_dir(workdir)
+    else:
+        workdir.mkdir(parents=True, exist_ok=True)
 
     ctx = OpContext(workdir=workdir)
     ctx.meta["recipe"] = str(config_path)

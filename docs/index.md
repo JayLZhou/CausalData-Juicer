@@ -79,8 +79,8 @@ repeatedly — then bottles the result with an <b>evidence tier on every row</b>
 <div class="null-box">
 <div class="eyebrow">The honesty policy</div>
 <h2 style="margin-top:8px">We publish our nulls.</h2>
-<p class="sub" style="margin:8px 0 0">Our training-value pilot tied exactly — twice, at two data scales. It sits in the <a href="https://github.com/JayLZhou/CausalData-Juicer/blob/main/experiments/claims.md">claims ledger</a> beside the wins. Every number on this page re-earns itself on your machine:</p>
-<div class="mono-line">$ cdj verify-claims → 8/8 PASS, including a byte-exact offline replay of a live run</div>
+<p class="sub" style="margin:8px 0 0">Our training-value pilot tied exactly — twice, at two data scales. It sits in the <a href="https://github.com/JayLZhou/CausalData-Juicer/blob/main/experiments/claims.md">claims ledger</a> beside the wins. The offline-verifiable core re-earns itself on your machine — and the scorecard names what it <i>can't</i> re-run (the GPU-hour sweeps), whose evidence ships as archived run directories instead. A skipped check is never shown as passed.</p>
+<div class="mono-line">$ cdj verify-claims → 8 re-earned, 0 skipped, 0 failed — incl. a byte-exact offline replay of a live run</div>
 </div>
 </section>
 

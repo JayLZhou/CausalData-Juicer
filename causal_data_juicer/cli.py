@@ -65,7 +65,10 @@ def main(argv: list[str] | None = None) -> int:
     p_proc = sub.add_parser("process", help="run a YAML recipe of operators (DJ-style)")
     p_proc.add_argument("--config", required=True)
 
-    sub.add_parser("verify-claims", help="re-earn the front-page numbers on this machine")
+    p_vc = sub.add_parser("verify-claims",
+                          help="re-earn the offline-verifiable claims on this machine (PASS/FAIL/SKIP)")
+    p_vc.add_argument("--strict", action="store_true",
+                      help="skipped checks count as failures (nonzero exit)")
 
     p_mig = sub.add_parser("migrate-run", help="upgrade a run's env pointers to v2 (relocatable)")
     p_mig.add_argument("run_dir")
@@ -174,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "verify-claims":
         from causal_data_juicer.verify_claims import verify_claims
-        return verify_claims()
+        return verify_claims(strict=args.strict)
 
     if args.cmd == "migrate-run":
         from causal_data_juicer.migrate import migrate_run

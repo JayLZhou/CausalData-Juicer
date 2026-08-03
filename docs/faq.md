@@ -42,7 +42,13 @@ weaker collectors produce a superset of learning material. Spend strength on
 **Are the numbers on the front page real?**
 Run `cdj verify-claims`. It re-collects the demo, re-validates the flips,
 re-trips the negative controls, replays the exported counterfactuals, and
-re-executes a committed replay pack byte-for-byte — on your machine.
+re-executes a committed replay pack byte-for-byte — on your machine. It
+reports a three-state PASS/FAIL/SKIP scorecard (a skipped check is never
+counted as passed; `--strict` makes skips fail) and explicitly lists the
+ledger rows it cannot re-run offline — the GPU-hour-scale sweeps (budget
+curves, source ladders, revalidation events, training pilots). For those,
+the evidence is the pre-registered claims ledger plus archived run
+directories under `experiments/results/`.
 
 **Does training on this data actually help?**
 Honest answer: unproven at our corpus size. Our matched-token pilot (~40

@@ -47,9 +47,12 @@ Then pick your entry point:
 | a repo + a check | `cdj run --repo . --verify "pytest -q"` | certified correction pairs + an HTML report of what changed and why it counts |
 | a DJ habit | `cdj process --config recipes/demo.yaml` | the same loop as a YAML operator recipe |
 
-Don't trust us: **`cdj verify-claims`** re-earns every front-page number on
-your machine, including replaying a committed pack of a live run
-byte-for-byte with no model.
+Don't trust us: **`cdj verify-claims`** re-earns the offline-verifiable core
+on your machine — fresh demo collection, flip re-validation, negative
+controls, exported-counterfactual replay, and a committed pack of a live run
+replayed byte-for-byte with no model. It prints a PASS/FAIL/SKIP scorecard
+and names what it *cannot* re-run offline (the GPU-hour-scale sweeps), whose
+evidence ships as run directories in `experiments/results/` instead.
 
 ## 📊 Highlights (all pre-registered in the [claims ledger](experiments/claims.md))
 

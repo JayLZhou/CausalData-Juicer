@@ -226,6 +226,13 @@ replaying from scratch, and sparse-checkpoint forks reconstruct
 byte-identical trees (digest equality is asserted inside the benchmark)
 [A6].
 
+Validation itself parallelizes: candidate validations are independent given
+the store, so a worker pool scales the screening loop to **5.3×** at 8
+workers (113.5s → 21.4s on a 120-candidate pool) with the validated set
+identical at every width — a determinism property, asserted, not assumed
+[A15]. The measured trade-off is honest: per-worker control caches duplicate
+work (173→254 replays); cross-worker memoization is recorded future work.
+
 ### 4.4 Freshness: selective revalidation
 
 Each unit's provenance records *dependency claims* — per-family environment
@@ -315,7 +322,7 @@ perturbations critical and 3 harmless, exactly matching SQL semantics —
 repair (fail→pass) and stress (pass→fail) are the same machinery with the
 sign flipped.
 
-## 8 Training-value pilot: an honest null
+## 8 Downstream value: an honest null and a training-free positive
 
 Does replay validation make correction pairs *train* better than the same
 distribution unvalidated? Matched-token arms from the same fixer proposals
@@ -327,6 +334,24 @@ pre-registered the kill condition (validated *losing* to unvalidated), which
 did not trigger. We publish the null, the power analysis, and the re-test
 conditions (≥10× corpus or task-targeted evaluation) rather than a favorable
 subset.
+
+The null is about one *consumption path*, not about the data. A second,
+training-free path consumes the same corpus as retrieval memory: for each
+held-out task we retrieve the two most similar failure→recovery units
+(lexical overlap; the memory carries the failure signature and the actual
+fix) and prepend them to the agent prompt. Same 7B agent, greedy decoding,
+two replicates per arm: baseline 6/16 in both replicates (task-for-task
+identical), memory 8/16 and 7/16 [C2]. The task-level picture is causal
+rather than aggregate: two tasks flip to solved in *both* memory replicates
+(baseline fails both twice), one task is robustly *lost* — a pandas recovery
+misleads a SQLAlchemy task — and one is unstable. Two design lessons
+surfaced by the same experiment: memory content must carry the failure
+signature and fix substance (an earlier variant whose hints held only
+provenance labels tied the baseline exactly), and memory can mislead, which
+argues for the same validation loop upstream of what gets retrieved. Taken
+with C1, the pair reframes the value question: at this scale the corpus is
+invisible to tiny-LoRA training yet immediately useful — and measurably
+harmful in one slot — as retrieved experience.
 
 ## 9 Limitations
 

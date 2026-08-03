@@ -63,6 +63,7 @@ def run_depmig(
     resample_temperature: float = 0.85,
     refine_rounds: int = 0,  # validation-in-the-loop refinement for unflipped episodes
     episode_variants: int = 1,  # >1: extra prompt-perturbed episodes per task
+    task_hints: dict | None = None,  # task_id -> text appended to the agent prompt (e.g. retrieved memory)
 ) -> dict:
     t_start = time.monotonic()
     run_dir = Path(run_dir)
@@ -112,7 +113,8 @@ def run_depmig(
         write_env_pointer(ws, python)
         policy = LLMPolicy(llm, max_steps=max_steps)
         prompt = task.agent_prompt() + ("" if variant == 0
-                                        else f"\n(independent attempt #{variant})")
+                                        else f"\n(independent attempt #{variant})") \
+            + ((task_hints or {}).get(task.id, ""))
         policy.bind_task(prompt)
         episode, snaps = collector.run_episode(
             task.id, prompt, ws, policy,

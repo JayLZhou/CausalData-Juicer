@@ -1,0 +1,30 @@
+[
+  {
+    "workers": 1,
+    "wall_s": 113.5,
+    "validated": 28,
+    "replays": 173,
+    "speedup": 1.0
+  },
+  {
+    "workers": 2,
+    "wall_s": 59.8,
+    "validated": 28,
+    "replays": 197,
+    "speedup": 1.9
+  },
+  {
+    "workers": 4,
+    "wall_s": 37.8,
+    "validated": 28,
+    "replays": 230,
+    "speedup": 3.0
+  },
+  {
+    "workers": 8,
+    "wall_s": 21.4,
+    "validated": 28,
+    "replays": 254,
+    "speedup": 5.3
+  }
+]

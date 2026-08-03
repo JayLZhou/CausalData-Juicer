@@ -1,0 +1,100 @@
+{
+ "design": "DJ-E1 analog, training-free: failure->recovery units from train families (p/n/c/d prefixes, 17 units) retrieved as prompt memory (token-overlap top-2, failure signature + working fix) for 16 cross-family holdout tasks (s*/k*); agent Qwen2.5-7B temp 0 on :8021; two replicate runs per arm",
+ "runs": {
+  "baseline": {
+   "s01_select_list": true,
+   "s02_table_names": false,
+   "s03_engine_execute": false,
+   "s04_bind_autoload": true,
+   "s05_session_raw_sql": true,
+   "s06_autocommit": false,
+   "k01_info": false,
+   "k02_gpickle": false,
+   "k03_ordered_graph": true,
+   "k04_jit": true,
+   "k05_persist_pipeline": false,
+   "k06_report_tool": false,
+   "k07_log_summary": true,
+   "k08_jit_cache": false,
+   "k09_ordered_store": false,
+   "k10_dag_export": false
+  },
+  "baseline-r2": {
+   "s01_select_list": true,
+   "s02_table_names": false,
+   "s03_engine_execute": false,
+   "s04_bind_autoload": true,
+   "s05_session_raw_sql": true,
+   "s06_autocommit": false,
+   "k01_info": false,
+   "k02_gpickle": false,
+   "k03_ordered_graph": true,
+   "k04_jit": true,
+   "k05_persist_pipeline": false,
+   "k06_report_tool": false,
+   "k07_log_summary": true,
+   "k08_jit_cache": false,
+   "k09_ordered_store": false,
+   "k10_dag_export": false
+  },
+  "memory2": {
+   "s01_select_list": true,
+   "s02_table_names": true,
+   "s03_engine_execute": false,
+   "s04_bind_autoload": false,
+   "s05_session_raw_sql": true,
+   "s06_autocommit": false,
+   "k01_info": false,
+   "k02_gpickle": false,
+   "k03_ordered_graph": true,
+   "k04_jit": true,
+   "k05_persist_pipeline": false,
+   "k06_report_tool": false,
+   "k07_log_summary": true,
+   "k08_jit_cache": true,
+   "k09_ordered_store": false,
+   "k10_dag_export": true
+  },
+  "memory2-r2": {
+   "s01_select_list": true,
+   "s02_table_names": false,
+   "s03_engine_execute": false,
+   "s04_bind_autoload": false,
+   "s05_session_raw_sql": true,
+   "s06_autocommit": false,
+   "k01_info": false,
+   "k02_gpickle": false,
+   "k03_ordered_graph": true,
+   "k04_jit": true,
+   "k05_persist_pipeline": false,
+   "k06_report_tool": false,
+   "k07_log_summary": true,
+   "k08_jit_cache": true,
+   "k09_ordered_store": false,
+   "k10_dag_export": true
+  }
+ },
+ "solve_rate": {
+  "baseline": [
+   6,
+   6
+  ],
+  "memory": [
+   8,
+   7
+  ]
+ },
+ "task_level": {
+  "robust_gains": [
+   "k08_jit_cache",
+   "k10_dag_export"
+  ],
+  "robust_loss": [
+   "s04_bind_autoload"
+  ],
+  "flaky_gain": [
+   "s02_table_names"
+  ],
+  "note": "baseline deterministic 2/2 identical; memory arm s02 flips across replicates (vLLM batching nondeterminism at temp 0)"
+ }
+}

@@ -278,3 +278,57 @@ def test_export_observational_writes_views(tmp_path):
     ctx = OpContext(workdir=tmp_path, episodes=[ep])
     OPERATORS.get("export_observational")().run(ctx)
     assert ctx.exports and all(Path(p).exists() for p in ctx.exports.values())
+
+
+def test_tool_ablate_replaces_effect_with_pure_read(tmp_path):
+    ep = _episode(writes=[("a.py", "x = 1"), ("b.py", "y = 2")])
+    ctx = OpContext(workdir=tmp_path, episodes=[ep])
+    OPERATORS.get("tool_ablate")().run(ctx)
+    assert len(ctx.candidates) == 2
+    for _e, iv in ctx.candidates:
+        assert iv.new_action.tool == "read_file"  # pure: the effect is removed
+        assert "content" not in iv.new_action.args
+    assert {iv.new_action.args["path"] for _e, iv in ctx.candidates} == {"a.py", "b.py"}
+
+
+def test_tool_ablate_respects_tool_filter_and_limit(tmp_path):
+    ep = _episode(writes=[("a.py", "1"), ("b.py", "2"), ("c.py", "3")])
+    ctx = OpContext(workdir=tmp_path, episodes=[ep])
+    OPERATORS.get("tool_ablate")(max_steps=2).run(ctx)
+    assert len(ctx.candidates) == 2
+    ctx2 = OpContext(workdir=tmp_path, episodes=[ep])
+    OPERATORS.get("tool_ablate")(tools=["run_pytest"]).run(ctx2)
+    assert ctx2.candidates == []
+
+
+def test_group_advantage_is_success_minus_sibling_mean(tmp_path):
+    ep = _episode()
+    ctx = OpContext(workdir=tmp_path, episodes=[ep])
+    # three siblings at the same fork point: one flips, two do not
+    ctx.units = [
+        _unit(ep, step=0, flipped=True),
+        _unit(ep, step=0, flipped=False),
+        _unit(ep, step=0, flipped=False),
+    ]
+    OPERATORS.get("group_advantage")().run(ctx)
+    rows = [
+        json.loads(line)
+        for line in Path(ctx.exports["group_advantage"]).read_text().splitlines()
+        if line.strip()
+    ]
+    assert [r["advantage"] for r in rows] == [0.667, -0.333, -0.333]
+    assert all(r["group_size"] == 3 for r in rows)
+    assert ctx.meta["group_advantage"]["groups"] == 1
+
+
+def test_group_advantage_is_zero_when_siblings_agree(tmp_path):
+    ep = _episode()
+    ctx = OpContext(workdir=tmp_path, episodes=[ep])
+    ctx.units = [_unit(ep, step=0, flipped=True), _unit(ep, step=0, flipped=True)]
+    OPERATORS.get("group_advantage")().run(ctx)
+    rows = [
+        json.loads(line)
+        for line in Path(ctx.exports["group_advantage"]).read_text().splitlines()
+        if line.strip()
+    ]
+    assert [r["advantage"] for r in rows] == [0.0, 0.0]  # no signal, honestly reported

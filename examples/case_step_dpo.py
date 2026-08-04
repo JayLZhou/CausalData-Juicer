@@ -17,7 +17,7 @@ from pathlib import Path
 from causal_data_juicer.acquisition.fixer import last_write_step
 from causal_data_juicer.compiler.common import render_action, render_context, write_jsonl
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
 from causal_data_juicer.runtime.llm_policy import extract_action
@@ -41,7 +41,7 @@ episodes = [
 snapshots = store.load_snapshots()
 replayer = Replayer(
     default_registry(),
-    LocalSandbox(store.blobs, Path(args.out) / "scratch"),
+    UnsafeLocalWorkspace(store.blobs, Path(args.out) / "scratch"),
     PytestVerifier(timeout=120),
 )
 llm = DiskCachedLLM(

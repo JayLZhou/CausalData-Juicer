@@ -7,7 +7,7 @@
 [![CI](https://github.com/JayLZhou/CausalData-Juicer/actions/workflows/ci.yml/badge.svg)](https://github.com/JayLZhou/CausalData-Juicer/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-63%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen.svg)](tests/)
 
 [English] | [[中文](README_ZH.md)] · [Docs](https://jaylzhou.github.io/CausalData-Juicer/) · [Operator Zoo](docs/operator-zoo.md) · [Claims ledger](experiments/claims.md)
 
@@ -47,7 +47,7 @@ Then pick your entry point:
 | a repo + a check | `cdj run --repo . --verify "pytest -q"` | certified correction pairs + an HTML report of what changed and why it counts |
 | a DJ habit | `cdj process --config recipes/demo.yaml` | the same loop as a YAML operator recipe |
 
-**32 operators** ship registered and recipe-usable (`cdj ops`) across the four
+**34 operators** ship registered and recipe-usable (`cdj ops`) across the four
 categories of the algebra — observational, source, interventional, compile.
 We deliberately do not mirror Data-Juicer's 200+ text-cleaning operators:
 those answer an observational question ("is this sample good?"), while every

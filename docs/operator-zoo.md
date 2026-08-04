@@ -14,7 +14,7 @@ interventional one ("would the outcome have changed?").
 
 <!-- BEGIN GENERATED ZOO -->
 
-**32 operators ship in this package**, in the four categories of the algebra. This table is generated from the registry by `scripts/gen_zoo_docs.py`; a test fails if it drifts from what `cdj ops` lists.
+**34 operators ship in this package**, in the four categories of the algebra. This table is generated from the registry by `scripts/gen_zoo_docs.py`; a test fails if it drifts from what `cdj ops` lists.
 
 ### `observational` — no environment, zero budget — can never raise a tier (12)
 
@@ -33,7 +33,7 @@ interventional one ("would the outcome have changed?").
 | `sample_units` | Deterministically subsample units (stable across runs — the digest of the unit id decides) | `n (required), seed (default 0)` |
 | `screen_failures` | Select failed episodes and gather deduped candidates from the context's sources | — |
 
-### `source` — propose interventions (model cost, no execution) (8)
+### `source` — propose interventions (model cost, no execution) (9)
 
 | operator | what it does | params |
 |---|---|---|
@@ -45,6 +45,7 @@ interventional one ("would the outcome have changed?").
 | `refine` | Validation-in-the-loop: revise the interventions that did NOT flip, conditioning on their own executed failure output. Requires units from a previous paired_replay | `base_url, model, rounds (default 1)` |
 | `resample` | Temperature-resampling candidate source | `base_url, model, k (default 3), temperature (default 0.85)` |
 | `thought_truncate` | Thought-anchor probing without a model: truncate a reasoning trace at each sentence boundary, so the earliest truncation that still flips marks the sentence carrying the counterfactual weight | `path (default thoughts.md)` |
+| `tool_ablate` | Was this tool call necessary? Replace a step's action with a *pure* read of the same path, which keeps the trajectory plausible while removing the step's effect — downstream steps then re-react, and a run that still succeeds proves the call was not load-bearing | `tools (list of tool names to ablate, default ['write_file']), max_steps (default 0 = every matching step)` |
 
 ### `interventional` — execute the environment, spend budget, raise tiers (6)
 
@@ -57,13 +58,14 @@ interventional one ("would the outcome have changed?").
 | `revalidate` | Selective revalidation under a dependency event: only units whose claims intersect the change are replayed, inside the NEW environment; survivors are re-stamped, casualties demoted | `family (required), python (required, interpreter of the new env), freeze (required, the new `pip freeze` text), mode (selective | full, default selective), n_repro (default 2)` |
 | `stress_probe` | The stress direction: run each candidate as a single intervened branch against a *passing* episode and record whether it breaks the outcome — critical vs harmless, same machinery, opposite sign | — |
 
-### `compile` — materialize views; tier-preserving (6)
+### `compile` — materialize views; tier-preserving (7)
 
 | operator | what it does | params |
 |---|---|---|
 | `credit_ate` | Compile step-level counterfactual credit — ATE = P(success | do(a')) - P(success | a) — straight from stored paired outcomes. Offline: no replay, no model | `out (default exports/credit_ate.jsonl)` |
 | `export_trl` | Trainer-native exports | `formats (default [trl-sft, trl-dpo, verl])` |
 | `export_views` | Compile SFT / DPO / memory / regression views | — |
+| `group_advantage` | Group-relative advantage per intervened branch — the data core of tree-based GRPO methods (TreeRL / Tree-GRPO / RTMC). Siblings are the units sharing a fork point; each one scores its own success minus the sibling-group mean. Offline: reads stored outcomes, executes nothing | `out (default exports/group_advantage.jsonl)` |
 | `process_rewards` | Compile a process-reward view: one row per intervened atom, labelled by whether it was necessary (critical) or not (harmless) — the clause-PRM / step-PRM shape | `out (default exports/process_rewards.jsonl)` |
 | `report` | Write the human-readable report for this recipe run (terminal text and optional HTML), so a recipe ends with something a person can read | `html (bool, default false)` |
 | `save_run` | Persist the context as a run directory (episodes/snapshots/units) | `none (uses the recipe workdir)` |

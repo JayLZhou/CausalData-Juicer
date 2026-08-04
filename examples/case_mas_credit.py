@@ -15,7 +15,7 @@ from pathlib import Path
 
 from causal_data_juicer.compiler.common import write_jsonl
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
 from causal_data_juicer.runtime.llm_policy import LLMPolicy
@@ -72,7 +72,9 @@ class TeamPolicy:
 
 blobs = BlobStore(OUT / "blobs")
 collector = Collector(default_registry(), blobs, PytestVerifier())
-replayer = Replayer(default_registry(), LocalSandbox(blobs, OUT / "scratch"), PytestVerifier())
+replayer = Replayer(
+    default_registry(), UnsafeLocalWorkspace(blobs, OUT / "scratch"), PytestVerifier()
+)
 llm = DiskCachedLLM(
     OpenAICompatClient("http://127.0.0.1:8021/v1", "Qwen/Qwen2.5-7B-Instruct"), OUT / "llm_cache"
 )

@@ -304,3 +304,93 @@ class ProcessRewards(CompileOp):
         ctx.exports["process_rewards"] = str(out)
         ctx.meta["process_rewards"] = {"rows": len(rows)}
         return ctx
+
+
+@OPERATORS.register("tool_ablate")
+class ToolAblate(SourceOp):
+    """Was this tool call necessary? Replace a step's action with a *pure*
+    read of the same path, which keeps the trajectory plausible while
+    removing the step's effect — downstream steps then re-react, and a run
+    that still succeeds proves the call was not load-bearing.
+
+    Params: tools (list of tool names to ablate, default ['write_file']),
+    max_steps (default 0 = every matching step)."""
+
+    def run(self, ctx: OpContext) -> OpContext:
+        from causal_data_juicer.sdk.schemas import Intervention, InterventionType, ToolCall
+
+        tools = set(self.params.get("tools", ["write_file"]))
+        limit = int(self.params.get("max_steps", 0))
+        for ep in ctx.episodes:
+            hits = 0
+            for step in ep.steps:
+                action = step.action
+                if action.tool not in tools or "path" not in action.args:
+                    continue
+                if limit and hits >= limit:
+                    break
+                hits += 1
+                ctx.candidates.append(
+                    (
+                        ep,
+                        Intervention(
+                            type=InterventionType.ACTION_REPLACE,
+                            target_step=step.index,
+                            new_action=ToolCall(
+                                tool="read_file", args={"path": action.args["path"]}
+                            ),
+                            rationale=(
+                                f"ablate step {step.index}: {action.tool} "
+                                f"{action.args['path']} -> pure read"
+                            ),
+                            source=f"tool-ablate:{step.index}",
+                        ),
+                    )
+                )
+        return ctx
+
+
+@OPERATORS.register("group_advantage")
+class GroupAdvantage(CompileOp):
+    """Group-relative advantage per intervened branch — the data core of
+    tree-based GRPO methods (TreeRL / Tree-GRPO / RTMC). Siblings are the
+    units sharing a fork point; each one scores its own success minus the
+    sibling-group mean. Offline: reads stored outcomes, executes nothing.
+
+    Params: out (default exports/group_advantage.jsonl)."""
+
+    def run(self, ctx: OpContext) -> OpContext:
+        from collections import defaultdict
+
+        out = Path(ctx.workdir) / str(self.params.get("out", "exports/group_advantage.jsonl"))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        groups: dict[tuple[str, int], list] = defaultdict(list)
+        for u in ctx.units:
+            if u.intervened_outcome is not None:
+                groups[(u.episode_id, u.effective_intervention().target_step)].append(u)
+        rows = []
+        for (episode_id, step), siblings in sorted(groups.items()):
+            values = [float(u.intervened_outcome.success) for u in siblings]
+            mean = sum(values) / len(values)
+            for u, value in zip(siblings, values, strict=True):
+                iv = u.effective_intervention()
+                rows.append(
+                    {
+                        "task_id": u.task_id,
+                        "episode_id": episode_id,
+                        "step": step,
+                        "source": iv.source,
+                        "group_size": len(siblings),
+                        "value": value,
+                        "group_mean": round(mean, 3),
+                        "advantage": round(value - mean, 3),
+                        "evidence_tier": u.tier_name,
+                    }
+                )
+        out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+        ctx.exports["group_advantage"] = str(out)
+        ctx.meta["group_advantage"] = {
+            "groups": len(groups),
+            "nonzero_advantages": sum(1 for r in rows if r["advantage"]),
+        }
+        return ctx

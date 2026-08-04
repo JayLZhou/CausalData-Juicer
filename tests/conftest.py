@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
@@ -32,7 +32,7 @@ def collector(registry, blobs, verifier):
 
 @pytest.fixture
 def replayer(registry, blobs, verifier, tmp_path):
-    return Replayer(registry, LocalSandbox(blobs, tmp_path / "scratch"), verifier)
+    return Replayer(registry, UnsafeLocalWorkspace(blobs, tmp_path / "scratch"), verifier)
 
 
 @pytest.fixture

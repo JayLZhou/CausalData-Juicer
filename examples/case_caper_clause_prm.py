@@ -19,7 +19,7 @@ from caper_workload import REPAIR, STRESS
 
 from causal_data_juicer.compiler.common import write_jsonl
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.replay.sandbox import LocalSandbox
+from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.tools import default_registry
@@ -39,7 +39,7 @@ OUT = Path("runs/case_caper")
 blobs = BlobStore(OUT / "blobs")
 verifier = PytestVerifier(timeout=60)
 collector = Collector(default_registry(), blobs, verifier)
-replayer = Replayer(default_registry(), LocalSandbox(blobs, OUT / "scratch"), verifier)
+replayer = Replayer(default_registry(), UnsafeLocalWorkspace(blobs, OUT / "scratch"), verifier)
 ledger, rows = CostLedger(), []
 
 

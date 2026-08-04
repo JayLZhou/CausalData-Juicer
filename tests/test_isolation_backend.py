@@ -27,6 +27,7 @@ from causal_data_juicer.runtime.exec_backend import (
     check_container_compatible,
     container_image,
     describe,
+    memory_hog_code,
     probe,
     wrap,
     wrap_or_downgrade,
@@ -139,14 +140,13 @@ def test_netns_blocks_egress(tmp_path):
 
 @netns_only
 def test_netns_memory_limit_kills_oversized_allocation(tmp_path):
+    limit = 256 * 1024**2
     over = wrap(
-        [sys.executable, "-c", "x = bytearray(1024**3)"],
-        tmp_path,
-        limits={"as_bytes": 256 * 1024**2},
+        [sys.executable, "-c", memory_hog_code(4 * limit)], tmp_path, limits={"as_bytes": limit}
     )
     assert _run(over).returncode != 0
     under = wrap(
-        [sys.executable, "-c", "x = bytearray(10 * 1024**2)"],
+        [sys.executable, "-c", memory_hog_code(16 * 1024**2)],
         tmp_path,
         limits={"as_bytes": 512 * 1024**2},
     )
@@ -191,15 +191,27 @@ def test_container_cannot_see_host_filesystem(tmp_path):
 
 
 @container_only
-def test_container_memory_limit_enforced(tmp_path):
+def test_container_memory_claim_matches_reality(tmp_path):
+    """cgroups cap *resident* memory, so the old probe — a lazily-mapped
+    `bytearray(2GB)` — sailed past a 256MB limit and exited 0. Touch every
+    page, and assert the engine only advertises the limit when this host
+    actually enforces it (Docker silently ignores --memory when the cgroup
+    memory controller is unavailable)."""
+    limit = 256 * 1024**2
     proc = _run(
         wrap(
-            ["python", "-c", "x = bytearray(2 * 1024**3)"],
+            ["python", "-c", memory_hog_code(4 * limit)],
             tmp_path,
-            limits={"as_bytes": 256 * 1024**2},
+            limits={"as_bytes": limit},
         )
     )
-    assert proc.returncode != 0
+    killed = proc.returncode != 0
+    assert killed == bool(CAPS.detail.get("memory_limit_enforced")), (
+        f"probe said memory_limit_enforced="
+        f"{CAPS.detail.get('memory_limit_enforced')}, observed killed={killed}"
+    )
+    if not killed:  # the engine must not claim what it cannot do
+        assert "WITHOUT enforced memory limits" in describe(CAPS)
 
 
 @container_only

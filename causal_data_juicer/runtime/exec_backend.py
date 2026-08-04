@@ -132,9 +132,50 @@ def _probe_container(exe: str) -> str | None:
     return None
 
 
+# Allocate in chunks and *touch* every page: cgroups cap resident memory, so
+# a lazily-mapped bytearray never trips the limit (RLIMIT_AS, used at netns
+# level, caps address space instead and would). Exits 0 if it reaches the
+# cap unharmed — that means the limit is not being enforced.
+MEMORY_HOG = (
+    "chunks = []\n"
+    "for _ in range({chunks}):\n"
+    "    c = bytearray({chunk_bytes})\n"
+    "    for i in range(0, len(c), 4096):\n"
+    "        c[i] = 1\n"
+    "    chunks.append(c)\n"
+)
+
+
+def memory_hog_code(total_bytes: int, chunk_bytes: int = 64 * 1024**2) -> str:
+    return MEMORY_HOG.format(chunks=max(1, total_bytes // chunk_bytes), chunk_bytes=chunk_bytes)
+
+
+def _memory_limit_enforced(exe: str) -> bool:
+    """Does this host actually enforce the container memory cap?
+
+    Docker prints a warning and silently ignores `--memory` when the cgroup
+    memory controller is unavailable. We refuse to advertise a limit we did
+    not observe working.
+    """
+    limit = 256 * 1024**2
+    with tempfile.TemporaryDirectory(prefix="cdj-mem-") as tmp:
+        argv = [
+            *_container_argv(exe, Path(tmp), {**DEFAULT_LIMITS, "as_bytes": limit}),
+            "python",
+            "-c",
+            memory_hog_code(4 * limit),
+        ]
+        try:
+            return (
+                subprocess.run(argv, capture_output=True, timeout=180, check=False).returncode != 0
+            )
+        except (OSError, subprocess.TimeoutExpired):  # pragma: no cover — env-dependent
+            return False
+
+
 @functools.lru_cache(maxsize=1)
 def probe() -> Capabilities:
-    detail = {"apparmor": _apparmor_profile()}
+    detail: dict[str, object] = {"apparmor": _apparmor_profile()}
 
     for runtime in ("podman", "docker"):
         exe = shutil.which(runtime)
@@ -144,6 +185,7 @@ def probe() -> Capabilities:
         error = _probe_container(exe)
         if error is None:
             detail["runtime"] = runtime
+            detail["memory_limit_enforced"] = _memory_limit_enforced(exe)
             return Capabilities("container", detail)
         detail[f"{runtime}_error"] = error
 
@@ -245,9 +287,15 @@ def wrap_or_downgrade(
 def describe(caps: Capabilities | None = None) -> str:
     caps = caps or probe()
     if caps.level == "container":
+        mem = (
+            "memory/pids limits enforced"
+            if caps.detail.get("memory_limit_enforced")
+            else "WITHOUT enforced memory limits (cgroup memory controller "
+            "unavailable to the runtime on this host)"
+        )
         return (
             f"container isolation via {caps.detail['runtime']} "
-            "(no network, read-only rootfs, cgroup limits)"
+            f"(no network, read-only rootfs, {mem})"
         )
     if caps.level == "netns":
         return (

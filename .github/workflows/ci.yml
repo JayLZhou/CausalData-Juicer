@@ -26,6 +26,7 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false        # one red cell must not hide the others' verdicts
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.11", "3.12"]
@@ -38,11 +39,40 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e . && pip install coverage
+      # Pull the isolation image here, with retries, so a Docker Hub rate
+      # limit fails as an infrastructure step instead of masquerading as
+      # "the container backend is broken".
+      - name: pre-pull isolation image
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          for i in 1 2 3; do
+            docker pull python:3.12-slim && exit 0
+            echo "pull attempt $i failed; retrying"; sleep 15
+          done
+          exit 1
       # ubuntu runners ship Docker: prove the container isolation path for
       # real there (a silent fallback to netns would hide a broken backend)
-      - run: coverage run -m pytest tests/ -q
+      - name: tests
+        run: |
+          set -o pipefail
+          coverage run -m pytest tests/ -q 2>&1 | tee /tmp/pytest.log
         env:
           CDJ_REQUIRE_CONTAINER: ${{ matrix.os == 'ubuntu-latest' && '1' || '0' }}
+      # Failure detail as annotations: readable from the public API without a
+      # log download, so a red run can be triaged from anywhere.
+      - name: failure diagnostics
+        if: failure()
+        run: |
+          python - > /tmp/probe.txt 2>&1 <<'PY' || true
+          from causal_data_juicer.runtime.exec_backend import probe
+          caps = probe()
+          print(f"level={caps.level} detail={caps.detail}")
+          PY
+          echo "::error title=isolation-probe::$(tr '\n|%' '   ' < /tmp/probe.txt | cut -c1-900)"
+          if [ -f /tmp/pytest.log ]; then
+            echo "::error title=pytest-failures::$(grep -E '^(FAILED|ERROR)|^E ' /tmp/pytest.log | head -25 | tr '\n|%' '   ' | cut -c1-1500)"
+            echo "::error title=pytest-tail::$(tail -c 1200 /tmp/pytest.log | tr '\n|%' '   ')"
+          fi
       # overall gate is a ratchet: 60 now (truth: 63%), raising toward 80
       - run: coverage report --fail-under=60
       # the security boundary is held to a higher bar

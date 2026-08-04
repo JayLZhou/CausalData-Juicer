@@ -47,6 +47,15 @@ Then pick your entry point:
 | a repo + a check | `cdj run --repo . --verify "pytest -q"` | certified correction pairs + an HTML report of what changed and why it counts |
 | a DJ habit | `cdj process --config recipes/demo.yaml` | the same loop as a YAML operator recipe |
 
+**32 operators** ship registered and recipe-usable (`cdj ops`) across the four
+categories of the algebra — observational, source, interventional, compile.
+We deliberately do not mirror Data-Juicer's 200+ text-cleaning operators:
+those answer an observational question ("is this sample good?"), while every
+operator here answers an interventional one ("would the outcome have
+changed?"). The count in [the zoo](docs/operator-zoo.md) is generated from the
+registry, and a test fails if the docs and the package ever disagree.
+`recipes/attribution.yaml` chains fourteen of them into one offline run.
+
 Don't trust us: **`cdj verify-claims`** re-earns the offline-verifiable core
 on your machine — fresh demo collection, flip re-validation, negative
 controls, exported-counterfactual replay, and a committed pack of a live run

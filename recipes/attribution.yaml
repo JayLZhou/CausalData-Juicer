@@ -1,0 +1,19 @@
+# Everything below runs offline: the proposals are deterministic (leave-one-out,
+# truncation), the engine executes both branches, and the compile ops turn the
+# executed differences into credit. No model, no endpoint.
+workdir: runs/recipe-attribution
+process:
+  - collect_toy: {}
+  - screen_failures: {}
+  - budget_screen: {policy: adaptive, replays: 40, n_repro: 2}
+  - minimize: {}
+  - filter_units: {min_tier: COUNTERFACTUAL_VALIDATED}
+  - dedupe_units: {}
+  - credit_ate: {}
+  - process_rewards: {}
+  - her_relabel: {}
+  - export_observational: {}
+  - dag_stats: {}
+  - cost_report: {out: cost.json}
+  - coverage_report: {out: coverage.json}
+  - save_run: {}

@@ -20,7 +20,7 @@ from pathlib import Path
 
 import yaml
 
-from causal_data_juicer.ops import ops_zoo  # noqa: F401 — populates the registry
+import causal_data_juicer.ops  # noqa: F401 — importing the package registers every op
 from causal_data_juicer.ops.base_op import OPERATORS, OpContext
 
 

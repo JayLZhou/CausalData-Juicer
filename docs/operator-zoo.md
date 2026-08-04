@@ -1,10 +1,79 @@
 # Operator Zoo
 
-
 Operators extend Data-Juicer's observational signature to an interventional one:
-`(Units, Env, Budget) → Units'`. Three classes form a complete algebra —
-observational ops are free, interventional ops spend real execution budget and
-are the only way to climb the evidence ladder, compile ops materialize views.
+`(Units, Env, Budget) → Units'`. Four categories form the algebra — observational
+ops are free and can never raise a tier, source ops propose interventions,
+interventional ops spend real execution budget and are the only way to climb the
+evidence ladder, and compile ops materialize views.
+
+Everything below is **registered and runnable in a YAML recipe** (`cdj process
+--config recipe.yaml`) and listed by `cdj ops`. We deliberately do not mirror
+Data-Juicer's 200+ text-cleaning operators: those answer an observational
+question ("is this sample good?"), while every operator here answers an
+interventional one ("would the outcome have changed?").
+
+<!-- BEGIN GENERATED ZOO -->
+
+**32 operators ship in this package**, in the four categories of the algebra. This table is generated from the registry by `scripts/gen_zoo_docs.py`; a test fails if it drifts from what `cdj ops` lists.
+
+### `observational` — no environment, zero budget — can never raise a tier (12)
+
+| operator | what it does | params |
+|---|---|---|
+| `collect_toy` | Collect the built-in toy workload (offline; also seeds the toy fix table as a candidate source) | — |
+| `cost_report` | Ledger breakdown plus cost per validated unit into ctx.meta['cost'] | `out (optional path, relative to workdir)` |
+| `coverage_report` | How much of the failure set got covered, by task and by tier, into ctx.meta['coverage'] | `out (optional path)` |
+| `dag_stats` | Trace-DAG sharing statistics (unique trees, bytes saved) into ctx.meta['dag'] | — |
+| `dedupe_units` | Drop units whose (episode, target step, effect) signature repeats — two fixes that flip the same failure the same way are one datum | — |
+| `export_observational` | Behaviour-cloning and failure-log views straight from episodes — the OBSERVED-ceiling exports that need no replay at all | — |
+| `filter_units` | Keep units matching a predicate | `min_tier (e.g. MINIMAL), flipped (bool), task_prefix (str), source (str). Unset params do not constrain` |
+| `her_relabel` | Hindsight relabelling: a failed trajectory is optimal supervision for the goal it *did* reach. Pure re-reading of recorded episodes, so the rows carry the OBSERVED ceiling | `out (default exports/her_sft.jsonl)` |
+| `import_traces` | Ingest external agent traces (Import Mode; OBSERVED ceiling) | `path` |
+| `load_run` | Load a previous run directory into the context | `path` |
+| `sample_units` | Deterministically subsample units (stable across runs — the digest of the unit id decides) | `n (required), seed (default 0)` |
+| `screen_failures` | Select failed episodes and gather deduped candidates from the context's sources | — |
+
+### `source` — propose interventions (model cost, no execution) (8)
+
+| operator | what it does | params |
+|---|---|---|
+| `clause_perturb` | Clause-level stress perturbations (CAPER semantics): patch one line of a written artifact with a supplied variant, so the verifier decides which clauses are critical and which are harmless | `path (required), patches (list of {line, text})` |
+| `context_ablate` | Leave-one-document-out over an assembled context (ContextCite semantics): each candidate drops exactly one block, so a downstream reader that still succeeds proves the block was not load-bearing | `path (default context.md), separator (default '\n\n'), keep_min (default 1)` |
+| `fix_table` | Curated / cached fixes as a candidate source — the zero-cost way to replay a known set of corrections | `path (JSON {task_id: [{tool, args}, …]})` |
+| `fixer_llm` | LLM fixer candidate source | `base_url, model, candidates (default 2), tests_by_task (optional)` |
+| `message_ablate` | Multi-agent message credit: replace one teammate's message with a supplied alternative and let downstream agents re-react (needs `continuation_policy` at replay time to be meaningful) | `path (default inbox.md), replacements (list of strings, or a JSON file via replacements_file)` |
+| `refine` | Validation-in-the-loop: revise the interventions that did NOT flip, conditioning on their own executed failure output. Requires units from a previous paired_replay | `base_url, model, rounds (default 1)` |
+| `resample` | Temperature-resampling candidate source | `base_url, model, k (default 3), temperature (default 0.85)` |
+| `thought_truncate` | Thought-anchor probing without a model: truncate a reasoning trace at each sentence boundary, so the earliest truncation that still flips marks the sentence carrying the counterfactual weight | `path (default thoughts.md)` |
+
+### `interventional` — execute the environment, spend budget, raise tiers (6)
+
+| operator | what it does | params |
+|---|---|---|
+| `budget_screen` | Validate candidates under a hard budget with a pluggable acquisition policy — the "budgeted" half of the engine, exposed | `policy (exhaustive | random | adaptive, default adaptive), replays (budget, default 60), n_repro (default 3)` |
+| `minimize` | ddmin-slice REPRODUCIBLE units to MINIMAL | — |
+| `paired_replay` | Validate every candidate with paired counterfactual replay | `n_repro (default 3)` |
+| `paired_replay_parallel` | paired_replay across a process pool — identical outputs, wall-clock divided by the worker count (the per-worker control caches duplicate some replays; cost_report will show it) | `workers (default 4), n_repro (default 3)` |
+| `revalidate` | Selective revalidation under a dependency event: only units whose claims intersect the change are replayed, inside the NEW environment; survivors are re-stamped, casualties demoted | `family (required), python (required, interpreter of the new env), freeze (required, the new `pip freeze` text), mode (selective | full, default selective), n_repro (default 2)` |
+| `stress_probe` | The stress direction: run each candidate as a single intervened branch against a *passing* episode and record whether it breaks the outcome — critical vs harmless, same machinery, opposite sign | — |
+
+### `compile` — materialize views; tier-preserving (6)
+
+| operator | what it does | params |
+|---|---|---|
+| `credit_ate` | Compile step-level counterfactual credit — ATE = P(success | do(a')) - P(success | a) — straight from stored paired outcomes. Offline: no replay, no model | `out (default exports/credit_ate.jsonl)` |
+| `export_trl` | Trainer-native exports | `formats (default [trl-sft, trl-dpo, verl])` |
+| `export_views` | Compile SFT / DPO / memory / regression views | — |
+| `process_rewards` | Compile a process-reward view: one row per intervened atom, labelled by whether it was necessary (critical) or not (harmless) — the clause-PRM / step-PRM shape | `out (default exports/process_rewards.jsonl)` |
+| `report` | Write the human-readable report for this recipe run (terminal text and optional HTML), so a recipe ends with something a person can read | `html (bool, default false)` |
+| `save_run` | Persist the context as a run directory (episodes/snapshots/units) | `none (uses the recipe workdir)` |
+
+<!-- END GENERATED ZOO -->
+
+## Under the hood
+
+The classes and functions these operators wrap, for readers who want the
+Python API rather than the recipe vocabulary:
 
 ### Observational (no env, zero budget, ceiling ≤ SUGGESTED)
 

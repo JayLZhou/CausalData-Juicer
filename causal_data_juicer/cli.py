@@ -220,11 +220,14 @@ def _main(argv: list[str] | None = None) -> int:
             for name in context_manifest(Path(args.repo)):
                 print(name)
             return 0
-        if not args.unsafe_local_execution and \
+        from causal_data_juicer.runtime.exec_backend import describe, probe
+        caps = probe()
+        if caps.level != "container" and not args.unsafe_local_execution and \
                 os.environ.get("CDJ_UNSAFE_LOCAL_EXECUTION") != "1":
             print("cdj run executes the repository's verify command AND "
-                  "model-generated patches directly on this host — there is no "
-                  "container isolation yet (see docs/security.md).\n"
+                  "model-generated patches on this host without full container "
+                  f"isolation (best available here: {describe(caps)}; see "
+                  "docs/security.md).\n"
                   "Re-run with --unsafe-local-execution (or set "
                   "CDJ_UNSAFE_LOCAL_EXECUTION=1) to acknowledge this.")
             return 2

@@ -15,16 +15,32 @@ run as executing untrusted code on your machine**, because it does.
 
 The class doing workspace materialization is named `UnsafeLocalWorkspace`
 on purpose. It isolates **state between replay branches** (each fork gets
-its own tree — that's what paired counterfactuals need). It is **not** a
-security boundary: no container, no syscall filter, no network isolation,
-no resource limits. A malicious repo, or a model-generated patch, can do
-anything your user account can. `cdj run` on an untrusted repo therefore
-requires the explicit `--unsafe-local-execution` flag.
+its own tree — that's what paired counterfactuals need). It is not, by
+itself, a security boundary.
 
-**Planned safe default**: a rootless container backend (Docker/Podman) with
-network disabled, non-root user, workspace-only mount, CPU/memory/pids/disk
-limits and timeouts, and no secrets, git credentials, or docker socket
-mounted. Until that lands, the flag stays.
+**Execution isolation** (`runtime/exec_backend.py`) is probed at run time
+— by actually exercising the capability, never by reading a version string
+— and verify commands run at the strongest level the host supports:
+
+| Level | Mechanism | What it guarantees |
+|---|---|---|
+| `container` | rootless Podman/Docker: `--network=none`, read-only rootfs, workspace-only rw mount, `--cap-drop ALL`, `no-new-privileges`, memory/pids limits, non-root | network off, host fs invisible, resource-bounded |
+| `netns` | `unshare -U -r -n` + setrlimit shim | **kernel-enforced network isolation** (even localhost unreachable) + address-space/CPU/file-size limits; **no filesystem isolation** |
+| `none` | plain host execution | nothing |
+
+`cdj doctor` prints the level with evidence. At `container` level `cdj run`
+proceeds without ceremony; below it, the explicit `--unsafe-local-execution`
+flag is required because the filesystem is still exposed. The test suite
+(`tests/test_isolation_backend.py`) proves the properties against live
+sockets and real allocations — container-level tests run wherever a runtime
+works and skip (with the probe's evidence) where it cannot.
+
+Known-hostile host: hardened k8s pods whose AppArmor profile
+(`cri-containerd.apparmor.d`) denies all `mount` operations block every
+container runtime — rootless Podman installs fine but cannot unpack images
+or set up rootfs mounts. On such pods the engine runs at `netns` level;
+full container isolation requires the cluster admin to relax the profile
+(`container.apparmor.security.beta.kubernetes.io/<name>: unconfined`).
 
 ## Path safety
 

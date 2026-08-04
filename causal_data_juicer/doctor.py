@@ -55,6 +55,11 @@ def run_doctor(base_url: str | None = None) -> int:
     shutil.rmtree(tmp, ignore_errors=True)
     good &= _check("scratch space writable", writable)
 
+    from causal_data_juicer.runtime.exec_backend import describe, probe
+    caps = probe()
+    _check(f"execution isolation: {describe(caps)}",
+           caps.level == "container", warn=caps.level != "container")
+
     if base_url:
         try:
             with urllib.request.urlopen(f"{base_url.rstrip('/')}/models", timeout=5) as r:

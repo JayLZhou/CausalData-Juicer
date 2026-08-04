@@ -50,12 +50,16 @@ class CommandVerifier:
     exit code 0.  ``{python}`` in arguments expands to the workspace's
     env-pointer interpreter (falls back to the engine's own)."""
 
-    def __init__(self, command: list[str], timeout: int = 120):
+    def __init__(self, command: list[str], timeout: int = 120, isolate: bool = False):
         self.command = list(command)
         self.timeout = timeout
+        self.isolate = isolate
 
     def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome:
         argv = resolve_command(self.command, workspace)
+        if self.isolate:
+            from causal_data_juicer.runtime.exec_backend import wrap
+            argv = wrap(argv, workspace)
         t0 = time.monotonic()
         proc = subprocess.run(argv, cwd=workspace, capture_output=True,
                               text=True, timeout=self.timeout)

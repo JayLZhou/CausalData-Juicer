@@ -68,14 +68,18 @@ def _copy_repo(repo: Path, dest: Path) -> None:
     shutil.copytree(repo, dest, ignore=ignore)
 
 
-def _registry_for(verify_argv: list[str], sealed=None) -> ToolRegistry:
+def _registry_for(verify_argv: list[str], sealed=None, isolate: bool = False) -> ToolRegistry:
     import subprocess
 
     def run_check(workspace: Path) -> str:
         from causal_data_juicer.runtime.verifier import resolve_command
         if sealed is not None:
             sealed.restore(workspace)  # the in-episode check is sealed too
-        proc = subprocess.run(resolve_command(verify_argv, workspace), cwd=workspace,
+        argv = resolve_command(verify_argv, workspace)
+        if isolate:
+            from causal_data_juicer.runtime.exec_backend import wrap
+            argv = wrap(argv, workspace)
+        proc = subprocess.run(argv, cwd=workspace,
                               capture_output=True, text=True, timeout=300)
         tail = (proc.stdout + proc.stderr).strip()[-4000:]
         return f"{tail}\n[exit={proc.returncode}]"
@@ -149,9 +153,14 @@ def run_repo(
     ws = out / "workspaces" / repo.name
     _copy_repo(repo, ws)
 
+    from causal_data_juicer.runtime.exec_backend import describe, probe
+    caps = probe()
+    print(f"execution isolation: {describe(caps)}")
+    isolate = caps.level != "none"
+
     from causal_data_juicer.runtime.verifier import SealedVerifier
-    verifier = SealedVerifier(CommandVerifier(verify_argv, timeout=300), ws)
-    registry = _registry_for(verify_argv, sealed=verifier)
+    verifier = SealedVerifier(CommandVerifier(verify_argv, timeout=300, isolate=isolate), ws)
+    registry = _registry_for(verify_argv, sealed=verifier, isolate=isolate)
     collector = Collector(registry, store.blobs, verifier)
     replayer = Replayer(registry, UnsafeLocalWorkspace(store.blobs, out / "scratch"), verifier)
 

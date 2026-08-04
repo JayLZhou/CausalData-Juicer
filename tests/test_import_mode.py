@@ -1,17 +1,36 @@
 import json
+from pathlib import Path
 
 from causal_data_juicer.compiler.observational import compile_observational
 from causal_data_juicer.runtime.import_trace import load_generic_traces
 
 TRACES = [
-    {"task_id": "ok1", "description": "add numbers", "success": True,
-     "steps": [{"tool": "write_file", "args": {"path": "s.py", "content": "x=1\n"},
-                "observation": "wrote s.py"},
-               {"tool": "run_pytest", "args": {}, "observation": "exit=0 passed=1"}]},
-    {"task_id": "bad1", "description": "parse dates", "success": False,
-     "outcome_detail": "AssertionError: wrong month",
-     "steps": [{"tool": "write_file", "args": {"path": "p.py", "content": "y=2\n"},
-                "observation": "wrote p.py"}]},
+    {
+        "task_id": "ok1",
+        "description": "add numbers",
+        "success": True,
+        "steps": [
+            {
+                "tool": "write_file",
+                "args": {"path": "s.py", "content": "x=1\n"},
+                "observation": "wrote s.py",
+            },
+            {"tool": "run_pytest", "args": {}, "observation": "exit=0 passed=1"},
+        ],
+    },
+    {
+        "task_id": "bad1",
+        "description": "parse dates",
+        "success": False,
+        "outcome_detail": "AssertionError: wrong month",
+        "steps": [
+            {
+                "tool": "write_file",
+                "args": {"path": "p.py", "content": "y=2\n"},
+                "observation": "wrote p.py",
+            }
+        ],
+    },
 ]
 
 
@@ -34,12 +53,12 @@ def test_observational_ceiling_is_visible_everywhere(tmp_path):
     episodes = load_generic_traces(_trace_file(tmp_path))
     exports = compile_observational(episodes, tmp_path / "exports")
 
-    bc = [json.loads(l) for l in open(exports["bc_sft"])]
+    bc = [json.loads(line) for line in Path(exports["bc_sft"]).read_text().splitlines()]
     assert len(bc) == 2  # 2 steps of the one successful episode
     assert all(r["evidence_tier"] == "OBSERVED" for r in bc)
     assert "write_file" in bc[0]["completion"]
 
-    failures = [json.loads(l) for l in open(exports["failures"])]
+    failures = [json.loads(line) for line in Path(exports["failures"]).read_text().splitlines()]
     assert len(failures) == 1
     assert failures[0]["evidence_tier"] == "OBSERVED"
     assert "wrong month" in failures[0]["outcome"]

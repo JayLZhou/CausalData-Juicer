@@ -3,6 +3,7 @@
 Exists because `_repo_context` used to inline *every* small text file —
 `.env` contents and symlinked host files walked straight into prompts.
 """
+
 import os
 import stat
 
@@ -29,7 +30,7 @@ def repo(tmp_path):
     (r / "id_rsa").write_text("-----BEGIN OPENSSH PRIVATE KEY-----\nabc\n")
     (r / "server.pem").write_text("-----BEGIN PRIVATE KEY-----\nxyz\n-----END PRIVATE KEY-----\n")
     (tmp_path / "host_secret.txt").write_text(CANARY_HOST)
-    os.symlink(tmp_path / "host_secret.txt", r / "notes.txt")   # symlink to host file
+    os.symlink(tmp_path / "host_secret.txt", r / "notes.txt")  # symlink to host file
     return r
 
 
@@ -60,9 +61,8 @@ def test_allowed_code_still_enters(repo):
 
 def test_secrets_inside_allowed_files_are_redacted(repo):
     (repo / "config.py").write_text(
-        f'AWS_KEY = "{CANARY_AWS}"\n'
-        'API_KEY = "supersecretvalue123"\n'
-        "NORMAL = 42\n")
+        f'AWS_KEY = "{CANARY_AWS}"\nAPI_KEY = "supersecretvalue123"\nNORMAL = 42\n'
+    )
     ctx = build_context(repo)
     assert CANARY_AWS not in ctx
     assert "supersecretvalue123" not in ctx
@@ -87,6 +87,7 @@ def test_llm_cache_written_0600(tmp_path):
 
     class Fake:
         model = "fake"
+
         def complete(self, messages):
             return LLMResponse(text="ok", tokens_in=1, tokens_out=1, dollars=0.0)
 
@@ -95,5 +96,4 @@ def test_llm_cache_written_0600(tmp_path):
     llm.complete([{"role": "user", "content": "hi"}])
     assert stat.S_IMODE(cache.stat().st_mode) == 0o700
     entries = list(cache.glob("*.json"))
-    assert entries and all(
-        stat.S_IMODE(e.stat().st_mode) == 0o600 for e in entries)
+    assert entries and all(stat.S_IMODE(e.stat().st_mode) == 0o600 for e in entries)

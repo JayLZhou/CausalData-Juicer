@@ -1,5 +1,7 @@
 """End-to-end demo pipeline test: the M1 kill-line check in CI form."""
+
 import json
+from pathlib import Path
 
 from causal_data_juicer.pipeline import run_demo
 from causal_data_juicer.run_store import RunStore
@@ -33,11 +35,11 @@ def test_demo_end_to_end(tmp_path):
     # Every unit is provenance-stamped; every export row carries its tier.
     assert all(u.provenance.get("workload_digest") for u in units)
     for name in ("sft", "dpo", "memory", "regression"):
-        rows = [json.loads(l) for l in open(report["exports"][name])]
+        rows = [json.loads(line) for line in Path(report["exports"][name]).read_text().splitlines()]
         assert len(rows) == 6
         assert all(row["evidence_tier"] == "MINIMAL" for row in rows)
 
     # Exported counterfactual cases replay: spot-check one.
-    case = json.loads(open(report["exports"]["regression"]).readline())
+    case = json.loads(Path(report["exports"]["regression"]).read_text().splitlines()[0])
     ok, detail = store.replay_regression_case(case, scratch=tmp_path / "regress")
     assert ok, detail

@@ -60,8 +60,13 @@ def test_atom_explosion_and_rebuild():
     iv = Intervention(
         type=InterventionType.TOOL_ARGUMENT_EDIT,
         target_step=0,
-        edits=[ArgEdit(arg="content", op="patch_lines",
-                       patches=[LinePatch(line=0, text="A"), LinePatch(line=2, text="C")])],
+        edits=[
+            ArgEdit(
+                arg="content",
+                op="patch_lines",
+                patches=[LinePatch(line=0, text="A"), LinePatch(line=2, text="C")],
+            )
+        ],
     )
     atoms = intervention_atoms(iv)
     assert len(atoms) == 2 and all(len(a.patches) == 1 for a in atoms)

@@ -13,6 +13,7 @@ gate, not assumed.  Two properties pin down exactly what that gate does:
    its pass/fail summary, so cosmetic nondeterminism cannot poison a
    unit whose outcome is deterministic.
 """
+
 from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
 from causal_data_juicer.sdk.schemas import (
     ArgEdit,
@@ -29,18 +30,25 @@ def _episode(collector, ws_root, name, test_content, solution_content):
     ws = ws_root / name
     ws.mkdir()
     (ws / "test_solution.py").write_text(test_content)
-    policy = ScriptedPolicy([
-        ScriptedStep(action=ToolCall(tool="write_file",
-                                     args={"path": "solution.py",
-                                           "content": solution_content})),
-        ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
-    ])
+    policy = ScriptedPolicy(
+        [
+            ScriptedStep(
+                action=ToolCall(
+                    tool="write_file", args={"path": "solution.py", "content": solution_content}
+                )
+            ),
+            ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
+        ]
+    )
     return collector.run_episode(name, name, ws, policy)
 
 
 def _fix():
-    return Intervention(type=InterventionType.TOOL_ARGUMENT_EDIT, target_step=0,
-                        edits=[ArgEdit(arg="content", op="set", value=FIX)])
+    return Intervention(
+        type=InterventionType.TOOL_ARGUMENT_EDIT,
+        target_step=0,
+        edits=[ArgEdit(arg="content", op="set", value=FIX)],
+    )
 
 
 def test_gate_rejects_outcome_flaky_environment(collector, replayer, ws_root, tmp_path):
@@ -60,14 +68,15 @@ def test_gate_rejects_outcome_flaky_environment(collector, replayer, ws_root, tm
         "    # episode's two visits (step + verifier) fail, later ones pass\n"
         "    assert n >= 2\n"
     )
-    episode, snapshots = _episode(collector, ws_root, "flaky", poison_test,
-                                  "def stamp():\n    return 'nope'\n")
+    episode, snapshots = _episode(
+        collector, ws_root, "flaky", poison_test, "def stamp():\n    return 'nope'\n"
+    )
     assert not episode.outcome.success  # recorded run: visits 0 and 1 -> fails
 
     unit = replayer.paired_replay(episode, snapshots, _fix(), n_repro=3)
     assert unit.original_replay_match is False  # control saw a different verdict
     assert unit.tier == EvidenceTier.SUGGESTED
-    assert unit.intervened_outcome is None      # branch B never ran: no spend on a broken instrument
+    assert unit.intervened_outcome is None  # branch B never ran: no spend on a broken instrument
 
 
 def test_gate_is_outcome_grained_not_text_grained(collector, replayer, ws_root):
@@ -82,8 +91,9 @@ def test_gate_is_outcome_grained_not_text_grained(collector, replayer, ws_root):
         "def test_stamp():\n"
         "    assert stamp() == 'fixed', f'got {stamp()} at {time.time_ns()}'\n"
     )
-    episode, snapshots = _episode(collector, ws_root, "noisy", noisy_test,
-                                  "def stamp():\n    return 'nope'\n")
+    episode, snapshots = _episode(
+        collector, ws_root, "noisy", noisy_test, "def stamp():\n    return 'nope'\n"
+    )
     assert not episode.outcome.success
 
     unit = replayer.paired_replay(episode, snapshots, _fix(), n_repro=3)

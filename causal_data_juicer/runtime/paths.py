@@ -16,6 +16,7 @@ Rules enforced (all four raise ``WorkspaceEscapeError``):
 
 A final ``realpath`` containment check backstops the walk.
 """
+
 from __future__ import annotations
 
 import os
@@ -52,14 +53,12 @@ def resolve_workspace_path(
         is_final = i == len(parts) - 1
         if cur.is_symlink():
             if not is_final:
-                raise WorkspaceEscapeError(
-                    f"intermediate symlink in path: {raw} (at {part})")
+                raise WorkspaceEscapeError(f"intermediate symlink in path: {raw} (at {part})")
             if not allow_symlink:
                 raise WorkspaceEscapeError(f"path is a symlink: {raw}")
             real = Path(os.path.realpath(cur))
             if ws_real != real and ws_real not in real.parents:
-                raise WorkspaceEscapeError(
-                    f"symlink resolves outside workspace: {raw}")
+                raise WorkspaceEscapeError(f"symlink resolves outside workspace: {raw}")
 
     real_final = Path(os.path.realpath(cur))
     if ws_real != real_final and ws_real not in real_final.parents:

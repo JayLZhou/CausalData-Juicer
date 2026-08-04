@@ -10,6 +10,7 @@ A run directory is self-contained and re-executable:
       blobs/            content-addressed workspace trees
       exports/          sft/dpo/memory/regression views + test_regression.py
 """
+
 from __future__ import annotations
 
 import json
@@ -43,8 +44,13 @@ class RunStore:
 
     # -- save ---------------------------------------------------------------
 
-    def save(self, episodes: list[Episode], snapshots: list[Snapshot],
-             units: list[CausalUnit], report: dict) -> None:
+    def save(
+        self,
+        episodes: list[Episode],
+        snapshots: list[Snapshot],
+        units: list[CausalUnit],
+        report: dict,
+    ) -> None:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         _dump_jsonl(self.run_dir / "episodes.jsonl", episodes)
         _dump_jsonl(self.run_dir / "snapshots.jsonl", snapshots)

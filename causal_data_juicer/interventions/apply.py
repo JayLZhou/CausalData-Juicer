@@ -8,11 +8,17 @@ M1 ships two intervention types:
   per-line ``patch_lines`` — and those atoms are what causal slicing
   minimizes over.
 """
+
 from __future__ import annotations
 
 import copy
 
-from causal_data_juicer.sdk.schemas import ArgEdit, Intervention, InterventionType, LinePatch, ToolCall
+from causal_data_juicer.sdk.schemas import (
+    ArgEdit,
+    Intervention,
+    InterventionType,
+    ToolCall,
+)
 
 
 def apply_arg_edit(args: dict, edit: ArgEdit) -> dict:
@@ -22,7 +28,9 @@ def apply_arg_edit(args: dict, edit: ArgEdit) -> dict:
     elif edit.op == "patch_lines":
         original = args.get(edit.arg)
         if not isinstance(original, str):
-            raise ValueError(f"patch_lines needs a string arg, got {type(original)} for {edit.arg!r}")
+            raise ValueError(
+                f"patch_lines needs a string arg, got {type(original)} for {edit.arg!r}"
+            )
         lines = original.splitlines()
         for patch in edit.patches:
             if patch.line >= len(lines):
@@ -49,15 +57,14 @@ def apply_intervention(original: ToolCall, intervention: Intervention) -> ToolCa
 
 # --- decomposition into atoms for causal slicing ---------------------------
 
+
 def intervention_atoms(intervention: Intervention) -> list[ArgEdit]:
     """Explode a TOOL_ARGUMENT_EDIT into its finest-grained atoms.
     ACTION_REPLACE is atomic (returns [])."""
     atoms: list[ArgEdit] = []
     for edit in intervention.edits:
         if edit.op == "patch_lines" and len(edit.patches) > 1:
-            atoms.extend(
-                ArgEdit(arg=edit.arg, op="patch_lines", patches=[p]) for p in edit.patches
-            )
+            atoms.extend(ArgEdit(arg=edit.arg, op="patch_lines", patches=[p]) for p in edit.patches)
         else:
             atoms.append(edit)
     return atoms

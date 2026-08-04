@@ -6,10 +6,10 @@ script.  This keeps the M1 loop fully deterministic (the flip-reproducibility
 kill line is measured on this deterministic subset) while exercising the
 exact same recording surface a live LLM agent would.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from causal_data_juicer.sdk.schemas import LLMRecord, Step, ToolCall
 
@@ -33,7 +33,7 @@ class ScriptedPolicy:
 
     def next_action(
         self, task_id: str, step_index: int, history: list[Step]
-    ) -> Optional[tuple[ToolCall, Optional[LLMRecord]]]:
+    ) -> tuple[ToolCall, LLMRecord | None] | None:
         if step_index >= len(self.script):
             return None
         s = self.script[step_index]

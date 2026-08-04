@@ -9,7 +9,7 @@ description = "A budgeted interventional data engine for agent improvement"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 keywords = ["agents", "counterfactual", "training-data", "causal", "llm"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7",
     "pytest>=8",
@@ -26,3 +26,38 @@ include = ["causal_data_juicer*", "causeforge*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "W", "I", "UP", "B", "SIM", "PLW", "RUF", "ISC", "PERF", "BLE"]
+ignore = [
+  "SIM108",  # ternary-vs-if is a style call we make per-site
+  "ISC003",  # explicit string concat used for readable long messages
+]
+
+[tool.ruff.lint.per-file-ignores]
+# tool/verifier executors deliberately catch everything: agent-facing
+# errors become observations, never crashes
+"causal_data_juicer/runtime/tools.py" = ["BLE001"]
+"causal_data_juicer/ops/base_op.py" = ["BLE001"]
+"causal_data_juicer/verify_claims.py" = ["BLE001"]
+"causal_data_juicer/doctor.py" = ["BLE001"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["causal_data_juicer"]
+omit = ["causal_data_juicer/ops/ops_zoo.py"]
+
+[tool.coverage.report]
+show_missing = false
+precision = 1

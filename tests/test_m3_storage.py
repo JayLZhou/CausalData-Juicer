@@ -5,8 +5,7 @@ from causal_data_juicer.store.dag import select_checkpoints
 
 
 def _snaps(episode_id, steps):
-    return [Snapshot(episode_id=episode_id, step_index=i, tree_digest=f"d{i}")
-            for i in steps]
+    return [Snapshot(episode_id=episode_id, step_index=i, tree_digest=f"d{i}") for i in steps]
 
 
 def test_select_checkpoints_policies():
@@ -22,15 +21,22 @@ def test_fork_at_sparse_reconstructs_dense_state(collector, replayer, ws_root):
     ws = ws_root / "mini"
     ws.mkdir()
     (ws / "test_solution.py").write_text(
-        "from solution import inc\n\ndef test_inc():\n    assert inc(1) == 2\n")
-    policy = ScriptedPolicy([
-        ScriptedStep(action=ToolCall(tool="write_file",
-                                     args={"path": "notes.txt", "content": "step0\n"})),
-        ScriptedStep(action=ToolCall(tool="write_file",
-                                     args={"path": "solution.py",
-                                           "content": "def inc(x):\n    return x + 1\n"})),
-        ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
-    ])
+        "from solution import inc\n\ndef test_inc():\n    assert inc(1) == 2\n"
+    )
+    policy = ScriptedPolicy(
+        [
+            ScriptedStep(
+                action=ToolCall(tool="write_file", args={"path": "notes.txt", "content": "step0\n"})
+            ),
+            ScriptedStep(
+                action=ToolCall(
+                    tool="write_file",
+                    args={"path": "solution.py", "content": "def inc(x):\n    return x + 1\n"},
+                )
+            ),
+            ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
+        ]
+    )
     episode, snapshots = collector.run_episode("mini", "mini", ws, policy)
     assert len(snapshots) == 3
 

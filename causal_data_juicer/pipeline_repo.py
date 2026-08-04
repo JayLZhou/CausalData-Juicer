@@ -9,6 +9,7 @@ replay, and ends with a human-readable report (terminal + HTML) plus
 the four export views. One command from "my tests fail" to "here are
 certified correction pairs".
 """
+
 from __future__ import annotations
 
 import shlex
@@ -23,6 +24,7 @@ from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
+from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
 from causal_data_juicer.runtime.llm_policy import LLMPolicy
@@ -34,7 +36,6 @@ from causal_data_juicer.runtime.tools import (
     _write_file,
 )
 from causal_data_juicer.runtime.verifier import CommandVerifier
-from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.sdk.schemas import CausalUnit, CostLedger, EvidenceTier
 from causal_data_juicer.slicing.ddmin import minimize_unit
 
@@ -59,12 +60,14 @@ def _repo_context(ws: Path, max_file: int = 4000, max_total: int = 9000) -> str:
     no symlink following, entropy/token redaction. What would be sent is
     inspectable via `cdj run --context-manifest`."""
     from causal_data_juicer.runtime.context import build_context
+
     return build_context(ws, max_file=max_file, max_total=max_total)
 
 
 def _copy_repo(repo: Path, dest: Path) -> None:
     def ignore(_dir, names):
         return [n for n in names if n in EXCLUDE]
+
     shutil.copytree(repo, dest, ignore=ignore)
 
 
@@ -73,22 +76,31 @@ def _registry_for(verify_argv: list[str], sealed=None, isolate: bool = False) ->
 
     def run_check(workspace: Path) -> str:
         from causal_data_juicer.runtime.verifier import resolve_command
+
         if sealed is not None:
             sealed.restore(workspace)  # the in-episode check is sealed too
         argv = resolve_command(verify_argv, workspace)
         if isolate:
             from causal_data_juicer.runtime.exec_backend import wrap
+
             argv = wrap(argv, workspace)
-        proc = subprocess.run(argv, cwd=workspace,
-                              capture_output=True, text=True, timeout=300)
+        proc = subprocess.run(
+            argv, cwd=workspace, capture_output=True, text=True, timeout=300, check=False
+        )
         tail = (proc.stdout + proc.stderr).strip()[-4000:]
         return f"{tail}\n[exit={proc.returncode}]"
 
     reg = ToolRegistry()
     reg.register(Tool("write_file", SideEffectClass.REVERSIBLE, _write_file))
     reg.register(Tool("read_file", SideEffectClass.PURE, _read_file))
-    reg.register(Tool("run_check", SideEffectClass.IDEMPOTENT, run_check,
-                      normalize=lambda obs: obs.rsplit("[", 1)[-1].rstrip("]\n")))
+    reg.register(
+        Tool(
+            "run_check",
+            SideEffectClass.IDEMPOTENT,
+            run_check,
+            normalize=lambda obs: obs.rsplit("[", 1)[-1].rstrip("]\n"),
+        )
+    )
     return reg
 
 
@@ -105,29 +117,36 @@ def _remine_success(episode, snapshots, repo, out, collector, replayer):
     if k is None:
         return episode, snapshots, []
     fix_action = episode.steps[k].action
-    snap = next(s for s in snapshots
-                if s.episode_id == episode.id and s.step_index == k)
+    snap = next(s for s in snapshots if s.episode_id == episode.id and s.step_index == k)
     pre = replayer.sandbox.materialize(snap.tree_digest)
     try:
-        original = (pre / fix_action.args["path"]).read_text() \
-            if (pre / fix_action.args["path"]).exists() else ""
+        original = (
+            (pre / fix_action.args["path"]).read_text()
+            if (pre / fix_action.args["path"]).exists()
+            else ""
+        )
     finally:
         replayer.sandbox.dispose(pre)
 
     identity = fix_action.model_copy(deep=True)
     identity.args = {**fix_action.args, "content": original}
-    script = [ScriptedStep(action=(identity if st.index == k else st.action))
-              for st in episode.steps]
+    script = [
+        ScriptedStep(action=(identity if st.index == k else st.action)) for st in episode.steps
+    ]
     ws2 = out / "workspaces" / f"{repo.name}-control"
     _copy_repo(repo, ws2)
     ep2, snaps2 = collector.run_episode(
-        repo.name, episode.task_description, ws2,
-        ScriptedPolicy(script), workload_id="byo-repo")
-    if ep2.outcome.success:      # identity control unexpectedly passes: bail
+        repo.name, episode.task_description, ws2, ScriptedPolicy(script), workload_id="byo-repo"
+    )
+    if ep2.outcome.success:  # identity control unexpectedly passes: bail
         return episode, snapshots, []
-    iv = Intervention(type=InterventionType.ACTION_REPLACE, target_step=k,
-                      new_action=fix_action, rationale="the agent's own successful fix",
-                      source="agent-self")
+    iv = Intervention(
+        type=InterventionType.ACTION_REPLACE,
+        target_step=k,
+        new_action=fix_action,
+        rationale="the agent's own successful fix",
+        source="agent-self",
+    )
     return ep2, snaps2, [(ep2, iv)]
 
 
@@ -146,6 +165,7 @@ def run_repo(
     t0 = time.monotonic()
     repo = Path(repo).resolve()
     from causal_data_juicer.runtime.rundir import prepare_run_dir
+
     out = prepare_run_dir(Path(out))
     store = RunStore(out)
     verify_argv = shlex.split(verify)
@@ -154,11 +174,13 @@ def run_repo(
     _copy_repo(repo, ws)
 
     from causal_data_juicer.runtime.exec_backend import describe, probe
+
     caps = probe()
     print(f"execution isolation: {describe(caps)}")
     isolate = caps.level != "none"
 
     from causal_data_juicer.runtime.verifier import SealedVerifier
+
     verifier = SealedVerifier(CommandVerifier(verify_argv, timeout=300, isolate=isolate), ws)
     registry = _registry_for(verify_argv, sealed=verifier, isolate=isolate)
     collector = Collector(registry, store.blobs, verifier)
@@ -166,42 +188,58 @@ def run_repo(
 
     baseline = verifier.evaluate(ws, CostLedger())
     if baseline.success:
-        print(f"`{verify}` already passes in {repo} — nothing to fix. "
-              f"(Stress direction is on the roadmap.)")
+        print(
+            f"`{verify}` already passes in {repo} — nothing to fix. "
+            f"(Stress direction is on the roadmap.)"
+        )
         return {"status": "already-passing"}
     print(f"baseline: `{verify}` fails — collecting an agent attempt…")
 
     from causal_data_juicer.runtime.context import context_manifest
-    manifest = context_manifest(ws)
-    print("context sent to the LLM will include these files "
-          "(allowlisted, secret-scanned): " + (", ".join(manifest) or "<none>"))
 
-    llm = DiskCachedLLM(OpenAICompatClient(base_url, model, max_tokens=4096),
-                    out / "llm_cache")
+    manifest = context_manifest(ws)
+    print(
+        "context sent to the LLM will include these files "
+        "(allowlisted, secret-scanned): " + (", ".join(manifest) or "<none>")
+    )
+
+    llm = DiskCachedLLM(OpenAICompatClient(base_url, model, max_tokens=4096), out / "llm_cache")
     description = task or (
         f"Make the check `{verify}` pass in this repository. Current failure:\n"
         + "\n".join(baseline.detail.splitlines()[-12:])
-        + "\n\nRepository files:" + _repo_context(ws))
+        + "\n\nRepository files:"
+        + _repo_context(ws)
+    )
     system_prompt = REPO_SYSTEM_PROMPT
     if "qwen3" in model.lower():
         system_prompt += " /no_think"
     policy = LLMPolicy(llm, max_steps=max_steps, system_prompt=system_prompt)
     policy.bind_task(description)
-    episode, snapshots = collector.run_episode(repo.name, description, ws, policy,
-                                               workload_id="byo-repo", max_steps=max_steps)
+    episode, snapshots = collector.run_episode(
+        repo.name, description, ws, policy, workload_id="byo-repo", max_steps=max_steps
+    )
     if episode.outcome.success:
         print("the agent fixed it — certifying its own fix as a causal unit…")
         episode, snapshots, mined = _remine_success(
-            episode, snapshots, repo, out, collector, replayer)
+            episode, snapshots, repo, out, collector, replayer
+        )
         candidates_extra = mined
     else:
         candidates_extra = []
     screening_cost = CostLedger()
-    screener = Screener(sources=[
-        FixerLLMSource(llm, candidates_per_failure=fixer_candidates, ledger=screening_cost),
-        ResampleSource(DiskCachedLLM(OpenAICompatClient(base_url, model, temperature=0.85, max_tokens=4096),
-                                     out / "llm_cache"), k=resample_k, ledger=screening_cost),
-    ])
+    screener = Screener(
+        sources=[
+            FixerLLMSource(llm, candidates_per_failure=fixer_candidates, ledger=screening_cost),
+            ResampleSource(
+                DiskCachedLLM(
+                    OpenAICompatClient(base_url, model, temperature=0.85, max_tokens=4096),
+                    out / "llm_cache",
+                ),
+                k=resample_k,
+                ledger=screening_cost,
+            ),
+        ]
+    )
     candidates = candidates_extra + screener.screen([episode])
     print(f"screened {len(candidates)} candidate fixes — validating with paired replay…")
 
@@ -210,8 +248,9 @@ def run_repo(
     fingerprint = env_fingerprint(registry, "byo-repo")
     fingerprint["verify"] = verify
     for ep, iv in candidates:
-        unit = replayer.paired_replay(ep, snapshots, iv, n_repro=n_repro,
-                                      control_cache=control_cache, early_stop_repro=True)
+        unit = replayer.paired_replay(
+            ep, snapshots, iv, n_repro=n_repro, control_cache=control_cache, early_stop_repro=True
+        )
         if unit.tier >= EvidenceTier.REPRODUCIBLE:
             unit = minimize_unit(replayer, ep, snapshots, unit)
         stamp(unit, fingerprint)
@@ -225,9 +264,12 @@ def run_repo(
     for u in units:
         total.merge(u.cost)
     report = {
-        "status": "ok", "repo": str(repo), "verify": verify,
+        "status": "ok",
+        "repo": str(repo),
+        "verify": verify,
         "agent_solved": episode.outcome.success,
-        "candidates": len(candidates), "validated_units": len(validated),
+        "candidates": len(candidates),
+        "validated_units": len(validated),
         "seal_violations": verifier.violations,
         "cost": total.model_dump(),
         "exports": {k: str(v) for k, v in exports.items()},

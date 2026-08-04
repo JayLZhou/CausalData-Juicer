@@ -1,4 +1,5 @@
 """M2 budget/policy/engine tests with a stub replayer (no real replays)."""
+
 from causal_data_juicer.acquisition.budget import Budget
 from causal_data_juicer.acquisition.engine import AcquisitionEngine
 from causal_data_juicer.acquisition.policies import (
@@ -27,11 +28,15 @@ def _episode(task_id, family):
 
 
 def _candidate(ep, source="s1"):
-    return Candidate(episode=ep, intervention=Intervention(
-        type=InterventionType.ACTION_REPLACE, target_step=0,
-        new_action=ToolCall(tool="write_file", args={"path": "x", "content": ep.task_id}),
-        source=source,
-    ))
+    return Candidate(
+        episode=ep,
+        intervention=Intervention(
+            type=InterventionType.ACTION_REPLACE,
+            target_step=0,
+            new_action=ToolCall(tool="write_file", args={"path": "x", "content": ep.task_id}),
+            source=source,
+        ),
+    )
 
 
 class StubReplayer:
@@ -40,16 +45,27 @@ class StubReplayer:
     def __init__(self):
         self.calls = []
 
-    def paired_replay(self, episode, snapshots, intervention, n_repro=3,
-                      control_cache=None, early_stop_repro=False):
+    def paired_replay(
+        self,
+        episode,
+        snapshots,
+        intervention,
+        n_repro=3,
+        control_cache=None,
+        early_stop_repro=False,
+    ):
         self.calls.append(episode.task_id)
         flipped = episode.meta["family"] == "good"
         unit = CausalUnit(
-            episode_id=episode.id, task_id=episode.task_id,
-            intervention=intervention, original_outcome=episode.outcome,
-            flipped=flipped, original_replay_match=True,
+            episode_id=episode.id,
+            task_id=episode.task_id,
+            intervention=intervention,
+            original_outcome=episode.outcome,
+            flipped=flipped,
+            original_replay_match=True,
             tier=EvidenceTier.REPRODUCIBLE if flipped else EvidenceTier.SUGGESTED,
-            repro_runs=n_repro, repro_flips=n_repro if flipped else 0,
+            repro_runs=n_repro,
+            repro_flips=n_repro if flipped else 0,
             cost=CostLedger(replay_runs=3, wall_time_s=1.0),
         )
         return unit
@@ -61,8 +77,9 @@ def _engine():
 
 def test_budget_truncates_spend():
     eps = [_episode(f"t{i}", "good") for i in range(10)]
-    result = _engine().run([_candidate(e) for e in eps], [],
-                           Budget(max_replays=9), ExhaustivePolicy())
+    result = _engine().run(
+        [_candidate(e) for e in eps], [], Budget(max_replays=9), ExhaustivePolicy()
+    )
     assert result.spent.replay_runs == 9
     assert result.candidates_processed == 3  # 3 replays each
 
@@ -85,7 +102,7 @@ def test_adaptive_prefers_uncovered_episodes_and_good_families():
     for e in good + bad:
         candidates.extend([_candidate(e, "s1"), _candidate(e, "s2")])
     engine = _engine()
-    result = engine.run(list(candidates), [], Budget(max_replays=18), AdaptivePolicy())
+    engine.run(list(candidates), [], Budget(max_replays=18), AdaptivePolicy())
     processed = engine.replayer.calls
     # first 6 picks must all be distinct episodes (singleton rule)
     assert len(set(processed[:6])) == 6

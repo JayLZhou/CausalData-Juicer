@@ -18,6 +18,7 @@ Honesty contract of this tool:
   directories and archived JSON under `experiments/results/`, with
   committed replay packs where byte-exact offline reproduction is possible.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,7 +31,11 @@ from pathlib import Path
 PYTEST_CHECKS = [
     ("A2/A3", "non-fix rejection + minimal slicing (toy E2E)", "tests/test_e2e_demo.py"),
     ("A6", "sparse-fork state reconstruction is byte-identical", "tests/test_m3_storage.py"),
-    ("A13", "determinism gate rejects outcome-flaky environments", "tests/test_negative_control.py"),
+    (
+        "A13",
+        "determinism gate rejects outcome-flaky environments",
+        "tests/test_negative_control.py",
+    ),
     ("B2", "TRL/verl export formats round-trip", "tests/test_adapters.py"),
 ]
 
@@ -61,23 +66,27 @@ class Scorecard:
 
     def summary(self, strict: bool = True) -> int:
         print()
-        print(f"{len(self.passed)} re-earned, {len(self.not_run)} not run, "
-              f"{len(self.failed)} failed.")
+        print(
+            f"{len(self.passed)} re-earned, {len(self.not_run)} not run, {len(self.failed)} failed."
+        )
         for cid, reason in self.not_run:
             print(f"  NOT_RUN {cid}: {reason}")
         print(f"\n{NOT_COVERED}")
         if self.failed:
-            print("\nSome claims FAILED to reproduce — that is reportable; "
-                  "please open an issue.")
+            print("\nSome claims FAILED to reproduce — that is reportable; please open an issue.")
             return 1
         if self.not_run and strict:
-            print("\nstrict (default): required claims left NOT_RUN exit "
-                  "nonzero. Use --lenient to downgrade, or enable the check "
-                  "(see reasons above).")
+            print(
+                "\nstrict (default): required claims left NOT_RUN exit "
+                "nonzero. Use --lenient to downgrade, or enable the check "
+                "(see reasons above)."
+            )
             return 1
         if self.not_run:
-            print("\nThe subset that ran passed. NOT_RUN checks are NOT "
-                  "verified — this is not a full reproduction.")
+            print(
+                "\nThe subset that ran passed. NOT_RUN checks are NOT "
+                "verified — this is not a full reproduction."
+            )
         else:
             print("\nAll required claims executed and passed on this machine.")
         return 0
@@ -91,25 +100,47 @@ def verify_claims(repo_root: Path | None = None, strict: bool = True) -> int:
 
     # A1/A9: fresh demo run, kill line + digest match re-earned
     from causal_data_juicer.pipeline import run_demo
+
     report = run_demo(tmp / "demo", n_repro=3)
     rate = report.get("flip_repro_rate") or 0.0
-    card.row("A1", "flip reproducibility ≥90% on a fresh demo run",
-             rate >= 0.9, f"{rate:.0%}, {report['flip_repro_detail']}")
-    card.row("A9", "control-branch digest match on that run",
-             report.get("control_digest_match_rate") == 1.0,
-             f"{report.get('control_digest_match_rate'):.0%}")
+    card.row(
+        "A1",
+        "flip reproducibility ≥90% on a fresh demo run",
+        rate >= 0.9,
+        f"{rate:.0%}, {report['flip_repro_detail']}",
+    )
+    card.row(
+        "A9",
+        "control-branch digest match on that run",
+        report.get("control_digest_match_rate") == 1.0,
+        f"{report.get('control_digest_match_rate'):.0%}",
+    )
 
     # regression: the exported counterfactual suite replays
     regress = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", str(tmp / "demo" / "exports" / "test_regression.py")],
-        capture_output=True, text=True, cwd=root)
-    card.row("Regr", "exported counterfactual cases replay and still flip",
-             regress.returncode == 0)
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            str(tmp / "demo" / "exports" / "test_regression.py"),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=root,
+        check=False,
+    )
+    card.row("Regr", "exported counterfactual cases replay and still flip", regress.returncode == 0)
 
     # ledger-mapped pytest slices
     for cid, desc, target in PYTEST_CHECKS:
-        proc = subprocess.run([sys.executable, "-m", "pytest", "-q", target],
-                              capture_output=True, text=True, cwd=root)
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", target],
+            capture_output=True,
+            text=True,
+            cwd=root,
+            check=False,
+        )
         card.row(cid, desc, proc.returncode == 0)
 
     # replay pack (needs the bench envs)
@@ -120,22 +151,42 @@ def verify_claims(repo_root: Path | None = None, strict: bool = True) -> int:
         work.mkdir()
         shutil.copytree(pack / "llm_cache", work / "llm_cache")
         proc = subprocess.run(
-            [sys.executable, "examples/case_step_dpo.py",
-             "--base", str(pack / "base-run"), "--out", str(work)],
-            capture_output=True, text=True, cwd=root)
+            [
+                sys.executable,
+                "examples/case_step_dpo.py",
+                "--base",
+                str(pack / "base-run"),
+                "--out",
+                str(work),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=root,
+            check=False,
+        )
         try:
-            tail = proc.stdout[proc.stdout.rindex("{"):] if "{" in proc.stdout else "{}"
+            tail = proc.stdout[proc.stdout.rindex("{") :] if "{" in proc.stdout else "{}"
             got = json.loads(tail)
         except Exception:
             got = {}
-        ok = got.get("sampled_branches") == 46 and got.get("flipping_branches") == 7 \
+        ok = (
+            got.get("sampled_branches") == 46
+            and got.get("flipping_branches") == 7
             and got.get("step_dpo_pairs") == 12
-        card.row("B1", "replay pack reproduces the live case byte-for-byte "
-                       "(46 branches / 7 flips / 12 pairs), offline",
-                 ok, json.dumps(got) if got else proc.stderr.strip()[-80:])
+        )
+        card.row(
+            "B1",
+            "replay pack reproduces the live case byte-for-byte "
+            "(46 branches / 7 flips / 12 pairs), offline",
+            ok,
+            json.dumps(got) if got else proc.stderr.strip()[-80:],
+        )
     else:
-        card.skip("B1", "replay pack NOT verified",
-                  "bench envs missing — run `cdj bench-build` to enable this check")
+        card.skip(
+            "B1",
+            "replay pack NOT verified",
+            "bench envs missing — run `cdj bench-build` to enable this check",
+        )
 
     shutil.rmtree(tmp, ignore_errors=True)
     return card.summary(strict)

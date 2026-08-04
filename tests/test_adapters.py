@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -19,14 +20,21 @@ from causal_data_juicer.sdk.schemas import (
 def unit_and_episode():
     bad = ToolCall(tool="write_file", args={"path": "solution.py", "content": "bad\n"})
     good = ToolCall(tool="write_file", args={"path": "solution.py", "content": "good\n"})
-    ep = Episode(task_id="t1", workload_id="wl", task_description="fix it",
-                 steps=[Step(index=0, action=bad, observation="wrote")],
-                 outcome=Outcome(success=False))
+    ep = Episode(
+        task_id="t1",
+        workload_id="wl",
+        task_description="fix it",
+        steps=[Step(index=0, action=bad, observation="wrote")],
+        outcome=Outcome(success=False),
+    )
     unit = CausalUnit(
-        episode_id=ep.id, task_id="t1",
-        intervention=Intervention(type=InterventionType.ACTION_REPLACE,
-                                  target_step=0, new_action=good),
-        original_outcome=ep.outcome, flipped=True,
+        episode_id=ep.id,
+        task_id="t1",
+        intervention=Intervention(
+            type=InterventionType.ACTION_REPLACE, target_step=0, new_action=good
+        ),
+        original_outcome=ep.outcome,
+        flipped=True,
         tier=EvidenceTier.REPRODUCIBLE,
     )
     low = unit.model_copy(deep=True)
@@ -37,7 +45,7 @@ def unit_and_episode():
 def test_trl_dpo_format(unit_and_episode, tmp_path):
     units, eps = unit_and_episode
     path = export_trl_dpo(units, eps, tmp_path / "dpo.jsonl")
-    rows = [json.loads(l) for l in open(path)]
+    rows = [json.loads(line) for line in Path(path).read_text().splitlines()]
     assert len(rows) == 1  # SUGGESTED row excluded
     row = rows[0]
     assert set(row) >= {"prompt", "chosen", "rejected", "evidence_tier"}
@@ -48,7 +56,7 @@ def test_trl_dpo_format(unit_and_episode, tmp_path):
 def test_trl_sft_messages_format(unit_and_episode, tmp_path):
     units, eps = unit_and_episode
     path = export_trl_sft(units, eps, tmp_path / "sft.jsonl")
-    rows = [json.loads(l) for l in open(path)]
+    rows = [json.loads(line) for line in Path(path).read_text().splitlines()]
     assert len(rows) == 1
     roles = [m["role"] for m in rows[0]["messages"]]
     assert roles == ["user", "assistant"]

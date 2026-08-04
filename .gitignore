@@ -7,3 +7,7 @@ runs/
 bench_envs/
 .venv-train/
 experiments/c1_adapters/
+build/
+dist/
+.coverage
+coverage.xml

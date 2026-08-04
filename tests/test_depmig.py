@@ -1,13 +1,12 @@
 """Structure-level depmig bench tests (no env building — the full
 pass-old/fail-new validation lives in `causal_data_juicer bench-build`'s
 certificate, which is the bench's admission ticket)."""
+
 from collections import Counter
 
+from causal_data_juicer.workloads.depmig import pandas_family
 from causal_data_juicer.workloads.depmig.base import scan_hermeticity
 from causal_data_juicer.workloads.depmig.build import all_tasks, enabled_families
-
-
-from causal_data_juicer.workloads.depmig import pandas_family
 
 CORE = {"pydantic", "numpy", "sqlalchemy", "click", "networkx"}
 

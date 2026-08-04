@@ -1,9 +1,10 @@
 """CausalData-Juicer CLI.
 
-    causal_data_juicer demo   [--out runs/demo] [--repro 3]   one-command E2E demo
-    causal_data_juicer report [run_dir]                        re-print a run report
-    causal_data_juicer regress [run_dir]                       run exported counterfactual regression tests
+causal_data_juicer demo   [--out runs/demo] [--repro 3]   one-command E2E demo
+causal_data_juicer report [run_dir]                        re-print a run report
+causal_data_juicer regress [run_dir]                       run exported counterfactual regression tests
 """
+
 from __future__ import annotations
 
 import argparse
@@ -19,27 +20,35 @@ def _print_report(report: dict) -> None:
     print("CausalData-Juicer run report")
     print("=" * 62)
     rate = report.get("flip_repro_rate")
-    print(f"episodes            : {report['episodes']} "
-          f"({report['failed_episodes']} failed)")
+    print(f"episodes            : {report['episodes']} ({report['failed_episodes']} failed)")
     print(f"candidates screened : {report['candidates_screened']}")
     print(f"units by tier       : {report['units_by_tier']}")
     det = report["determinism_control_ok"]
-    print(f"determinism control : {'n/a' if det is None else 'OK' if det else 'MISMATCH'}"
-          + (f"  (digest match {report['control_digest_match_rate']:.1%})"
-             if report.get("control_digest_match_rate") is not None else ""))
-    print(f"FLIP REPRO RATE     : {rate if rate is None else f'{rate:.1%}'} "
-          f"({report['flip_repro_detail']})  [kill line: >= 90%]")
+    print(
+        f"determinism control : {'n/a' if det is None else 'OK' if det else 'MISMATCH'}"
+        + (
+            f"  (digest match {report['control_digest_match_rate']:.1%})"
+            if report.get("control_digest_match_rate") is not None
+            else ""
+        )
+    )
+    print(
+        f"FLIP REPRO RATE     : {rate if rate is None else f'{rate:.1%}'} "
+        f"({report['flip_repro_detail']})  [kill line: >= 90%]"
+    )
     sl = report["slicing"]
     print(f"causal slicing      : {sl['atoms_before']} atoms -> {sl['atoms_after']} atoms")
     c = report["cost"]
-    print(f"cost ledger         : {c['llm_calls']} llm calls, "
-          f"{c['tokens_in']}+{c['tokens_out']} tokens, "
-          f"{c['tool_calls']} tool calls, {c['replay_runs']} replays, "
-          f"{c['wall_time_s']}s tool-time, ${c['dollars']:.2f}")
+    print(
+        f"cost ledger         : {c['llm_calls']} llm calls, "
+        f"{c['tokens_in']}+{c['tokens_out']} tokens, "
+        f"{c['tool_calls']} tool calls, {c['replay_runs']} replays, "
+        f"{c['wall_time_s']}s tool-time, ${c['dollars']:.2f}"
+    )
     print(f"cost/validated unit : {report['cost_per_validated_unit_s']}s")
     print("exports:")
     for name, path in report["exports"].items():
-        n = sum(1 for _ in open(path)) if Path(path).exists() else 0
+        n = len(Path(path).read_text().splitlines()) if Path(path).exists() else 0
         print(f"  {name:<10} {n:>3} rows  {path}")
     print(f"total wall time     : {report['wall_time_total_s']}s")
 
@@ -49,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         return _main(argv)
     except Exception as e:
         from causal_data_juicer.runtime.rundir import UnmanagedDirectoryError
+
         if isinstance(e, UnmanagedDirectoryError):
             print(f"error: {e}", file=sys.stderr)
             return 2
@@ -71,16 +81,22 @@ def _main(argv: list[str] | None = None) -> int:
     p_regress.add_argument("run_dir", nargs="?", default="runs/demo")
 
     p_ops = sub.add_parser("ops", help="list the operator zoo")
-    p_ops.add_argument("--category", default=None,
-                       choices=["observational", "source", "interventional", "compile"])
+    p_ops.add_argument(
+        "--category", default=None, choices=["observational", "source", "interventional", "compile"]
+    )
 
     p_proc = sub.add_parser("process", help="run a YAML recipe of operators (DJ-style)")
     p_proc.add_argument("--config", required=True)
 
-    p_vc = sub.add_parser("verify-claims",
-                          help="re-earn the offline-verifiable claims on this machine (PASS/FAIL/SKIP)")
-    p_vc.add_argument("--lenient", action="store_true",
-                      help="do not fail on NOT_RUN checks (strict is the default)")
+    p_vc = sub.add_parser(
+        "verify-claims",
+        help="re-earn the offline-verifiable claims on this machine (PASS/FAIL/SKIP)",
+    )
+    p_vc.add_argument(
+        "--lenient",
+        action="store_true",
+        help="do not fail on NOT_RUN checks (strict is the default)",
+    )
 
     p_mig = sub.add_parser("migrate-run", help="upgrade a run's env pointers to v2 (relocatable)")
     p_mig.add_argument("run_dir")
@@ -101,16 +117,24 @@ def _main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
     p_run.add_argument("--out", default=None)
     p_run.add_argument("--task", default=None, help="task description shown to the agent")
-    p_run.add_argument("--context-manifest", action="store_true",
-                       help="print exactly which files would enter the LLM prompt, then exit")
-    p_run.add_argument("--unsafe-local-execution", action="store_true",
-                       help="acknowledge that repo code and model-generated patches "
-                            "execute directly on this host (no container isolation yet); "
-                            "see docs/security.md")
+    p_run.add_argument(
+        "--context-manifest",
+        action="store_true",
+        help="print exactly which files would enter the LLM prompt, then exit",
+    )
+    p_run.add_argument(
+        "--unsafe-local-execution",
+        action="store_true",
+        help="acknowledge that repo code and model-generated patches "
+        "execute directly on this host (no container isolation yet); "
+        "see docs/security.md",
+    )
     p_run.add_argument("--repro", type=int, default=3)
     p_run.add_argument("--max-steps", type=int, default=10)
 
-    p_imp = sub.add_parser("import-trace", help="Import Mode: ingest external traces (observational)")
+    p_imp = sub.add_parser(
+        "import-trace", help="Import Mode: ingest external traces (observational)"
+    )
     p_imp.add_argument("trace_file")
     p_imp.add_argument("--out", default="runs/imported")
 
@@ -168,8 +192,8 @@ def _main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "demo":
         from causal_data_juicer.pipeline import run_demo
-        report = run_demo(Path(args.out), n_repro=args.repro,
-                          keep_workspaces=args.keep_workspaces)
+
+        report = run_demo(Path(args.out), n_repro=args.repro, keep_workspaces=args.keep_workspaces)
         _print_report(report)
         rate = report.get("flip_repro_rate")
         return 0 if (rate is not None and rate >= 0.9) else 1
@@ -181,33 +205,38 @@ def _main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "ops":
         from causal_data_juicer.ops.recipe import list_ops
+
         print(list_ops(args.category))
         return 0
 
     if args.cmd == "process":
         from causal_data_juicer.ops.recipe import run_recipe
         from causal_data_juicer.sdk.schemas import EvidenceTier
+
         ctx = run_recipe(Path(args.config))
-        validated = sum(1 for u in ctx.units
-                        if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED)
+        validated = sum(1 for u in ctx.units if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED)
         print(f"done: {validated} validated units | exports: {list(ctx.exports)}")
         return 0
 
     if args.cmd == "verify-claims":
         from causal_data_juicer.verify_claims import verify_claims
+
         return verify_claims(strict=not args.lenient)
 
     if args.cmd == "migrate-run":
         from causal_data_juicer.migrate import migrate_run
+
         print(json.dumps(migrate_run(Path(args.run_dir), Path(args.env_root)), indent=2))
         return 0
 
     if args.cmd == "doctor":
         from causal_data_juicer.doctor import run_doctor
+
         return run_doctor(args.base_url)
 
     if args.cmd == "explain":
         from causal_data_juicer.report import explain_html, explain_text
+
         print(explain_text(Path(args.run_dir), include_rejected=args.all))
         if args.html:
             path = explain_html(Path(args.run_dir), Path(args.html))
@@ -217,54 +246,77 @@ def _main(argv: list[str] | None = None) -> int:
     if args.cmd == "run":
         if args.context_manifest:
             from causal_data_juicer.runtime.context import context_manifest
+
             for name in context_manifest(Path(args.repo)):
                 print(name)
             return 0
         from causal_data_juicer.runtime.exec_backend import describe, probe
+
         caps = probe()
-        if caps.level != "container" and not args.unsafe_local_execution and \
-                os.environ.get("CDJ_UNSAFE_LOCAL_EXECUTION") != "1":
-            print("cdj run executes the repository's verify command AND "
-                  "model-generated patches on this host without full container "
-                  f"isolation (best available here: {describe(caps)}; see "
-                  "docs/security.md).\n"
-                  "Re-run with --unsafe-local-execution (or set "
-                  "CDJ_UNSAFE_LOCAL_EXECUTION=1) to acknowledge this.")
+        if (
+            caps.level != "container"
+            and not args.unsafe_local_execution
+            and os.environ.get("CDJ_UNSAFE_LOCAL_EXECUTION") != "1"
+        ):
+            print(
+                "cdj run executes the repository's verify command AND "
+                "model-generated patches on this host without full container "
+                f"isolation (best available here: {describe(caps)}; see "
+                "docs/security.md).\n"
+                "Re-run with --unsafe-local-execution (or set "
+                "CDJ_UNSAFE_LOCAL_EXECUTION=1) to acknowledge this."
+            )
             return 2
         from causal_data_juicer.pipeline_repo import run_repo
         from causal_data_juicer.report import explain_html, explain_text
+
         out = Path(args.out or f"runs/byo-{Path(args.repo).resolve().name}")
-        report = run_repo(Path(args.repo), args.verify, args.base_url, args.model,
-                          out, task=args.task, n_repro=args.repro,
-                          max_steps=args.max_steps)
+        report = run_repo(
+            Path(args.repo),
+            args.verify,
+            args.base_url,
+            args.model,
+            out,
+            task=args.task,
+            n_repro=args.repro,
+            max_steps=args.max_steps,
+        )
         if report.get("status") == "ok":
             print()
             print(explain_text(out))
             html = explain_html(out, out / "report.html")
-            print(f"\nvalidated units: {report['validated_units']} | "
-                  f"wall time: {report['wall_time_s']}s | HTML report: {html}")
+            print(
+                f"\nvalidated units: {report['validated_units']} | "
+                f"wall time: {report['wall_time_s']}s | HTML report: {html}"
+            )
         return 0
 
     if args.cmd == "import-trace":
         from causal_data_juicer.compiler.observational import compile_observational
         from causal_data_juicer.run_store import RunStore
         from causal_data_juicer.runtime.import_trace import load_generic_traces
+
         episodes = load_generic_traces(Path(args.trace_file))
         ok = sum(1 for ep in episodes if ep.outcome and ep.outcome.success)
         store = RunStore(Path(args.out))
         exports = compile_observational(episodes, Path(args.out) / "exports")
-        report = {"mode": "import", "episodes": len(episodes), "successful": ok,
-                  "evidence_ceiling": "OBSERVED",
-                  "exports": {k: str(v) for k, v in exports.items()}}
+        report = {
+            "mode": "import",
+            "episodes": len(episodes),
+            "successful": ok,
+            "evidence_ceiling": "OBSERVED",
+            "exports": {k: str(v) for k, v in exports.items()},
+        }
         store.save(episodes, [], [], report)
         print(f"imported {len(episodes)} episodes ({ok} successful) -> {args.out}")
         for name, path in exports.items():
-            n = sum(1 for _ in open(path))
+            n = len(Path(path).read_text().splitlines())
             print(f"  {name:<10} {n:>3} rows  {path}   [evidence ceiling: OBSERVED]")
         return 0
 
     if args.cmd == "storage-bench":
         from causal_data_juicer.store.bench import print_bench, storage_bench
+
         report = storage_bench(Path(args.run), args.policies.split(","), repeats=args.repeats)
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(report, indent=2))
@@ -274,39 +326,56 @@ def _main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "revalidate":
         from causal_data_juicer.maintenance.revalidate import run_version_event
-        report = run_version_event(Path(args.base), [Path(p) for p in args.pool],
-                                   args.family, args.pin, Path(args.env_root),
-                                   n_repro=args.repro)
-        out = Path(args.out or f"experiments/results/m4_{args.family}_{args.pin.split('==')[-1]}.json")
+
+        report = run_version_event(
+            Path(args.base),
+            [Path(p) for p in args.pool],
+            args.family,
+            args.pin,
+            Path(args.env_root),
+            n_repro=args.repro,
+        )
+        out = Path(
+            args.out or f"experiments/results/m4_{args.family}_{args.pin.split('==')[-1]}.json"
+        )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(report, indent=2, ensure_ascii=False))
-        print(f"event: {report['event']['family']} -> {report['event']['new_pin']} "
-              f"({report['units_total']} units in corpus)")
+        print(
+            f"event: {report['event']['family']} -> {report['event']['new_pin']} "
+            f"({report['units_total']} units in corpus)"
+        )
         for mode in ("selective", "full"):
             m = report[mode]
             demos = ", ".join(f"{d['task_id']}[{d['reason']}]" for d in m["demoted"]) or "none"
-            print(f"  {mode:<10} revalidated={m['revalidated']:<3} confirmed={m['confirmed']:<3} "
-                  f"replays={m['replays']:<4} demoted: {demos}")
-        print(f"  replay ratio (full/selective): {report['replay_ratio']}x   "
-              f"demotion agreement: {'OK' if report['demotion_agreement'] else 'MISSED'}")
+            print(
+                f"  {mode:<10} revalidated={m['revalidated']:<3} confirmed={m['confirmed']:<3} "
+                f"replays={m['replays']:<4} demoted: {demos}"
+            )
+        print(
+            f"  replay ratio (full/selective): {report['replay_ratio']}x   "
+            f"demotion agreement: {'OK' if report['demotion_agreement'] else 'MISSED'}"
+        )
         print(f"saved: {out}")
         return 0 if report["demotion_agreement"] else 1
 
     if args.cmd == "export":
         from causal_data_juicer.compiler.adapters import ADAPTERS
         from causal_data_juicer.run_store import RunStore
+
         store = RunStore(Path(args.run))
         suffix = "" if args.format == "verl" else ".jsonl"
         out = Path(args.out) if args.out else Path(args.run) / "exports" / f"{args.format}{suffix}"
         path = ADAPTERS[args.format](store.load_units(), store.load_episodes(), out)
-        n = sum(1 for _ in open(path, "rb"))
+        n = len(Path(path, "rb").read_text().splitlines())
         print(f"{args.format}: {path} ({'parquet' if path.suffix == '.parquet' else f'{n} rows'})")
         return 0
 
     if args.cmd == "acquire-eval":
         from causal_data_juicer.acquisition.evaluate import evaluate, print_eval
+
         report = evaluate(
-            Path(args.base), [Path(p) for p in args.pool],
+            Path(args.base),
+            [Path(p) for p in args.pool],
             policies=args.policies.split(","),
             budgets=[int(b) for b in args.budgets.split(",")],
             n_repro=args.repro,
@@ -326,6 +395,7 @@ def _main(argv: list[str] | None = None) -> int:
             print_certificate,
             save_certificate,
         )
+
         with tempfile.TemporaryDirectory(prefix="cf-bench-") as scratch:
             cert = build_and_validate(Path(args.env_root), Path(scratch))
         save_certificate(cert, Path(args.out))
@@ -335,26 +405,37 @@ def _main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "collect-depmig":
         from causal_data_juicer.pipeline_depmig import run_depmig
+
         report = run_depmig(
-            Path(args.out), base_url=args.base_url, model=args.model,
-            n_repro=args.repro, max_steps=args.max_steps,
-            task_ids=args.tasks, env_root=Path(args.env_root),
+            Path(args.out),
+            base_url=args.base_url,
+            model=args.model,
+            n_repro=args.repro,
+            max_steps=args.max_steps,
+            task_ids=args.tasks,
+            env_root=Path(args.env_root),
             fixer_candidates=args.fixer_candidates,
-            fixer_base_url=args.fixer_base_url, fixer_model=args.fixer_model,
+            fixer_base_url=args.fixer_base_url,
+            fixer_model=args.fixer_model,
             llm_cache=Path(args.llm_cache) if args.llm_cache else None,
-            sources=args.sources, resample_k=args.resample_k,
+            sources=args.sources,
+            resample_k=args.resample_k,
             refine_rounds=args.refine_rounds,
             episode_variants=args.episode_variants,
             task_hints=json.loads(Path(args.hints_file).read_text()) if args.hints_file else None,
         )
         _print_report(report)
-        extra = (f"agent solved       : {report['agent_solved']}/{report['episodes']} "
-                 f"(seal violations: {report['seal_violations']})")
+        extra = (
+            f"agent solved       : {report['agent_solved']}/{report['episodes']} "
+            f"(seal violations: {report['seal_violations']})"
+        )
         print(extra)
         for key in sorted(report["breakdown"]):
             b = report["breakdown"][key]
-            print(f"  {key:<18} candidates={b['candidates']} flipped={b['flipped']} "
-                  f"repro={b['repro_flips']}/{b['repro_runs']}")
+            print(
+                f"  {key:<18} candidates={b['candidates']} flipped={b['flipped']} "
+                f"repro={b['repro_flips']}/{b['repro_runs']}"
+            )
         rate = report.get("flip_repro_rate")
         return 0 if (rate is None or rate >= 0.9) else 1
 

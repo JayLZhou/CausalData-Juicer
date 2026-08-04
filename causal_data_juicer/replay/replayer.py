@@ -11,10 +11,8 @@
 Evidence ladder produced here:
 SUGGESTED -> COUNTERFACTUAL_VALIDATED (one flip) -> REPRODUCIBLE (n/n flips).
 """
-from __future__ import annotations
 
-from pathlib import Path
-from typing import Optional
+from __future__ import annotations
 
 from causal_data_juicer.interventions.apply import apply_intervention
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
@@ -51,7 +49,7 @@ class Replayer:
         from_step: int,
         tree_digest: str,
         ledger: CostLedger,
-        intervention: Optional[Intervention] = None,
+        intervention: Intervention | None = None,
         prep=None,  # callable(workspace) applied after fork, e.g. env-pointer override (M4)
         continuation_policy=None,  # reactive replay: downstream re-generates live
     ) -> ReplayRecord:
@@ -68,29 +66,38 @@ class Replayer:
                     action = apply_intervention(step.action, intervention)
                 obs, obs_digest = executor.execute(workspace, action, ledger)
                 obs_digests.append(obs_digest)
-                if (continuation_policy is not None and intervention is not None
-                        and step.index == intervention.target_step):
+                if (
+                    continuation_policy is not None
+                    and intervention is not None
+                    and step.index == intervention.target_step
+                ):
                     # Reactive continuation: from here on, downstream agents
                     # RE-REACT to the intervened state instead of replaying
                     # recorded actions — the message-credit semantics.
                     from causal_data_juicer.sdk.schemas import Step as _Step
-                    live_steps.append(_Step(index=step.index, action=action,
-                                            observation=obs, obs_digest=obs_digest))
+
+                    live_steps.append(
+                        _Step(
+                            index=step.index, action=action, observation=obs, obs_digest=obs_digest
+                        )
+                    )
                     idx = step.index + 1
                     while True:
-                        nxt = continuation_policy.next_action(
-                            episode.task_id, idx, live_steps)
+                        nxt = continuation_policy.next_action(episode.task_id, idx, live_steps)
                         if nxt is None:
                             break
                         live_action, llm = nxt
-                        live_obs, live_digest = executor.execute(
-                            workspace, live_action, ledger)
+                        live_obs, live_digest = executor.execute(workspace, live_action, ledger)
                         if llm is not None and not llm.cached:
-                            ledger.charge_llm(llm.tokens_in, llm.tokens_out,
-                                              dollars=llm.dollars)
-                        live_steps.append(_Step(index=idx, action=live_action,
-                                                observation=live_obs,
-                                                obs_digest=live_digest))
+                            ledger.charge_llm(llm.tokens_in, llm.tokens_out, dollars=llm.dollars)
+                        live_steps.append(
+                            _Step(
+                                index=idx,
+                                action=live_action,
+                                observation=live_obs,
+                                obs_digest=live_digest,
+                            )
+                        )
                         idx += 1
                     break
             outcome = self.verifier.evaluate(workspace, ledger)
@@ -101,7 +108,7 @@ class Replayer:
         record = ReplayRecord(branch=branch, outcome=outcome, obs_digests=obs_digests)
         if intervention is None:
             recorded = [s.obs_digest for s in episode.steps[from_step:]]
-            matches = sum(1 for a, b in zip(obs_digests, recorded) if a == b)
+            matches = sum(1 for a, b in zip(obs_digests, recorded, strict=False) if a == b)
             record.digest_match_fraction = matches / len(recorded) if recorded else 1.0
             record.deterministic_match = (
                 obs_digests == recorded
@@ -115,7 +122,7 @@ class Replayer:
         episode: Episode,
         snapshots: list[Snapshot],
         step: int,
-        ledger: Optional[CostLedger] = None,
+        ledger: CostLedger | None = None,
         prep=None,
     ):
         """Materialize the state *before* ``step`` from a possibly sparse
@@ -123,8 +130,7 @@ class Replayer:
         step and re-execute the recorded prefix in between (M3).
 
         Returns (workspace, prefix_steps_reexecuted).  Caller disposes."""
-        avail = [s for s in snapshots
-                 if s.episode_id == episode.id and s.step_index <= step]
+        avail = [s for s in snapshots if s.episode_id == episode.id and s.step_index <= step]
         if not avail:
             raise KeyError(f"no checkpoint at or before step {step} for {episode.id}")
         snap = max(avail, key=lambda s: s.step_index)
@@ -134,12 +140,14 @@ class Replayer:
         executor = ToolExecutor(self.registry, mode="replay")
         ledger = ledger if ledger is not None else CostLedger()
         n = 0
-        for st in episode.steps[snap.step_index:step]:
+        for st in episode.steps[snap.step_index : step]:
             executor.execute(workspace, st.action, ledger)
             n += 1
         return workspace, n
 
-    def _snapshot_for(self, snapshots: list[Snapshot], episode: Episode, step_index: int) -> Snapshot:
+    def _snapshot_for(
+        self, snapshots: list[Snapshot], episode: Episode, step_index: int
+    ) -> Snapshot:
         for s in snapshots:
             if s.episode_id == episode.id and s.step_index == step_index:
                 return s
@@ -175,7 +183,7 @@ class Replayer:
         snapshots: list[Snapshot],
         intervention: Intervention,
         n_repro: int = 3,
-        control_cache: Optional[dict] = None,
+        control_cache: dict | None = None,
         early_stop_repro: bool = False,
         prep=None,
         continuation_policy=None,
@@ -212,8 +220,13 @@ class Replayer:
 
         # Branch B: intervened, first validation run.
         first = self._run_branch(
-            episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
-            prep=prep, continuation_policy=continuation_policy,
+            episode,
+            intervention.target_step,
+            snap.tree_digest,
+            unit.cost,
+            intervention,
+            prep=prep,
+            continuation_policy=continuation_policy,
         )
         unit.intervened_outcome = first.outcome
         flipped_once = (not episode.outcome.success) and first.outcome.success
@@ -227,8 +240,13 @@ class Replayer:
         flips, runs = 1, 1
         for _ in range(max(0, n_repro - 1)):
             rec = self._run_branch(
-                episode, intervention.target_step, snap.tree_digest, unit.cost, intervention,
-                prep=prep, continuation_policy=continuation_policy,
+                episode,
+                intervention.target_step,
+                snap.tree_digest,
+                unit.cost,
+                intervention,
+                prep=prep,
+                continuation_policy=continuation_policy,
             )
             runs += 1
             if (not episode.outcome.success) and rec.outcome.success:

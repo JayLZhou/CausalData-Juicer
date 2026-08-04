@@ -15,6 +15,7 @@ Symlinks are never followed — neither into the store nor out of it. Links
 whose targets lie outside the tree are recorded as links (target string),
 not their contents.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -116,7 +117,7 @@ class BlobStore:
         digest = SCHEMA_PREFIX + h.hexdigest()[:16]
         dest = self.root / digest
         if not dest.exists():
-            tmp = self.root / f".tmp-{uuid.uuid4().hex}"   # unique: no concurrent collisions
+            tmp = self.root / f".tmp-{uuid.uuid4().hex}"  # unique: no concurrent collisions
             tmp.mkdir(parents=True)
             _copy_tree_nodes(workspace, tmp)
             meta_tmp = self.root / f".tmp-meta-{uuid.uuid4().hex}"
@@ -125,7 +126,7 @@ class BlobStore:
                 f.flush()
                 os.fsync(f.fileno())
             try:
-                os.replace(tmp, dest)                      # atomic commit
+                os.replace(tmp, dest)  # atomic commit
                 os.replace(meta_tmp, self._meta_path(digest))
             except OSError:
                 # lost the race to a concurrent writer of the same digest
@@ -141,15 +142,15 @@ class BlobStore:
         if dest.exists():
             raise FileExistsError(
                 f"restore destination already exists: {dest} — "
-                f"materialize into fresh directories only")
+                f"materialize into fresh directories only"
+            )
         if digest.startswith(SCHEMA_PREFIX):
             dest.mkdir(parents=True)
             _copy_tree_nodes(src, dest)
             got = tree_digest(dest)
             if got != digest:
-                raise RuntimeError(
-                    f"post-restore digest mismatch: wanted {digest}, got {got}")
-        else:                                              # legacy v1 blob
+                raise RuntimeError(f"post-restore digest mismatch: wanted {digest}, got {got}")
+        else:  # legacy v1 blob
             shutil.copytree(src, dest, symlinks=True)
         return dest
 

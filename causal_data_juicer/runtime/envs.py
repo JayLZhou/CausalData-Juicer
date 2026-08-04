@@ -8,6 +8,7 @@ only a tiny pointer file (``.causeforge_env.json``) that snapshots and
 replays travel with.  ``resolve_python`` is how run_pytest / the verifier
 pick the right interpreter for a workspace.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,12 +55,17 @@ class EnvManager:
         freeze = subprocess.run(
             [str(python), "-m", "pip", "freeze"], capture_output=True, text=True, check=True
         ).stdout
-        marker.write_text(json.dumps({
-            "name": env.name,
-            "requested": env.packages,
-            "frozen": sorted(freeze.strip().splitlines()),
-            "base_python": env.base_python,
-        }, indent=2))
+        marker.write_text(
+            json.dumps(
+                {
+                    "name": env.name,
+                    "requested": env.packages,
+                    "frozen": sorted(freeze.strip().splitlines()),
+                    "base_python": env.base_python,
+                },
+                indent=2,
+            )
+        )
         return python
 
     def provenance(self, env: TaskEnv) -> dict:
@@ -67,8 +73,9 @@ class EnvManager:
         return json.loads(marker.read_text()) if marker.exists() else {}
 
 
-def write_env_pointer(workspace: Path, python: Path, name: str | None = None,
-                      pins: list[str] | None = None) -> None:
+def write_env_pointer(
+    workspace: Path, python: Path, name: str | None = None, pins: list[str] | None = None
+) -> None:
     """Pointer v2 carries the env *identity* (name + pins), not just an
     absolute path, so snapshots stay replayable across machines and
     directory renames."""
@@ -102,9 +109,13 @@ def resolve_python(workspace: Path) -> str:
                 return str(local)
         if data.get("pins") and os.environ.get("CDJ_BUILD_ENVS") == "1":
             python = EnvManager(Path.cwd() / "bench_envs").ensure(
-                TaskEnv(name=name, packages=list(data["pins"])))
+                TaskEnv(name=name, packages=list(data["pins"]))
+            )
             return str(python)
-    warnings.warn(f"env pointer '{recorded}' is stale and no local env "
-                  f"matches{' ' + repr(name) if name else ''}; falling back to "
-                  f"{sys.executable} (set CDJ_BUILD_ENVS=1 to rebuild pinned envs)")
+    warnings.warn(
+        f"env pointer '{recorded}' is stale and no local env "
+        f"matches{' ' + repr(name) if name else ''}; falling back to "
+        f"{sys.executable} (set CDJ_BUILD_ENVS=1 to rebuild pinned envs)",
+        stacklevel=2,
+    )
     return sys.executable

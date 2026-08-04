@@ -6,6 +6,7 @@ exactly a LinePatch atom.  Sealed tests execute solution.sql against an
 in-memory sqlite seeded inline and compare to gold rows — hermetic and
 deterministic.
 """
+
 from __future__ import annotations
 
 
@@ -70,11 +71,15 @@ STRESS = {
         "ORDER BY name",
     ],
     "perturbations": {
-        0: ["SELECT name, price"],                  # breaks shape        -> critical
-        2: ["WHERE cat = 'hw'",                     # drops price filter  -> critical
-            "WHERE price > 25 AND cat = 'hw'"],     # commuted            -> harmless
-        4: ["HAVING COUNT(*) >= 1"],                # vacuous             -> harmless
-        5: ["ORDER BY name ASC",                    # explicit default    -> harmless
-            "ORDER BY name DESC"],                  # flips order         -> critical
+        0: ["SELECT name, price"],  # breaks shape        -> critical
+        2: [
+            "WHERE cat = 'hw'",  # drops price filter  -> critical
+            "WHERE price > 25 AND cat = 'hw'",
+        ],  # commuted            -> harmless
+        4: ["HAVING COUNT(*) >= 1"],  # vacuous             -> harmless
+        5: [
+            "ORDER BY name ASC",  # explicit default    -> harmless
+            "ORDER BY name DESC",
+        ],  # flips order         -> critical
     },
 }

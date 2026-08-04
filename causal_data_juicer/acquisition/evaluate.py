@@ -11,9 +11,9 @@ truncates the execution sequence.  So each policy runs ONCE with an
 unlimited budget and every matched-budget point is read off its curve,
 instead of re-running per budget.
 """
+
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from causal_data_juicer.acquisition.budget import Budget
@@ -21,9 +21,9 @@ from causal_data_juicer.acquisition.engine import AcquisitionEngine, Acquisition
 from causal_data_juicer.acquisition.policies import Candidate, make_policy
 from causal_data_juicer.replay.replayer import Replayer
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
+from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
-from causal_data_juicer.run_store import RunStore
 
 
 def load_pooled_candidates(base_dir: Path, pool_dirs: list[Path]):
@@ -66,18 +66,20 @@ def evaluate(
     n_repro: int = 3,
     scratch: Path | None = None,
 ) -> dict:
-    base, episodes, snapshots, candidates = load_pooled_candidates(base_dir, pool_dirs)
+    base, _episodes, snapshots, candidates = load_pooled_candidates(base_dir, pool_dirs)
     scratch = scratch or (Path(base_dir) / "scratch-m2")
-    replayer = Replayer(default_registry(), UnsafeLocalWorkspace(base.blobs, scratch),
-                        PytestVerifier(timeout=120))
+    replayer = Replayer(
+        default_registry(), UnsafeLocalWorkspace(base.blobs, scratch), PytestVerifier(timeout=120)
+    )
     engine = AcquisitionEngine(replayer, n_repro=n_repro)
 
     results: list[AcquisitionResult] = []
     for spec in policies:
         if spec.endswith("[no-mech]"):
             bare = AcquisitionEngine(replayer, n_repro=n_repro, mechanisms=False)
-            result = bare.run(list(candidates), snapshots, Budget(),
-                              make_policy(spec.removesuffix("[no-mech]")))
+            result = bare.run(
+                list(candidates), snapshots, Budget(), make_policy(spec.removesuffix("[no-mech]"))
+            )
             result.policy = spec
         else:
             result = engine.run(list(candidates), snapshots, Budget(), make_policy(spec))
@@ -94,12 +96,16 @@ def evaluate(
 
     table = []
     for r in results:
-        row = {"policy": r.policy,
-               "candidates": f"{r.candidates_processed}/{r.candidates_total}",
-               "total": {"replays": r.spent.replay_runs,
-                         "validated_units": len(r.validated()),
-                         "distinct_tasks": r.distinct_tasks()},
-               "at_budget": {str(b): at_budget(r.curve, b) for b in budgets}}
+        row = {
+            "policy": r.policy,
+            "candidates": f"{r.candidates_processed}/{r.candidates_total}",
+            "total": {
+                "replays": r.spent.replay_runs,
+                "validated_units": len(r.validated()),
+                "distinct_tasks": r.distinct_tasks(),
+            },
+            "at_budget": {str(b): at_budget(r.curve, b) for b in budgets},
+        }
         table.append(row)
 
     return {
@@ -124,6 +130,8 @@ def print_eval(report: dict) -> None:
             p = row["at_budget"][str(b)]
             cells += f"{p['validated_units']}u/{p['distinct_tasks']}t     "[:12]
         total = row["total"]
-        print(f"{row['policy']:<12}{cells}{total['validated_units']}u/{total['distinct_tasks']}t "
-              f"({total['replays']})")
+        print(
+            f"{row['policy']:<12}{cells}{total['validated_units']}u/{total['distinct_tasks']}t "
+            f"({total['replays']})"
+        )
     print("(u = validated units, t = distinct tasks covered, @N = replay budget N)")

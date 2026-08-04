@@ -1,6 +1,5 @@
 import json
 import sys
-
 from pathlib import Path
 
 from causal_data_juicer.runtime.envs import (
@@ -38,7 +37,6 @@ def test_resolution_chain_and_fallback(tmp_path, verifier, recwarn):
     known env name resolves to the local env; a stale path with no
     identity falls back to our interpreter WITH a warning (the engine
     keeps working after a repo move — the portability bug class)."""
-    import json
     import warnings
 
     from causal_data_juicer.sdk.schemas import CostLedger
@@ -59,9 +57,11 @@ def test_resolution_chain_and_fallback(tmp_path, verifier, recwarn):
     local = tmp_path / "bench_envs" / "mini-env" / "bin"
     local.mkdir(parents=True)
     (local / "python").symlink_to(sys.executable)
-    (ws / ENV_POINTER).write_text(json.dumps(
-        {"python": str(tmp_path / "gone" / "python"), "env_name": "mini-env"}))
+    (ws / ENV_POINTER).write_text(
+        json.dumps({"python": str(tmp_path / "gone" / "python"), "env_name": "mini-env"})
+    )
     import os
+
     cwd = os.getcwd()
     os.chdir(tmp_path)
     try:

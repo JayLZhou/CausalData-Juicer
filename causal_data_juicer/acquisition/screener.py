@@ -9,17 +9,17 @@ M1 candidate source: a fix table shipped with the workload, standing in
 for a cached fixer-LLM (zero live-token cost, which is exactly the cost
 model recorded in the ledger).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from causal_data_juicer.sdk.schemas import Episode, EvidenceTier, Intervention
+from causal_data_juicer.sdk.schemas import Episode, Intervention
 
 
 class CandidateSource(Protocol):
-    def propose(self, episode: Episode) -> list[Intervention]:
-        ...
+    def propose(self, episode: Episode) -> list[Intervention]: ...
 
 
 @dataclass
@@ -32,9 +32,9 @@ class TableFixSource:
     def propose(self, episode: Episode) -> list[Intervention]:
         out = []
         for iv in self.table.get(episode.task_id, []):
-            iv = iv.model_copy(deep=True)
-            iv.source = self.name
-            out.append(iv)
+            bound = iv.model_copy(deep=True)
+            bound.source = self.name
+            out.append(bound)
         return out
 
 

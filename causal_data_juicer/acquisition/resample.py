@@ -7,6 +7,7 @@ tasks the entire fixer pool misses; A10's layered result says pooling
 heterogeneous sources is the coverage strategy — so here it becomes a
 first-class source the screener can mix in.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -46,13 +47,16 @@ class ResampleSource:
         for i in range(self.k):
             messages = [
                 {"role": "system", "content": RESAMPLE_SYSTEM},
-                {"role": "user", "content": (
-                    f"Task brief:\n{episode.task_description}\n\n"
-                    f"(variant {i}) The recorded attempt failed:\n"
-                    f"path: {step.action.args.get('path')}\n"
-                    f"```python\n{step.action.args.get('content', '')}\n```\n\n"
-                    f"Verifier output:\n{episode.outcome.detail[-800:]}"
-                )},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Task brief:\n{episode.task_description}\n\n"
+                        f"(variant {i}) The recorded attempt failed:\n"
+                        f"path: {step.action.args.get('path')}\n"
+                        f"```python\n{step.action.args.get('content', '')}\n```\n\n"
+                        f"Verifier output:\n{episode.outcome.detail[-800:]}"
+                    ),
+                },
             ]
             resp = self.llm.complete(messages)
             if self.ledger is not None and not resp.cached:
@@ -63,12 +67,15 @@ class ResampleSource:
             args = action.get("args") or {}
             if not args.get("path") or not isinstance(args.get("content"), str):
                 continue
-            out.append(Intervention(
-                type=InterventionType.ACTION_REPLACE,
-                target_step=step_index,
-                new_action=ToolCall(tool="write_file",
-                                    args={"path": args["path"], "content": args["content"]}),
-                rationale=f"policy resample variant {i}",
-                source=f"{self.name}-v{i}",
-            ))
+            out.append(
+                Intervention(
+                    type=InterventionType.ACTION_REPLACE,
+                    target_step=step_index,
+                    new_action=ToolCall(
+                        tool="write_file", args={"path": args["path"], "content": args["content"]}
+                    ),
+                    rationale=f"policy resample variant {i}",
+                    source=f"{self.name}-v{i}",
+                )
+            )
         return out

@@ -17,12 +17,13 @@ Shipped policies:
               3. source diversity per episode (A10: heterogeneous fixer
                  pools cover more than any single source).
 """
+
 from __future__ import annotations
 
 import math
 import random
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 from causal_data_juicer.sdk.schemas import CausalUnit, Episode, Intervention
 
@@ -40,18 +41,17 @@ class Candidate:
 class AcquisitionPolicy(Protocol):
     name: str
 
-    def next(self, pending: list[Candidate]) -> Optional[Candidate]:
+    def next(self, pending: list[Candidate]) -> Candidate | None:
         """Pick the next candidate from ``pending`` (None = stop early)."""
 
-    def observe(self, candidate: Candidate, unit: CausalUnit) -> None:
-        ...
+    def observe(self, candidate: Candidate, unit: CausalUnit) -> None: ...
 
 
 @dataclass
 class ExhaustivePolicy:
     name: str = "exhaustive"
 
-    def next(self, pending: list[Candidate]) -> Optional[Candidate]:
+    def next(self, pending: list[Candidate]) -> Candidate | None:
         return pending[0] if pending else None
 
     def observe(self, candidate: Candidate, unit: CausalUnit) -> None:
@@ -66,7 +66,7 @@ class RandomPolicy:
     def __post_init__(self):
         self._rng = random.Random(self.seed)
 
-    def next(self, pending: list[Candidate]) -> Optional[Candidate]:
+    def next(self, pending: list[Candidate]) -> Candidate | None:
         return self._rng.choice(pending) if pending else None
 
     def observe(self, candidate: Candidate, unit: CausalUnit) -> None:
@@ -90,7 +90,7 @@ class AdaptivePolicy:
         mean = self.family_flips.get(family, 0) / n
         return mean + math.sqrt(self.explore * math.log(max(2, self.total_trials)) / n)
 
-    def next(self, pending: list[Candidate]) -> Optional[Candidate]:
+    def next(self, pending: list[Candidate]) -> Candidate | None:
         if not pending:
             return None
 
@@ -109,7 +109,8 @@ class AdaptivePolicy:
         self.family_trials[family] = self.family_trials.get(family, 0) + 1
         self.family_flips[family] = self.family_flips.get(family, 0) + int(unit.flipped)
         self.tried_sources.setdefault(candidate.episode.id, set()).add(
-            candidate.intervention.source)
+            candidate.intervention.source
+        )
         self.attempted_episodes.add(candidate.episode.id)
 
 

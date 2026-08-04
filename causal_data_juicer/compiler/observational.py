@@ -10,6 +10,7 @@ floor of the ladder, instead of dressing up as causal data:
                      (raw material for later intervention once the
                      project graduates to a replayable tier)
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -32,13 +33,15 @@ def compile_bc_sft(episodes: list[Episode], out: Path) -> Path:
     for ep in episodes:
         if ep.outcome is None or not ep.outcome.success:
             continue
-        for step in ep.steps:
-            rows.append({
+        rows.extend(
+            {
                 "task_id": ep.task_id,
                 "prompt": _context(ep, step.index),
                 "completion": render_action(step.action),
                 "evidence_tier": EvidenceTier.OBSERVED.name,
-            })
+            }
+            for step in ep.steps
+        )
     return write_jsonl(out, rows)
 
 
@@ -47,13 +50,15 @@ def compile_failure_log(episodes: list[Episode], out: Path) -> Path:
     for ep in episodes:
         if ep.outcome is None or ep.outcome.success:
             continue
-        rows.append({
-            "task_id": ep.task_id,
-            "task": ep.task_description,
-            "last_actions": [render_action(s.action) for s in ep.steps[-3:]],
-            "outcome": ep.outcome.detail,
-            "evidence_tier": EvidenceTier.OBSERVED.name,
-        })
+        rows.append(
+            {
+                "task_id": ep.task_id,
+                "task": ep.task_description,
+                "last_actions": [render_action(s.action) for s in ep.steps[-3:]],
+                "outcome": ep.outcome.detail,
+                "evidence_tier": EvidenceTier.OBSERVED.name,
+            }
+        )
     return write_jsonl(out, rows)
 
 

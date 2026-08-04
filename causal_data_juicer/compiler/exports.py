@@ -8,6 +8,7 @@
 Only units at COUNTERFACTUAL_VALIDATED or above are exported for training
 views; the tier is stamped on every row regardless.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -35,13 +36,15 @@ def compile_sft(units: list[CausalUnit], episodes: list[Episode], out: Path) -> 
     rows = []
     for u in _exportable(units):
         ep = eps[u.episode_id]
-        rows.append({
-            "unit_id": u.id,
-            "task_id": u.task_id,
-            "prompt": render_context(ep, u.effective_intervention().target_step),
-            "completion": render_action(corrected_action(ep, u)),
-            "evidence_tier": u.tier.name,
-        })
+        rows.append(
+            {
+                "unit_id": u.id,
+                "task_id": u.task_id,
+                "prompt": render_context(ep, u.effective_intervention().target_step),
+                "completion": render_action(corrected_action(ep, u)),
+                "evidence_tier": u.tier.name,
+            }
+        )
     return write_jsonl(out, rows)
 
 
@@ -50,14 +53,16 @@ def compile_dpo(units: list[CausalUnit], episodes: list[Episode], out: Path) -> 
     rows = []
     for u in _exportable(units):
         ep = eps[u.episode_id]
-        rows.append({
-            "unit_id": u.id,
-            "task_id": u.task_id,
-            "prompt": render_context(ep, u.effective_intervention().target_step),
-            "chosen": render_action(corrected_action(ep, u)),
-            "rejected": render_action(original_action(ep, u)),
-            "evidence_tier": u.tier.name,
-        })
+        rows.append(
+            {
+                "unit_id": u.id,
+                "task_id": u.task_id,
+                "prompt": render_context(ep, u.effective_intervention().target_step),
+                "chosen": render_action(corrected_action(ep, u)),
+                "rejected": render_action(original_action(ep, u)),
+                "evidence_tier": u.tier.name,
+            }
+        )
     return write_jsonl(out, rows)
 
 
@@ -67,21 +72,23 @@ def compile_memory(units: list[CausalUnit], episodes: list[Episode], out: Path) 
     for u in _exportable(units):
         ep = eps[u.episode_id]
         iv = u.effective_intervention()
-        rows.append({
-            "unit_id": u.id,
-            "task_id": u.task_id,
-            "task": ep.task_description,
-            "failure": {
-                "action": render_action(original_action(ep, u)),
-                "outcome": u.original_outcome.detail,
-            },
-            "recovery": {
-                "intervention_type": iv.type.value,
-                "action": render_action(corrected_action(ep, u)),
-                "rationale": iv.rationale,
-            },
-            "evidence_tier": u.tier.name,
-        })
+        rows.append(
+            {
+                "unit_id": u.id,
+                "task_id": u.task_id,
+                "task": ep.task_description,
+                "failure": {
+                    "action": render_action(original_action(ep, u)),
+                    "outcome": u.original_outcome.detail,
+                },
+                "recovery": {
+                    "intervention_type": iv.type.value,
+                    "action": render_action(corrected_action(ep, u)),
+                    "rationale": iv.rationale,
+                },
+                "evidence_tier": u.tier.name,
+            }
+        )
     return write_jsonl(out, rows)
 
 
@@ -92,17 +99,19 @@ def compile_regression(units: list[CausalUnit], episodes: list[Episode], out: Pa
     eps = _episode_index(episodes)
     rows = []
     for u in _exportable(units):
-        ep = eps[u.episode_id]
+        eps[u.episode_id]
         iv = u.effective_intervention()
-        rows.append({
-            "unit_id": u.id,
-            "task_id": u.task_id,
-            "episode_id": u.episode_id,
-            "target_step": iv.target_step,
-            "intervention": iv.model_dump(mode="json"),
-            "expected": {"original_success": False, "intervened_success": True},
-            "evidence_tier": u.tier.name,
-        })
+        rows.append(
+            {
+                "unit_id": u.id,
+                "task_id": u.task_id,
+                "episode_id": u.episode_id,
+                "target_step": iv.target_step,
+                "intervention": iv.model_dump(mode="json"),
+                "expected": {"original_success": False, "intervened_success": True},
+                "evidence_tier": u.tier.name,
+            }
+        )
     path = write_jsonl(out, rows)
     (out.parent / "test_regression.py").write_text(_REGRESSION_TEST_TEMPLATE)
     return path

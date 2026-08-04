@@ -5,10 +5,10 @@ replay and exports need no changes when the agent gets real.
 Protocol: the model answers with a single JSON object
 ``{"tool": "...", "args": {...}}``; ``{"tool": "done"}`` ends the episode.
 """
+
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 from causal_data_juicer.runtime.llm import LLMClient
 from causal_data_juicer.sdk.schemas import LLMRecord, Step, ToolCall
@@ -25,12 +25,13 @@ run the tests after editing; reply {"tool": "done", "args": {}} once tests pass
 or when you cannot make further progress."""
 
 
-def extract_action(text: str) -> Optional[dict]:
+def extract_action(text: str) -> dict | None:
     """First balanced JSON object in the reply (tolerates ``` fences and
     reasoning-model <think> blocks, which are stripped first)."""
     import re
+
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    if "<think>" in text:      # unclosed block: reply truncated mid-thought
+    if "<think>" in text:  # unclosed block: reply truncated mid-thought
         text = text.split("<think>")[0]
     start = text.find("{")
     while start != -1:
@@ -52,7 +53,7 @@ def extract_action(text: str) -> Optional[dict]:
                 depth -= 1
                 if depth == 0:
                     try:
-                        obj = json.loads(text[start:i + 1])
+                        obj = json.loads(text[start : i + 1])
                         if isinstance(obj, dict) and "tool" in obj:
                             return obj
                     except json.JSONDecodeError:
@@ -63,8 +64,13 @@ def extract_action(text: str) -> Optional[dict]:
 
 
 class LLMPolicy:
-    def __init__(self, llm: LLMClient, max_steps: int = 12, obs_limit: int = 2000,
-                 system_prompt: str = SYSTEM_PROMPT):
+    def __init__(
+        self,
+        llm: LLMClient,
+        max_steps: int = 12,
+        obs_limit: int = 2000,
+        system_prompt: str = SYSTEM_PROMPT,
+    ):
         self.llm = llm
         self.max_steps = max_steps
         self.obs_limit = obs_limit
@@ -75,19 +81,26 @@ class LLMPolicy:
         self.task_description = description
 
     def _messages(self, history: list[Step]) -> list[dict]:
-        messages = [{"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": f"Task: {self.task_description}"}]
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": f"Task: {self.task_description}"},
+        ]
         for step in history:
-            messages.append({"role": "assistant",
-                             "content": json.dumps(step.action.model_dump(), ensure_ascii=False)})
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": json.dumps(step.action.model_dump(), ensure_ascii=False),
+                }
+            )
             # Keep the tail: pytest puts the informative part at the end.
-            messages.append({"role": "user",
-                             "content": f"Observation: {step.observation[-self.obs_limit:]}"})
+            messages.append(
+                {"role": "user", "content": f"Observation: {step.observation[-self.obs_limit :]}"}
+            )
         return messages
 
     def next_action(
         self, task_id: str, step_index: int, history: list[Step]
-    ) -> Optional[tuple[ToolCall, Optional[LLMRecord]]]:
+    ) -> tuple[ToolCall, LLMRecord | None] | None:
         if step_index >= self.max_steps:
             return None
         messages = self._messages(history)

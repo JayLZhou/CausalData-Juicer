@@ -1,4 +1,5 @@
 """Collector + replay engine tests on a minimal 2-step task."""
+
 from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
 from causal_data_juicer.sdk.schemas import (
     ArgEdit,
@@ -8,10 +9,7 @@ from causal_data_juicer.sdk.schemas import (
     ToolCall,
 )
 
-TEST_FILE = (
-    "from solution import double\n\n"
-    "def test_double():\n    assert double(2) == 4\n"
-)
+TEST_FILE = "from solution import double\n\ndef test_double():\n    assert double(2) == 4\n"
 BAD = "def double(x):\n    return x + x + x\n"
 GOOD = "def double(x):\n    return 2 * x\n"
 
@@ -20,11 +18,14 @@ def _collect(collector, ws_root, content, task_id="mini"):
     ws = ws_root / task_id
     ws.mkdir()
     (ws / "test_solution.py").write_text(TEST_FILE)
-    policy = ScriptedPolicy([
-        ScriptedStep(action=ToolCall(tool="write_file",
-                                     args={"path": "solution.py", "content": content})),
-        ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
-    ])
+    policy = ScriptedPolicy(
+        [
+            ScriptedStep(
+                action=ToolCall(tool="write_file", args={"path": "solution.py", "content": content})
+            ),
+            ScriptedStep(action=ToolCall(tool="run_pytest", args={})),
+        ]
+    )
     return collector.run_episode(task_id, "implement double(x)", ws, policy)
 
 

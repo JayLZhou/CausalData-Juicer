@@ -9,6 +9,7 @@ For every task, prove the bench itself is honest before any agent sees it:
 Envs are built once (network allowed here, never during episodes) and
 their pip-freeze goes into the certificate for provenance.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,8 +30,10 @@ def enabled_families():
         pydantic_family,
         sqlalchemy_family,
     )
+
     modules = [pydantic_family, numpy_family, sqlalchemy_family, click_family, networkx_family]
     from causal_data_juicer.workloads.depmig import pandas_family
+
     if pandas_family.available():  # stretch family; needs the py3.11 base
         modules.append(pandas_family)
     return [(m.FAMILY, m.build_tasks()) for m in modules]
@@ -53,9 +56,14 @@ def build_and_validate(env_root: Path, scratch: Path) -> dict:
         }
         for task in tasks:
             violations = scan_hermeticity(task)
-            row = {"task": task.id, "family": family.name, "tier": task.tier,
-                   "hermetic": not violations, "violations": violations}
-            for which, expect_pass in (("old", True), ("new", False)):
+            row = {
+                "task": task.id,
+                "family": family.name,
+                "tier": task.tier,
+                "hermetic": not violations,
+                "violations": violations,
+            }
+            for which, _expect_pass in (("old", True), ("new", False)):
                 ws = scratch / f"{task.id}-{which}"
                 if ws.exists():
                     shutil.rmtree(ws)
@@ -85,10 +93,12 @@ def print_certificate(cert: dict) -> None:
     print(f"depmig bench validity: {'OK' if cert['valid'] else 'INVALID'}")
     print(f"{'task':<18} {'tier':<4} {'hermetic':<8} {'old':<5} {'new':<5} valid")
     for row in cert["tasks"]:
-        print(f"{row['task']:<18} T{row['tier']:<3} {str(row['hermetic']):<8} "
-              f"{'pass' if row['old_pass'] else 'FAIL':<5} "
-              f"{'PASS' if row['new_pass'] else 'fail':<5} "
-              f"{'✓' if row['valid'] else '✗'}")
+        print(
+            f"{row['task']:<18} T{row['tier']:<3} {row['hermetic']!s:<8} "
+            f"{'pass' if row['old_pass'] else 'FAIL':<5} "
+            f"{'PASS' if row['new_pass'] else 'fail':<5} "
+            f"{'✓' if row['valid'] else '✗'}"
+        )
 
 
 def save_certificate(cert: dict, path: Path) -> None:

@@ -9,6 +9,7 @@ team failure to the message: COMA-style counterfactual credit, executed.
 
 Run:  .venv/bin/python examples/case_mas_credit.py
 """
+
 import json
 from pathlib import Path
 
@@ -31,21 +32,29 @@ tests, then reply {"tool": "done", "args": {}}. Tools: read_file /
 write_file / run_pytest / done — one JSON object per reply."""
 
 TASKS = [
-    {"id": "mas_parity",
-     "test": ("from solution import label\n\n"
-              "def test_label():\n"
-              "    assert label(2) == 'even' and label(3) == 'odd'\n"),
-     "bad_plan": "Implement label(n) in solution.py returning the boolean n % 2 == 0.",
-     "good_plan": "Implement label(n) in solution.py returning the STRING 'even' "
-                  "if n is even else the STRING 'odd'."},
-    {"id": "mas_convert",
-     "test": ("from solution import convert\n\n"
-              "def test_convert():\n"
-              "    assert convert(0) == 32.0 and convert(100) == 212.0\n"),
-     "bad_plan": "Implement convert(t) in solution.py converting Fahrenheit to "
-                 "Celsius: (t - 32) * 5 / 9.",
-     "good_plan": "Implement convert(t) in solution.py converting CELSIUS TO "
-                  "FAHRENHEIT: t * 9 / 5 + 32."},
+    {
+        "id": "mas_parity",
+        "test": (
+            "from solution import label\n\n"
+            "def test_label():\n"
+            "    assert label(2) == 'even' and label(3) == 'odd'\n"
+        ),
+        "bad_plan": "Implement label(n) in solution.py returning the boolean n % 2 == 0.",
+        "good_plan": "Implement label(n) in solution.py returning the STRING 'even' "
+        "if n is even else the STRING 'odd'.",
+    },
+    {
+        "id": "mas_convert",
+        "test": (
+            "from solution import convert\n\n"
+            "def test_convert():\n"
+            "    assert convert(0) == 32.0 and convert(100) == 212.0\n"
+        ),
+        "bad_plan": "Implement convert(t) in solution.py converting Fahrenheit to "
+        "Celsius: (t - 32) * 5 / 9.",
+        "good_plan": "Implement convert(t) in solution.py converting CELSIUS TO "
+        "FAHRENHEIT: t * 9 / 5 + 32.",
+    },
 ]
 
 
@@ -57,17 +66,16 @@ class TeamPolicy:
 
     def next_action(self, task_id, idx, history):
         if idx == 0:
-            return ToolCall(tool="write_file",
-                            args={"path": "PLAN.md", "content": self.plan}), None
+            return ToolCall(tool="write_file", args={"path": "PLAN.md", "content": self.plan}), None
         return self.coder.next_action(task_id, idx, history)
 
 
 blobs = BlobStore(OUT / "blobs")
 collector = Collector(default_registry(), blobs, PytestVerifier())
-replayer = Replayer(default_registry(), LocalSandbox(blobs, OUT / "scratch"),
-                    PytestVerifier())
-llm = DiskCachedLLM(OpenAICompatClient("http://127.0.0.1:8021/v1",
-                                       "Qwen/Qwen2.5-7B-Instruct"), OUT / "llm_cache")
+replayer = Replayer(default_registry(), LocalSandbox(blobs, OUT / "scratch"), PytestVerifier())
+llm = DiskCachedLLM(
+    OpenAICompatClient("http://127.0.0.1:8021/v1", "Qwen/Qwen2.5-7B-Instruct"), OUT / "llm_cache"
+)
 
 rows = []
 for task in TASKS:
@@ -77,22 +85,42 @@ for task in TASKS:
     coder = LLMPolicy(llm, max_steps=6, system_prompt=CODER_SYS)
     coder.bind_task(f"Team task {task['id']}: implement per PLAN.md.")
     episode, snapshots = collector.run_episode(
-        task["id"], f"Team task {task['id']}", ws, TeamPolicy(coder, task["bad_plan"]))
+        task["id"], f"Team task {task['id']}", ws, TeamPolicy(coder, task["bad_plan"])
+    )
     message_edit = Intervention(
-        type=InterventionType.ACTION_REPLACE, target_step=0,
-        new_action=ToolCall(tool="write_file",
-                            args={"path": "PLAN.md", "content": task["good_plan"]}),
-        source="message-edit", rationale="counterfactual planner message")
-    unit = replayer.paired_replay(episode, snapshots, message_edit, n_repro=2,
-                                  continuation_policy=coder)
-    rows.append({"task_id": task["id"], "team_failed": not episode.outcome.success,
-                 "message_blamed": unit.flipped,
-                 "credit": (unit.repro_flips / unit.repro_runs) if unit.repro_runs else
-                           float(unit.flipped),
-                 "control_matched": unit.original_replay_match,
-                 "coder_rereacted": True, "evidence_tier": unit.tier.name})
+        type=InterventionType.ACTION_REPLACE,
+        target_step=0,
+        new_action=ToolCall(
+            tool="write_file", args={"path": "PLAN.md", "content": task["good_plan"]}
+        ),
+        source="message-edit",
+        rationale="counterfactual planner message",
+    )
+    unit = replayer.paired_replay(
+        episode, snapshots, message_edit, n_repro=2, continuation_policy=coder
+    )
+    rows.append(
+        {
+            "task_id": task["id"],
+            "team_failed": not episode.outcome.success,
+            "message_blamed": unit.flipped,
+            "credit": (unit.repro_flips / unit.repro_runs)
+            if unit.repro_runs
+            else float(unit.flipped),
+            "control_matched": unit.original_replay_match,
+            "coder_rereacted": True,
+            "evidence_tier": unit.tier.name,
+        }
+    )
 
 write_jsonl(OUT / "mas_credit.jsonl", rows)
-print(json.dumps({"teams": len(rows),
-                  "failures": sum(r["team_failed"] for r in rows),
-                  "messages_blamed": sum(r["message_blamed"] for r in rows)}, indent=2))
+print(
+    json.dumps(
+        {
+            "teams": len(rows),
+            "failures": sum(r["team_failed"] for r in rows),
+            "messages_blamed": sum(r["message_blamed"] for r in rows),
+        },
+        indent=2,
+    )
+)

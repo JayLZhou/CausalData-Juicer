@@ -10,6 +10,7 @@ exactly as the tier system demands.
 
 Run:  .venv/bin/python examples/case_her_relabel.py
 """
+
 import json
 from pathlib import Path
 
@@ -32,18 +33,24 @@ for run in RUNS:
             continue
         seen.add(ep.task_id)
         step = ep.steps[k]
-        achieved = (f"running the test suite yields: {ep.outcome.passed} passed, "
-                    f"{ep.outcome.failed} failed, ending with\n"
-                    + "\n".join(ep.outcome.detail.splitlines()[-3:]))
-        relabeled_goal = (f"Write {step.action.args.get('path')} so that {achieved}\n"
-                          f"(Original context follows.)\n{render_context(ep, k)}")
-        rows.append({
-            "task_id": ep.task_id,
-            "prompt": relabeled_goal,
-            "completion": json.dumps(step.action.model_dump(), ensure_ascii=False),
-            "evidence_tier": EvidenceTier.OBSERVED.name,
-            "source": "her-relabel",
-        })
+        achieved = (
+            f"running the test suite yields: {ep.outcome.passed} passed, "
+            f"{ep.outcome.failed} failed, ending with\n"
+            + "\n".join(ep.outcome.detail.splitlines()[-3:])
+        )
+        relabeled_goal = (
+            f"Write {step.action.args.get('path')} so that {achieved}\n"
+            f"(Original context follows.)\n{render_context(ep, k)}"
+        )
+        rows.append(
+            {
+                "task_id": ep.task_id,
+                "prompt": relabeled_goal,
+                "completion": json.dumps(step.action.model_dump(), ensure_ascii=False),
+                "evidence_tier": EvidenceTier.OBSERVED.name,
+                "source": "her-relabel",
+            }
+        )
 
 write_jsonl(OUT, rows)
 print(json.dumps({"relabeled_rows": len(rows), "out": str(OUT)}, indent=2))

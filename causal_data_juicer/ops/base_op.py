@@ -12,11 +12,12 @@ Categories mirror the algebra:
   interventional execute the environment, spend budget, raise tiers
   compile        materialize views, tier-preserving
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 from causal_data_juicer.sdk.schemas import CostLedger
 
@@ -28,12 +29,12 @@ class OpContext:
     workdir: Path
     episodes: list = field(default_factory=list)
     snapshots: list = field(default_factory=list)
-    candidates: list = field(default_factory=list)   # (episode, intervention)
+    candidates: list = field(default_factory=list)  # (episode, intervention)
     units: list = field(default_factory=list)
-    sources: list = field(default_factory=list)      # candidate sources for `screen`
+    sources: list = field(default_factory=list)  # candidate sources for `screen`
     exports: dict = field(default_factory=dict)
     ledger: CostLedger = field(default_factory=CostLedger)
-    services: dict = field(default_factory=dict)     # lazily built engine parts
+    services: dict = field(default_factory=dict)  # lazily built engine parts
     meta: dict = field(default_factory=dict)
 
 
@@ -50,8 +51,10 @@ class Op:
         raise NotImplementedError
 
     def summary(self, ctx: OpContext) -> str:
-        return (f"episodes={len(ctx.episodes)} candidates={len(ctx.candidates)} "
-                f"units={len(ctx.units)} replays={ctx.ledger.replay_runs}")
+        return (
+            f"episodes={len(ctx.episodes)} candidates={len(ctx.candidates)} "
+            f"units={len(ctx.units)} replays={ctx.ledger.replay_runs}"
+        )
 
 
 class ObservationalOp(Op):
@@ -72,16 +75,17 @@ class CompileOp(Op):
 
 class Registry:
     def __init__(self):
-        self._ops: dict[str, Type[Op]] = {}
+        self._ops: dict[str, type[Op]] = {}
 
     def register(self, name: str):
-        def deco(cls: Type[Op]) -> Type[Op]:
+        def deco(cls: type[Op]) -> type[Op]:
             cls._op_name = name
             self._ops[name] = cls
             return cls
+
         return deco
 
-    def get(self, name: str) -> Type[Op]:
+    def get(self, name: str) -> type[Op]:
         if name not in self._ops:
             raise KeyError(f"unknown operator: {name!r} — see `cdj ops` for the zoo")
         return self._ops[name]
@@ -106,12 +110,15 @@ def engine_services(ctx: OpContext) -> dict:
         registry = ctx.services.get("tool_registry") or default_registry()
         verifier = ctx.services.get("verifier") or PytestVerifier()
         blobs = BlobStore(ctx.workdir / "blobs")
-        ctx.services.update({
-            "tool_registry": registry,
-            "verifier": verifier,
-            "blobs": blobs,
-            "collector": Collector(registry, blobs, verifier),
-            "replayer": Replayer(registry, UnsafeLocalWorkspace(blobs, ctx.workdir / "scratch"),
-                                 verifier),
-        })
+        ctx.services.update(
+            {
+                "tool_registry": registry,
+                "verifier": verifier,
+                "blobs": blobs,
+                "collector": Collector(registry, blobs, verifier),
+                "replayer": Replayer(
+                    registry, UnsafeLocalWorkspace(blobs, ctx.workdir / "scratch"), verifier
+                ),
+            }
+        )
     return ctx.services

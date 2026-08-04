@@ -10,6 +10,7 @@ Same closed loop as the toy pipeline, with three additions:
 Headline outputs: flip_repro_rate (kill line #1, real jackpot) and
 control_digest_match_rate, both also broken down by family and tier.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -22,13 +23,13 @@ from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
+from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.envs import ENV_POINTER, EnvManager, write_env_pointer
 from causal_data_juicer.runtime.llm import DiskCachedLLM, OpenAICompatClient
 from causal_data_juicer.runtime.llm_policy import LLMPolicy
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
-from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.sdk.schemas import CausalUnit, CostLedger, Episode, EvidenceTier, Snapshot
 from causal_data_juicer.slicing.ddmin import minimize_unit
 from causal_data_juicer.workloads.depmig.base import WORKLOAD_ID, DepMigTask
@@ -63,10 +64,12 @@ def run_depmig(
     resample_temperature: float = 0.85,
     refine_rounds: int = 0,  # validation-in-the-loop refinement for unflipped episodes
     episode_variants: int = 1,  # >1: extra prompt-perturbed episodes per task
-    task_hints: dict | None = None,  # task_id -> text appended to the agent prompt (e.g. retrieved memory)
+    task_hints: dict
+    | None = None,  # task_id -> text appended to the agent prompt (e.g. retrieved memory)
 ) -> dict:
     t_start = time.monotonic()
     from causal_data_juicer.runtime.rundir import prepare_run_dir
+
     run_dir = prepare_run_dir(Path(run_dir))
     store = RunStore(run_dir)
     registry = default_registry()
@@ -93,8 +96,10 @@ def run_depmig(
             if python is None:
                 python = mgr.ensure(family.new_env())
                 from causal_data_juicer.sdk.schemas import digest_of
+
                 env_freezes[family.name] = digest_of(
-                    mgr.provenance(family.new_env()).get("frozen", []))
+                    mgr.provenance(family.new_env()).get("frozen", [])
+                )
             tasks.append((task, python))
     task_by_id = {t.id: t for t, _ in tasks}
 
@@ -106,27 +111,34 @@ def run_depmig(
     episodes: list[Episode] = []
     snapshots: list[Snapshot] = []
     for task, python in tasks:
-      for variant in range(max(1, episode_variants)):
-        ws = run_dir / "workspaces" / (task.id if variant == 0 else f"{task.id}-v{variant}")
-        task.setup(ws)
-        write_env_pointer(ws, python)
-        policy = LLMPolicy(llm, max_steps=max_steps)
-        prompt = task.agent_prompt() + ("" if variant == 0
-                                        else f"\n(independent attempt #{variant})") \
-            + ((task_hints or {}).get(task.id, ""))
-        policy.bind_task(prompt)
-        episode, snaps = collector.run_episode(
-            task.id, prompt, ws, policy,
-            workload_id=WORKLOAD_ID, max_steps=max_steps,
-        )
-        violation = _seal_check(task, ws)
-        if violation and episode.outcome and episode.outcome.success:
-            episode.outcome.success = False
-            episode.outcome.detail = f"[anti-cheat] {violation}"
-        episode.meta.update({"family": task.family.name, "tier": task.tier,
-                             "seal_violation": violation})
-        episodes.append(episode)
-        snapshots.extend(snaps)
+        for variant in range(max(1, episode_variants)):
+            ws = run_dir / "workspaces" / (task.id if variant == 0 else f"{task.id}-v{variant}")
+            task.setup(ws)
+            write_env_pointer(ws, python)
+            policy = LLMPolicy(llm, max_steps=max_steps)
+            prompt = (
+                task.agent_prompt()
+                + ("" if variant == 0 else f"\n(independent attempt #{variant})")
+                + ((task_hints or {}).get(task.id, ""))
+            )
+            policy.bind_task(prompt)
+            episode, snaps = collector.run_episode(
+                task.id,
+                prompt,
+                ws,
+                policy,
+                workload_id=WORKLOAD_ID,
+                max_steps=max_steps,
+            )
+            violation = _seal_check(task, ws)
+            if violation and episode.outcome and episode.outcome.success:
+                episode.outcome.success = False
+                episode.outcome.detail = f"[anti-cheat] {violation}"
+            episode.meta.update(
+                {"family": task.family.name, "tier": task.tier, "seal_violation": violation}
+            )
+            episodes.append(episode)
+            snapshots.extend(snaps)
 
     failures = [ep for ep in episodes if ep.outcome and not ep.outcome.success]
 
@@ -135,20 +147,28 @@ def run_depmig(
     source_objs = []
     for source_name in sources.split(","):
         if source_name == "fixer":
-            source_objs.append(FixerLLMSource(
-                fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost))
+            source_objs.append(
+                FixerLLMSource(
+                    fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost
+                )
+            )
         elif source_name == "fixer-tests":
-            source_objs.append(FixerLLMSource(
-                fixer_llm, candidates_per_failure=fixer_candidates, ledger=screening_cost,
-                name="fixer-tests",
-                tests_by_task={tid: t.test_files() for tid, t in task_by_id.items()}))
+            source_objs.append(
+                FixerLLMSource(
+                    fixer_llm,
+                    candidates_per_failure=fixer_candidates,
+                    ledger=screening_cost,
+                    name="fixer-tests",
+                    tests_by_task={tid: t.test_files() for tid, t in task_by_id.items()},
+                )
+            )
         elif source_name == "resample":
             from causal_data_juicer.acquisition.resample import ResampleSource
+
             resample_llm = DiskCachedLLM(
-                OpenAICompatClient(base_url, model, temperature=resample_temperature),
-                cache_dir)
-            source_objs.append(ResampleSource(resample_llm, k=resample_k,
-                                              ledger=screening_cost))
+                OpenAICompatClient(base_url, model, temperature=resample_temperature), cache_dir
+            )
+            source_objs.append(ResampleSource(resample_llm, k=resample_k, ledger=screening_cost))
         else:
             raise ValueError(f"unknown candidate source: {source_name}")
     screener = Screener(sources=source_objs)
@@ -159,13 +179,13 @@ def run_depmig(
     control_cache: dict = {}
 
     def validate(ep, iv) -> CausalUnit:
-        unit = replayer.paired_replay(ep, snapshots, iv, n_repro=n_repro,
-                                      control_cache=control_cache)
+        unit = replayer.paired_replay(
+            ep, snapshots, iv, n_repro=n_repro, control_cache=control_cache
+        )
         if unit.tier >= EvidenceTier.REPRODUCIBLE:
             unit = minimize_unit(replayer, ep, snapshots, unit)
         family = task_by_id[ep.task_id].family.name
-        stamp(unit, {**fingerprint, "family": family,
-                     f"env:{family}": env_freezes.get(family, "")})
+        stamp(unit, {**fingerprint, "family": family, f"env:{family}": env_freezes.get(family, "")})
         units.append(unit)
         return unit
 
@@ -180,6 +200,7 @@ def run_depmig(
 
     if refine_rounds > 0:
         from causal_data_juicer.acquisition.fixer import propose_refinement
+
         eps_by_id = {ep.id: ep for ep in episodes}
         for ep_id, (iv, detail) in list(last_attempt.items()):
             if ep_id in flipped_eps:
@@ -187,8 +208,9 @@ def run_depmig(
             ep = eps_by_id[ep_id]
             tests = task_by_id[ep.task_id].test_files()
             for round_index in range(1, refine_rounds + 1):
-                revised = propose_refinement(fixer_llm, ep, iv, detail, round_index,
-                                             tests=tests, ledger=screening_cost)
+                revised = propose_refinement(
+                    fixer_llm, ep, iv, detail, round_index, tests=tests, ledger=screening_cost
+                )
                 if revised is None:
                     break
                 unit = validate(ep, revised)
@@ -197,7 +219,8 @@ def run_depmig(
                     break
                 if unit.intervened_outcome is None:
                     break
-                iv, detail = revised, unit.intervened_outcome.detail
+                # chain feedback: next round refines the revised attempt
+                iv, detail = revised, unit.intervened_outcome.detail  # noqa: PLW2901
 
     exports = compile_all(units, episodes, run_dir / "exports")
 
@@ -222,8 +245,9 @@ def run_depmig(
     for u in units:
         fam, tier = bucket(u)
         for key in (f"family:{fam}", f"tier:T{tier}"):
-            b = by_bucket.setdefault(key, {"candidates": 0, "flipped": 0,
-                                           "repro_flips": 0, "repro_runs": 0})
+            b = by_bucket.setdefault(
+                key, {"candidates": 0, "flipped": 0, "repro_flips": 0, "repro_runs": 0}
+            )
             b["candidates"] += 1
             b["flipped"] += int(u.flipped)
             b["repro_flips"] += u.repro_flips
@@ -240,7 +264,8 @@ def run_depmig(
         "candidates_screened": len(candidates),
         "units_by_tier": {
             tier.name: sum(1 for u in units if u.tier == tier)
-            for tier in EvidenceTier if any(u.tier == tier for u in units)
+            for tier in EvidenceTier
+            if any(u.tier == tier for u in units)
         },
         "validated_units": len(validated),
         "flip_repro_rate": repro_flips / repro_runs if repro_runs else None,
@@ -257,7 +282,8 @@ def run_depmig(
         "cost": total_cost.model_dump(),
         "cost_per_validated_unit_s": (
             round(sum(u.cost.wall_time_s for u in validated) / len(validated), 2)
-            if validated else None
+            if validated
+            else None
         ),
         "exports": {k: str(v) for k, v in exports.items()},
         "provenance": fingerprint,

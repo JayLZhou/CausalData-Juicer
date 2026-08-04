@@ -5,6 +5,7 @@ validated under.  ``needs_revalidation`` is the hook M4's selective
 revalidation builds on: when a component version changes, only units
 whose provenance mentions that component go back to the replay queue.
 """
+
 from __future__ import annotations
 
 import platform
@@ -41,5 +42,4 @@ def needs_revalidation(unit: CausalUnit, current: dict) -> list[str]:
     metadata like which fixer produced the unit) cannot trigger
     revalidation — that asymmetry is what makes it selective.
     """
-    return [k for k in unit.provenance
-            if k in current and current[k] != unit.provenance[k]]
+    return [k for k in unit.provenance if k in current and current[k] != unit.provenance[k]]

@@ -7,9 +7,9 @@ one physical blob (repro forks, shared prefixes, identical task setups).
 placement policies whose replay-cost/storage trade-off ``storage-bench``
 measures on real runs.
 """
+
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from causal_data_juicer.sdk.schemas import Episode, Snapshot
@@ -23,8 +23,9 @@ def _blob_bytes(blob_root: Path, digest: str) -> int:
 
 
 def dag_stats(episodes: list[Episode], snapshots: list[Snapshot], blob_root: Path) -> dict:
-    references = [s.tree_digest for s in snapshots] + \
-        [ep.final_tree_digest for ep in episodes if ep.final_tree_digest]
+    references = [s.tree_digest for s in snapshots] + [
+        ep.final_tree_digest for ep in episodes if ep.final_tree_digest
+    ]
     unique = sorted(set(references))
     sizes = {d: _blob_bytes(blob_root, d) for d in unique}
     bytes_logical = sum(sizes[d] for d in references)
@@ -54,8 +55,7 @@ def select_checkpoints(snapshots: list[Snapshot], policy: str) -> list[Snapshot]
         by_episode.setdefault(s.episode_id, []).append(s)
     kept: list[Snapshot] = []
     if policy == "first":
-        for snaps in by_episode.values():
-            kept.append(snaps[0])
+        kept.extend(snaps[0] for snaps in by_episode.values())
         return kept
     if policy.startswith("every_k:"):
         k = int(policy.split(":", 1)[1])

@@ -1,5 +1,3 @@
-import pytest
-
 from causal_data_juicer.runtime.tools import EXTERNAL_OBS_PLACEHOLDER, ToolExecutor
 from causal_data_juicer.sdk.schemas import CostLedger, ToolCall
 from causal_data_juicer.store.blob import BlobStore, tree_digest
@@ -49,6 +47,6 @@ def test_external_tool_is_mocked_in_replay_and_digest_is_mode_invariant(registry
     live_obs, live_digest = ToolExecutor(registry, "live").execute(ws, call, CostLedger())
     replay_obs, replay_digest = ToolExecutor(registry, "replay").execute(ws, call, CostLedger())
     assert "report sent" in live_obs
-    assert "dry-run mock" in replay_obs          # never truly executed in replay
-    assert live_digest == replay_digest          # digests normalized via placeholder
+    assert "dry-run mock" in replay_obs  # never truly executed in replay
+    assert live_digest == replay_digest  # digests normalized via placeholder
     assert EXTERNAL_OBS_PLACEHOLDER not in live_obs

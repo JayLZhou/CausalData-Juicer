@@ -16,6 +16,7 @@ Levels (best first):
 `probe()` reports the level with evidence; `wrap()` rewrites an argv to run
 under that level. The probe result is cached per process.
 """
+
 from __future__ import annotations
 
 import functools
@@ -26,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_LIMITS = {
-    "as_bytes": 4 * 1024**3,     # address space
+    "as_bytes": 4 * 1024**3,  # address space
     "cpu_seconds": 600,
     "fsize_bytes": 1 * 1024**3,  # largest single file a check may write
 }
@@ -34,7 +35,7 @@ DEFAULT_LIMITS = {
 
 @dataclass
 class Capabilities:
-    level: str                      # container | netns | none
+    level: str  # container | netns | none
     detail: dict = field(default_factory=dict)
 
 
@@ -47,7 +48,9 @@ def _apparmor_profile() -> str:
 
 def _try(cmd: list[str], timeout: int = 20) -> bool:
     try:
-        return subprocess.run(cmd, capture_output=True, timeout=timeout).returncode == 0
+        return (
+            subprocess.run(cmd, capture_output=True, timeout=timeout, check=False).returncode == 0
+        )
     except (OSError, subprocess.TimeoutExpired):
         return False
 
@@ -78,8 +81,9 @@ def probe() -> Capabilities:
 _SHIM = "causal_data_juicer.runtime.rlimit_exec"
 
 
-def wrap(argv: list[str], workspace: Path, limits: dict | None = None,
-         caps: Capabilities | None = None) -> list[str]:
+def wrap(
+    argv: list[str], workspace: Path, limits: dict | None = None, caps: Capabilities | None = None
+) -> list[str]:
     """Rewrite ``argv`` to execute under the strongest available isolation."""
     caps = caps or probe()
     lim = {**DEFAULT_LIMITS, **(limits or {})}
@@ -88,27 +92,49 @@ def wrap(argv: list[str], workspace: Path, limits: dict | None = None,
         runtime = caps.detail["runtime"]
         ws = str(Path(workspace).resolve())
         return [
-            caps.detail[runtime], "run", "--rm",
+            caps.detail[runtime],
+            "run",
+            "--rm",
             "--network=none",
-            "--user", "1000:1000",
-            "--read-only", "--read-only-tmpfs",
-            "--memory", str(lim["as_bytes"]),
-            "--pids-limit", "256",
-            "--security-opt", "no-new-privileges",
-            "--cap-drop", "ALL",
-            "-v", f"{ws}:/ws:rw", "-w", "/ws",
+            "--user",
+            "1000:1000",
+            "--read-only",
+            "--read-only-tmpfs",
+            "--memory",
+            str(lim["as_bytes"]),
+            "--pids-limit",
+            "256",
+            "--security-opt",
+            "no-new-privileges",
+            "--cap-drop",
+            "ALL",
+            "-v",
+            f"{ws}:/ws:rw",
+            "-w",
+            "/ws",
             "python:3.12-slim",
-        ] + argv
+            *argv,
+        ]
 
     if caps.level == "netns":
         return [
-            caps.detail["unshare"], "-U", "-r", "-n", "--",
-            sys.executable, "-m", _SHIM,
-            "--as-bytes", str(lim["as_bytes"]),
-            "--cpu-seconds", str(lim["cpu_seconds"]),
-            "--fsize-bytes", str(lim["fsize_bytes"]),
+            caps.detail["unshare"],
+            "-U",
+            "-r",
+            "-n",
             "--",
-        ] + argv
+            sys.executable,
+            "-m",
+            _SHIM,
+            "--as-bytes",
+            str(lim["as_bytes"]),
+            "--cpu-seconds",
+            str(lim["cpu_seconds"]),
+            "--fsize-bytes",
+            str(lim["fsize_bytes"]),
+            "--",
+            *argv,
+        ]
 
     return argv
 
@@ -116,10 +142,14 @@ def wrap(argv: list[str], workspace: Path, limits: dict | None = None,
 def describe(caps: Capabilities | None = None) -> str:
     caps = caps or probe()
     if caps.level == "container":
-        return (f"container isolation via {caps.detail['runtime']} "
-                "(no network, read-only rootfs, cgroup limits)")
+        return (
+            f"container isolation via {caps.detail['runtime']} "
+            "(no network, read-only rootfs, cgroup limits)"
+        )
     if caps.level == "netns":
-        return ("network-namespace isolation + rlimits (network fully blocked; "
-                "NO filesystem isolation — container runtime unavailable: "
-                f"apparmor={caps.detail.get('apparmor', '?')})")
+        return (
+            "network-namespace isolation + rlimits (network fully blocked; "
+            "NO filesystem isolation — container runtime unavailable: "
+            f"apparmor={caps.detail.get('apparmor', '?')})"
+        )
     return "NO isolation — plain host execution"

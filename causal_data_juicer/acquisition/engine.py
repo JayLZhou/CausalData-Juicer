@@ -11,10 +11,10 @@ Every candidate processed appends a point to the curve trace
 (cost so far vs validated units so far) — the raw material for the
 cost-per-unit comparison across policies.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from causal_data_juicer.acquisition.budget import Budget
 from causal_data_juicer.acquisition.policies import AcquisitionPolicy, Candidate
@@ -41,8 +41,13 @@ class AcquisitionResult:
 
 
 class AcquisitionEngine:
-    def __init__(self, replayer: Replayer, n_repro: int = 3, slice_minimal: bool = True,
-                 mechanisms: bool = True):
+    def __init__(
+        self,
+        replayer: Replayer,
+        n_repro: int = 3,
+        slice_minimal: bool = True,
+        mechanisms: bool = True,
+    ):
         self.replayer = replayer
         self.n_repro = n_repro
         self.slice_minimal = slice_minimal
@@ -55,8 +60,9 @@ class AcquisitionEngine:
         budget: Budget,
         policy: AcquisitionPolicy,
     ) -> AcquisitionResult:
-        result = AcquisitionResult(policy=policy.name, budget=budget.label(),
-                                   candidates_total=len(candidates))
+        result = AcquisitionResult(
+            policy=policy.name, budget=budget.label(), candidates_total=len(candidates)
+        )
         pending = list(candidates)
         control_cache: dict | None = {} if self.mechanisms else None
 
@@ -67,8 +73,11 @@ class AcquisitionEngine:
             pending.remove(candidate)
 
             unit = self.replayer.paired_replay(
-                candidate.episode, snapshots, candidate.intervention,
-                n_repro=self.n_repro, control_cache=control_cache,
+                candidate.episode,
+                snapshots,
+                candidate.intervention,
+                n_repro=self.n_repro,
+                control_cache=control_cache,
                 early_stop_repro=self.mechanisms,
             )
             if self.slice_minimal and unit.tier >= EvidenceTier.REPRODUCIBLE:
@@ -78,10 +87,12 @@ class AcquisitionEngine:
             result.candidates_processed += 1
             policy.observe(candidate, unit)
 
-            result.curve.append({
-                "replays": result.spent.replay_runs,
-                "seconds": round(result.spent.wall_time_s, 2),
-                "validated_units": len(result.validated()),
-                "distinct_tasks": result.distinct_tasks(),
-            })
+            result.curve.append(
+                {
+                    "replays": result.spent.replay_runs,
+                    "seconds": round(result.spent.wall_time_s, 2),
+                    "validated_units": len(result.validated()),
+                    "distinct_tasks": result.distinct_tasks(),
+                }
+            )
         return result

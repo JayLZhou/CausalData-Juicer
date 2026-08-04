@@ -3,6 +3,7 @@
 Hard rule: every exported row carries ``evidence_tier`` — weak evidence
 never masquerades as strong.
 """
+
 from __future__ import annotations
 
 import json

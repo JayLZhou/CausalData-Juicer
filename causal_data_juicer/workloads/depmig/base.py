@@ -5,6 +5,7 @@ dependency family, executed in an environment that has the *new* version
 installed — so its tests fail until the agent migrates the source.
 Tests are sealed: the verifier refuses success if they were touched.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -24,12 +25,18 @@ class Family:
     base_python: str | None = None  # None -> engine's interpreter
 
     def old_env(self) -> TaskEnv:
-        return TaskEnv(name=f"{self.name}-old", packages=self.old_pins,
-                       **({"base_python": self.base_python} if self.base_python else {}))
+        return TaskEnv(
+            name=f"{self.name}-old",
+            packages=self.old_pins,
+            **({"base_python": self.base_python} if self.base_python else {}),
+        )
 
     def new_env(self) -> TaskEnv:
-        return TaskEnv(name=f"{self.name}-new", packages=self.new_pins,
-                       **({"base_python": self.base_python} if self.base_python else {}))
+        return TaskEnv(
+            name=f"{self.name}-new",
+            packages=self.new_pins,
+            **({"base_python": self.base_python} if self.base_python else {}),
+        )
 
 
 @dataclass
@@ -68,15 +75,23 @@ class DepMigTask:
 
 # Hermeticity: substrings forbidden in sealed test files (spec §4).
 FORBIDDEN_IN_TESTS = [
-    "import socket", "import requests", "import httpx", "urllib",
-    "time.time(", "datetime.now(", "datetime.utcnow(", "random.random(",
+    "import socket",
+    "import requests",
+    "import httpx",
+    "urllib",
+    "time.time(",
+    "datetime.now(",
+    "datetime.utcnow(",
+    "random.random(",
 ]
 
 
 def scan_hermeticity(task: DepMigTask) -> list[str]:
     violations = []
     for name, content in task.test_files().items():
-        for pattern in FORBIDDEN_IN_TESTS:
-            if pattern in content:
-                violations.append(f"{task.id}:{name}: forbidden '{pattern}'")
+        violations.extend(
+            f"{task.id}:{name}: forbidden '{pattern}'"
+            for pattern in FORBIDDEN_IN_TESTS
+            if pattern in content
+        )
     return violations

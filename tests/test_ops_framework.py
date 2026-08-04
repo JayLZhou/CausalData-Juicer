@@ -1,5 +1,4 @@
 """DJ-style ops framework: registry, categories, recipe execution."""
-from pathlib import Path
 
 import pytest
 
@@ -29,7 +28,7 @@ def test_registry_has_all_categories():
 
 def test_listing_mentions_every_op():
     text = list_ops()
-    for name, _ in OPERATORS.items():
+    for name, _op in OPERATORS.items():  # noqa: PERF102 — Registry, not a dict
         assert name in text
 
 
@@ -37,8 +36,7 @@ def test_recipe_reproduces_the_demo(tmp_path):
     config = tmp_path / "r.yaml"
     config.write_text(RECIPE.format(workdir=tmp_path / "wd"))
     ctx = run_recipe(config)
-    validated = [u for u in ctx.units
-                 if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED]
+    validated = [u for u in ctx.units if u.tier >= EvidenceTier.COUNTERFACTUAL_VALIDATED]
     assert len(validated) == 6
     assert all(u.tier == EvidenceTier.MINIMAL for u in validated)
     assert set(ctx.exports) >= {"sft", "dpo", "memory", "regression"}

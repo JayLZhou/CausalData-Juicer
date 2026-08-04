@@ -12,6 +12,7 @@ run-directory (re)creation now goes through :func:`prepare_run_dir`:
   are refused with instructions — there is no force flag that bypasses the
   marker or the path checks.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,8 @@ def prepare_run_dir(out: Path) -> Path:
             raise UnmanagedDirectoryError(
                 f"{out} exists but has no {MARKER} marker — it was not created "
                 f"by this engine, so it will not be cleared. Choose another "
-                f"--out or move the directory yourself.")
+                f"--out or move the directory yourself."
+            )
         old_id = json.loads(marker.read_text()).get("run_id", "unknown")
         trash = out.parent / ".cdj-trash"
         trash.mkdir(exist_ok=True)

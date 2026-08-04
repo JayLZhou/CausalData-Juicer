@@ -4,6 +4,7 @@ Run-dir side exists because `--out /path/to/anything` used to be rmtree'd.
 Snapshot side exists because the v1 digest ignored mode and symlinks: chmod
 +x was invisible, and symlinks were silently flattened into regular files.
 """
+
 import os
 
 import pytest
@@ -20,8 +21,8 @@ from causal_data_juicer.store.blob import (
     tree_digest_v1,
 )
 
-
 # -- managed run directories --------------------------------------------------
+
 
 def test_fresh_dir_is_created_and_marked(tmp_path):
     out = prepare_run_dir(tmp_path / "runs" / "r1")
@@ -40,7 +41,7 @@ def test_unmanaged_existing_dir_is_refused(tmp_path):
 def test_managed_dir_goes_to_trash_not_oblivion(tmp_path):
     out = prepare_run_dir(tmp_path / "runs" / "r1")
     (out / "units.jsonl").write_text("{}")
-    prepare_run_dir(tmp_path / "runs" / "r1")          # reuse the same --out
+    prepare_run_dir(tmp_path / "runs" / "r1")  # reuse the same --out
     trash = list((tmp_path / "runs" / ".cdj-trash").iterdir())
     assert len(trash) == 1
     assert (trash[0] / "units.jsonl").read_text() == "{}"
@@ -54,7 +55,7 @@ def test_home_and_root_are_refused(tmp_path):
 def test_symlinked_out_is_refused(tmp_path):
     real = tmp_path / "real"
     real.mkdir()
-    (real / MARKER).write_text("{\"run_id\": \"x\"}")
+    (real / MARKER).write_text('{"run_id": "x"}')
     link = tmp_path / "link"
     os.symlink(real, link)
     with pytest.raises(UnmanagedDirectoryError):
@@ -62,6 +63,7 @@ def test_symlinked_out_is_refused(tmp_path):
 
 
 # -- snapshot identity v2 -----------------------------------------------------
+
 
 @pytest.fixture()
 def tree(tmp_path):
@@ -118,15 +120,19 @@ def test_out_of_tree_symlink_is_stored_as_link_not_content(tree, tmp_path):
     store = BlobStore(tmp_path / "blobs")
     digest = store.put_tree(tree)
     blob_leak = store.root / digest / "leak.txt"
-    assert blob_leak.is_symlink()                      # not flattened
+    assert blob_leak.is_symlink()  # not flattened
     assert "HOST-ONLY" not in str(
-        [p.read_text() for p in (store.root / digest).rglob("*")
-         if p.is_file() and not p.is_symlink()])
+        [
+            p.read_text()
+            for p in (store.root / digest).rglob("*")
+            if p.is_file() and not p.is_symlink()
+        ]
+    )
 
 
 def test_digests_match_is_schema_aware(tree):
-    assert digests_match(tree_digest(tree), tree)      # v2 vs v2
-    assert digests_match(tree_digest_v1(tree), tree)   # legacy recorded digest
+    assert digests_match(tree_digest(tree), tree)  # v2 vs v2
+    assert digests_match(tree_digest_v1(tree), tree)  # legacy recorded digest
     assert not digests_match("v2-deadbeef00000000", tree)
 
 

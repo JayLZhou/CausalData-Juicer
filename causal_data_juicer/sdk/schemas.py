@@ -5,13 +5,14 @@ The four contribution-1 abstractions are ``Episode`` / ``Snapshot`` /
 evidence-graded ``CausalUnit``.  Evidence tiers are strictly ordered and
 must remain visible wherever a unit is displayed or exported.
 """
+
 from __future__ import annotations
 
 import enum
 import hashlib
 import json
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +26,7 @@ def digest_of(obj: Any) -> str:
     return hashlib.sha256(data.encode()).hexdigest()[:16]
 
 
-class SideEffectClass(str, enum.Enum):
+class SideEffectClass(enum.StrEnum):
     """Side-effect grading of a tool.  EXTERNAL_SIDE_EFFECT tools are never
     truly re-executed during replay — only mocked / dry-run."""
 
@@ -70,7 +71,7 @@ class CostLedger(BaseModel):
         self.tool_calls += 1
         self.wall_time_s += wall_time_s
 
-    def merge(self, other: "CostLedger") -> None:
+    def merge(self, other: CostLedger) -> None:
         self.llm_calls += other.llm_calls
         self.tokens_in += other.tokens_in
         self.tokens_out += other.tokens_out
@@ -106,8 +107,8 @@ class Step(BaseModel):
     action: ToolCall
     observation: str = ""
     obs_digest: str = ""
-    snapshot_id: Optional[str] = None  # snapshot of state *before* this step
-    llm: Optional[LLMRecord] = None
+    snapshot_id: str | None = None  # snapshot of state *before* this step
+    llm: LLMRecord | None = None
     wall_time_s: float = 0.0
 
 
@@ -127,7 +128,7 @@ class Episode(BaseModel):
     workload_id: str = ""
     task_description: str = ""
     steps: list[Step] = Field(default_factory=list)
-    outcome: Optional[Outcome] = None
+    outcome: Outcome | None = None
     final_tree_digest: str = ""
     cost: CostLedger = Field(default_factory=CostLedger)
     meta: dict[str, Any] = Field(default_factory=dict)
@@ -144,7 +145,7 @@ class Snapshot(BaseModel):
     declared_state: dict[str, Any] = Field(default_factory=dict)
 
 
-class InterventionType(str, enum.Enum):
+class InterventionType(enum.StrEnum):
     ACTION_REPLACE = "ACTION_REPLACE"
     TOOL_ARGUMENT_EDIT = "TOOL_ARGUMENT_EDIT"
 
@@ -160,7 +161,7 @@ class LinePatch(BaseModel):
 class ArgEdit(BaseModel):
     arg: str
     op: str = "set"  # "set" | "patch_lines"
-    value: Optional[Any] = None
+    value: Any | None = None
     patches: list[LinePatch] = Field(default_factory=list)
 
 
@@ -168,7 +169,7 @@ class Intervention(BaseModel):
     id: str = Field(default_factory=lambda: new_id("iv"))
     type: InterventionType
     target_step: int
-    new_action: Optional[ToolCall] = None      # ACTION_REPLACE
+    new_action: ToolCall | None = None  # ACTION_REPLACE
     edits: list[ArgEdit] = Field(default_factory=list)  # TOOL_ARGUMENT_EDIT
     rationale: str = ""
     source: str = ""  # e.g. "fixer-cache", "heuristic"
@@ -188,8 +189,8 @@ class ReplayRecord(BaseModel):
     branch: str  # "original" | "intervened"
     outcome: Outcome
     obs_digests: list[str] = Field(default_factory=list)
-    deterministic_match: Optional[bool] = None  # original branch only
-    digest_match_fraction: Optional[float] = None  # per-step match rate, original branch
+    deterministic_match: bool | None = None  # original branch only
+    digest_match_fraction: float | None = None  # per-step match rate, original branch
 
 
 class CausalUnit(BaseModel):
@@ -200,14 +201,14 @@ class CausalUnit(BaseModel):
     task_id: str
     intervention: Intervention
     original_outcome: Outcome
-    intervened_outcome: Optional[Outcome] = None
+    intervened_outcome: Outcome | None = None
     flipped: bool = False
-    original_replay_match: Optional[bool] = None
-    control_digest_match: Optional[float] = None  # step-level rate on the control branch
+    original_replay_match: bool | None = None
+    control_digest_match: float | None = None  # step-level rate on the control branch
     repro_runs: int = 0
     repro_flips: int = 0
     tier: EvidenceTier = EvidenceTier.SUGGESTED
-    minimal_intervention: Optional[Intervention] = None
+    minimal_intervention: Intervention | None = None
     atoms_before_slicing: int = 0
     atoms_after_slicing: int = 0
     cost: CostLedger = Field(default_factory=CostLedger)

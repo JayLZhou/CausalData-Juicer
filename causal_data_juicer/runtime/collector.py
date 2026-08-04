@@ -2,16 +2,16 @@
 workspace at every step boundary and recording actions, observations and
 cached LLM interactions into an ``Episode``.
 """
+
 from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Protocol
 
 from causal_data_juicer.runtime.tools import ToolExecutor, ToolRegistry
 from causal_data_juicer.runtime.verifier import PytestVerifier
 from causal_data_juicer.sdk.schemas import (
-    CostLedger,
     Episode,
     LLMRecord,
     Snapshot,
@@ -27,8 +27,7 @@ class Policy(Protocol):
 
     def next_action(
         self, task_id: str, step_index: int, history: list[Step]
-    ) -> Optional[tuple[ToolCall, Optional[LLMRecord]]]:
-        ...
+    ) -> tuple[ToolCall, LLMRecord | None] | None: ...
 
 
 class Collector:
@@ -47,7 +46,9 @@ class Collector:
         max_steps: int = 32,
     ) -> tuple[Episode, list[Snapshot]]:
         executor = ToolExecutor(self.registry, mode="live")
-        episode = Episode(task_id=task_id, workload_id=workload_id, task_description=task_description)
+        episode = Episode(
+            task_id=task_id, workload_id=workload_id, task_description=task_description
+        )
         snapshots: list[Snapshot] = []
 
         for i in range(max_steps):

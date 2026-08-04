@@ -14,13 +14,13 @@ and the tier system says exactly that instead of pretending).
 
 Run:  .venv/bin/python examples/case_credit_ate.py [--base runs/depmig-7b --pool ...]
 """
+
 import argparse
 import json
 from pathlib import Path
 
 from causal_data_juicer.compiler.common import render_action, write_jsonl
 from causal_data_juicer.maintenance.revalidate import load_pooled_units
-from causal_data_juicer.sdk.schemas import EvidenceTier
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", default="runs/depmig-7b")
@@ -37,26 +37,38 @@ for unit in units:
     k = unit.effective_intervention().target_step
     p_do = unit.repro_flips / unit.repro_runs if unit.repro_runs else float(unit.flipped)
     p_base = 1.0 if unit.original_outcome.success else 0.0
-    trajectory = [{
-        "step": st.index,
-        "action": render_action(st.action),
-        "credit": round(p_do - p_base, 3) if st.index == k else 0.0,
-        "counterfactual_action": render_action(unit.effective_intervention().new_action)
-        if st.index == k and unit.effective_intervention().new_action else None,
-        "has_counterfactual_evidence": st.index == k,
-    } for st in ep.steps]
-    rows.append({
-        "task_id": unit.task_id, "unit_id": unit.id,
-        "ate_at_target_step": round(p_do - p_base, 3),
-        "trajectory": trajectory,
-        "evidence_tier": unit.tier.name,
-    })
+    trajectory = [
+        {
+            "step": st.index,
+            "action": render_action(st.action),
+            "credit": round(p_do - p_base, 3) if st.index == k else 0.0,
+            "counterfactual_action": render_action(unit.effective_intervention().new_action)
+            if st.index == k and unit.effective_intervention().new_action
+            else None,
+            "has_counterfactual_evidence": st.index == k,
+        }
+        for st in ep.steps
+    ]
+    rows.append(
+        {
+            "task_id": unit.task_id,
+            "unit_id": unit.id,
+            "ate_at_target_step": round(p_do - p_base, 3),
+            "trajectory": trajectory,
+            "evidence_tier": unit.tier.name,
+        }
+    )
 
 write_jsonl(Path(args.out) / "credit.jsonl", rows)
 ates = [r["ate_at_target_step"] for r in rows]
-print(json.dumps({
-    "units": len(rows),
-    "mean_ate": round(sum(ates) / max(1, len(ates)), 3),
-    "credited_steps": sum(1 for r in rows for s in r["trajectory"] if s["credit"] != 0),
-    "out": str(Path(args.out) / "credit.jsonl"),
-}, indent=2))
+print(
+    json.dumps(
+        {
+            "units": len(rows),
+            "mean_ate": round(sum(ates) / max(1, len(ates)), 3),
+            "credited_steps": sum(1 for r in rows for s in r["trajectory"] if s["credit"] != 0),
+            "out": str(Path(args.out) / "credit.jsonl"),
+        },
+        indent=2,
+    )
+)

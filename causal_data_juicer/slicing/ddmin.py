@@ -5,9 +5,11 @@ atoms (per-arg / per-line edits) that still flips the outcome.  Every
 probe is a real replay and is charged to the unit's ledger — slicing cost
 is part of the unit's acquisition cost, not free.
 """
+
 from __future__ import annotations
 
-from typing import Callable, Sequence, TypeVar
+from collections.abc import Callable, Sequence
+from typing import TypeVar
 
 from causal_data_juicer.interventions.apply import intervention_atoms, rebuild_from_atoms
 from causal_data_juicer.replay.replayer import Replayer
@@ -15,7 +17,6 @@ from causal_data_juicer.sdk.schemas import (
     CausalUnit,
     Episode,
     EvidenceTier,
-    Intervention,
     InterventionType,
     Snapshot,
 )
@@ -32,7 +33,7 @@ def ddmin(atoms: Sequence[T], test: Callable[[list[T]], bool]) -> list[T]:
         chunk = max(1, len(atoms) // n)
         subsets = [atoms[i : i + chunk] for i in range(0, len(atoms), chunk)]
         reduced = False
-        for i, subset in enumerate(subsets):
+        for i, _subset in enumerate(subsets):
             complement = [a for j, s in enumerate(subsets) if j != i for a in s]
             if complement and test(complement):
                 atoms = complement

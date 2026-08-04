@@ -12,6 +12,7 @@ The old behavior — "inline every small text file" — walked straight into
 - `context_manifest()` reports exactly what would be sent, for display
   before the first LLM call and for `cdj run --context-manifest`.
 """
+
 from __future__ import annotations
 
 import math
@@ -19,31 +20,77 @@ import re
 from pathlib import Path
 
 ALLOWED_EXTENSIONS = {
-    ".py", ".md", ".rst", ".txt", ".toml", ".cfg", ".ini",
-    ".json", ".yaml", ".yml", ".sql", ".csv", ".html", ".css", ".js", ".ts",
+    ".py",
+    ".md",
+    ".rst",
+    ".txt",
+    ".toml",
+    ".cfg",
+    ".ini",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".sql",
+    ".csv",
+    ".html",
+    ".css",
+    ".js",
+    ".ts",
 }
 
-EXCLUDE_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache",
-                ".tox", ".mypy_cache", ".ruff_cache", ".aws", ".ssh", ".gnupg",
-                ".docker", ".kube", ".config"}
+EXCLUDE_DIRS = {
+    ".git",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".tox",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".aws",
+    ".ssh",
+    ".gnupg",
+    ".docker",
+    ".kube",
+    ".config",
+}
 
 DENY_NAME_PATTERNS = [
-    r"^\.env(\..*)?$", r"^\.npmrc$", r"^\.pypirc$", r"^\.netrc$",
-    r"credential", r"^id_rsa", r"^id_ed25519", r"^id_ecdsa", r"^id_dsa",
-    r"\.pem$", r"\.key$", r"\.p12$", r"\.pfx$", r"\.crt$", r"\.cer$",
-    r"\.der$", r"\.jks$", r"^\.htpasswd$", r"secret", r"^token", r"\.tfstate",
+    r"^\.env(\..*)?$",
+    r"^\.npmrc$",
+    r"^\.pypirc$",
+    r"^\.netrc$",
+    r"credential",
+    r"^id_rsa",
+    r"^id_ed25519",
+    r"^id_ecdsa",
+    r"^id_dsa",
+    r"\.pem$",
+    r"\.key$",
+    r"\.p12$",
+    r"\.pfx$",
+    r"\.crt$",
+    r"\.cer$",
+    r"\.der$",
+    r"\.jks$",
+    r"^\.htpasswd$",
+    r"secret",
+    r"^token",
+    r"\.tfstate",
 ]
 _DENY = [re.compile(p, re.IGNORECASE) for p in DENY_NAME_PATTERNS]
 
 # Token shapes worth refusing to transmit even from allowed files.
 SECRET_PATTERNS = [
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----"),
-    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),                      # AWS access key id
-    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"),            # GitHub tokens
-    re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),                 # OpenAI-style keys
-    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),          # Slack tokens
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),  # AWS access key id
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"),  # GitHub tokens
+    re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),  # OpenAI-style keys
+    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),  # Slack tokens
     re.compile(r"\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),  # JWT
-    re.compile(r"(?i)\b(api[_-]?key|secret|passwd|password|token|auth)\b\s*[:=]\s*['\"]?[^\s'\"]{8,}"),
+    re.compile(
+        r"(?i)\b(api[_-]?key|secret|passwd|password|token|auth)\b\s*[:=]\s*['\"]?[^\s'\"]{8,}"
+    ),
 ]
 
 REDACTED = "[REDACTED]"
@@ -84,7 +131,7 @@ def iter_context_files(ws: Path, max_file: int = 4000):
         rel_parts = p.relative_to(ws).parts
         if any(seg in EXCLUDE_DIRS for seg in rel_parts):
             continue
-        if p.is_symlink():          # never follow, file or directory
+        if p.is_symlink():  # never follow, file or directory
             continue
         if not p.is_file():
             continue

@@ -5,14 +5,15 @@ hard rule: in replay mode an ``EXTERNAL_SIDE_EFFECT`` tool is never truly
 executed — it is served a dry-run mock, and its observation is normalized
 to a constant so determinism digests do not depend on the external world.
 """
+
 from __future__ import annotations
 
 import re
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 from causal_data_juicer.sdk.schemas import CostLedger, SideEffectClass, ToolCall, digest_of
 
@@ -62,8 +63,7 @@ class ToolExecutor:
                 obs = tool.fn(workspace, **call.args)
             except Exception as e:  # tool errors are observations, not crashes —
                 # agents recover from them; paths normalized for digest stability
-                obs = (f"[tool-error] {type(e).__name__}: "
-                       f"{str(e).replace(str(workspace), '<ws>')}")
+                obs = f"[tool-error] {type(e).__name__}: {str(e).replace(str(workspace), '<ws>')}"
         ledger.charge_tool(time.monotonic() - t0)
         if tool.side_effect == SideEffectClass.EXTERNAL_SIDE_EFFECT:
             norm = EXTERNAL_OBS_PLACEHOLDER
@@ -78,8 +78,10 @@ class ToolExecutor:
 # Built-in tools for the local/python workload family
 # ---------------------------------------------------------------------------
 
+
 def _write_file(workspace: Path, path: str, content: str) -> str:
     from causal_data_juicer.runtime.paths import resolve_workspace_path
+
     target = resolve_workspace_path(workspace, path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content)
@@ -88,6 +90,7 @@ def _write_file(workspace: Path, path: str, content: str) -> str:
 
 def _read_file(workspace: Path, path: str, **_ignored) -> str:
     from causal_data_juicer.runtime.paths import resolve_workspace_path
+
     return resolve_workspace_path(workspace, path, must_exist=True).read_text()
 
 
@@ -101,9 +104,26 @@ def _run_pytest(workspace: Path, timeout: int = 60, **_ignored) -> str:
     from causal_data_juicer.runtime.envs import resolve_python
 
     proc = subprocess.run(
-        [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=short",
-         "-o", "addopts=", "-o", "testpaths=", "--rootdir=.", "."],
-        cwd=workspace, capture_output=True, text=True, timeout=timeout,
+        [
+            resolve_python(workspace),
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--tb=short",
+            "-o",
+            "addopts=",
+            "-o",
+            "testpaths=",
+            "--rootdir=.",
+            ".",
+        ],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
     )
     out = _TIMING.sub("Xs", proc.stdout + proc.stderr)
     counts = {"passed": 0, "failed": 0, "error": 0}
@@ -130,7 +150,8 @@ def default_registry() -> ToolRegistry:
     reg = ToolRegistry()
     reg.register(Tool("write_file", SideEffectClass.REVERSIBLE, _write_file))
     reg.register(Tool("read_file", SideEffectClass.PURE, _read_file))
-    reg.register(Tool("run_pytest", SideEffectClass.IDEMPOTENT, _run_pytest,
-                      normalize=_pytest_digest_basis))
+    reg.register(
+        Tool("run_pytest", SideEffectClass.IDEMPOTENT, _run_pytest, normalize=_pytest_digest_basis)
+    )
     reg.register(Tool("send_report", SideEffectClass.EXTERNAL_SIDE_EFFECT, _send_report))
     return reg

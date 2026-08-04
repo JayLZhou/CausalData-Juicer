@@ -4,6 +4,7 @@ This exists because an earlier version rendered a skipped replay-pack check
 as [PASS] and then printed "All claims re-earned" — exactly the kind of
 inflated verification this project is supposed to make impossible.
 """
+
 import io
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -81,10 +82,10 @@ def test_scorecard_discloses_uncovered_ledger_rows():
 
 def test_claims_yaml_marks_offline_checks_required():
     import yaml
-    reg = yaml.safe_load(
-        (Path(__file__).parent.parent / "experiments" / "claims.yaml").read_text())
+
+    reg = yaml.safe_load((Path(__file__).parent.parent / "experiments" / "claims.yaml").read_text())
     claims = reg["claims"]
-    assert claims["B1"]["required"] is True          # the replay pack is advertised
-    assert claims["A15"]["required"] is False        # GPU-hour claims are archived
+    assert claims["B1"]["required"] is True  # the replay pack is advertised
+    assert claims["A15"]["required"] is False  # GPU-hour claims are archived
     for cid, c in claims.items():
         assert c.get("statement") and c.get("reproducer"), cid

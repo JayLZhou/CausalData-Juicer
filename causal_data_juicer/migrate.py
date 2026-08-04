@@ -7,13 +7,14 @@ recomputes tree digests, and updates snapshot/episode references —
 observations and outcomes are untouched, so determinism digests and all
 causal claims survive verbatim.
 """
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from causal_data_juicer.runtime.envs import ENV_POINTER, EnvManager
 from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.runtime.envs import ENV_POINTER, EnvManager
 from causal_data_juicer.store.blob import tree_digest
 
 
@@ -69,5 +70,4 @@ def migrate_run(run_dir: Path, env_root: Path = Path("bench_envs")) -> dict:
         ep.final_tree_digest = digest_map.get(ep.final_tree_digest, ep.final_tree_digest)
     report = store.load_report() if (Path(run_dir) / "report.json").exists() else {}
     store.save(episodes, snapshots, units, report)
-    return {"run": str(run_dir), "trees_rewritten": rewritten,
-            "digests_remapped": len(digest_map)}
+    return {"run": str(run_dir), "trees_rewritten": rewritten, "digests_remapped": len(digest_map)}

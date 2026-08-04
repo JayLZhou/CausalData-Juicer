@@ -19,6 +19,7 @@ everything.  The A8 numbers are the replay ratio between the two and
 the demotion-set agreement (selective must not miss any demotion that
 full finds).
 """
+
 from __future__ import annotations
 
 import time
@@ -27,8 +28,8 @@ from pathlib import Path
 
 from causal_data_juicer.maintenance.provenance import needs_revalidation
 from causal_data_juicer.replay.replayer import Replayer
-from causal_data_juicer.runtime.envs import EnvManager, TaskEnv, write_env_pointer
 from causal_data_juicer.run_store import RunStore
+from causal_data_juicer.runtime.envs import EnvManager, TaskEnv, write_env_pointer
 from causal_data_juicer.sdk.schemas import CausalUnit, Episode, EvidenceTier, Snapshot, digest_of
 
 
@@ -53,8 +54,9 @@ def load_pooled_units(base_dir: Path, pool_dirs: list[Path]):
     return base, episodes, snapshots, units
 
 
-def enrich_dependency_claims(units: list[CausalUnit], family_of_task: dict[str, str],
-                             env_freezes: dict[str, str]) -> None:
+def enrich_dependency_claims(
+    units: list[CausalUnit], family_of_task: dict[str, str], env_freezes: dict[str, str]
+) -> None:
     """Backfill per-family dependency claims on units stamped before M4."""
     for u in units:
         family = u.provenance.get("family") or family_of_task[u.task_id]
@@ -90,25 +92,31 @@ def revalidate(
     current[f"env:{changed_family}"] = new_env_freeze
 
     report = ModeReport(mode=mode, considered=len(units))
-    targets = [u for u in units if needs_revalidation(u, current)] if mode == "selective" \
-        else list(units)
+    targets = (
+        [u for u in units if needs_revalidation(u, current)] if mode == "selective" else list(units)
+    )
     control_cache: dict = {}
     t0 = time.monotonic()
     for u in targets:
         affected = u.provenance.get("family") == changed_family
         prep = (lambda ws: write_env_pointer(ws, new_env_python)) if affected else None
         fresh = replayer.paired_replay(
-            eps[u.episode_id], snapshots, u.effective_intervention(),
-            n_repro=n_repro, control_cache=control_cache,
-            early_stop_repro=True, prep=prep,
+            eps[u.episode_id],
+            snapshots,
+            u.effective_intervention(),
+            n_repro=n_repro,
+            control_cache=control_cache,
+            early_stop_repro=True,
+            prep=prep,
         )
         report.revalidated += 1
         report.replays += fresh.cost.replay_runs
         if fresh.original_replay_match is False:
             u.tier = EvidenceTier.SUGGESTED
             u.provenance["stale_reason"] = "control-drift"
-            report.demoted.append({"unit_id": u.id, "task_id": u.task_id,
-                                   "reason": "control-drift"})
+            report.demoted.append(
+                {"unit_id": u.id, "task_id": u.task_id, "reason": "control-drift"}
+            )
         elif fresh.flipped and fresh.repro_flips == fresh.repro_runs:
             report.confirmed += 1
             if affected:
@@ -116,8 +124,7 @@ def revalidate(
         else:
             u.tier = EvidenceTier.SUGGESTED
             u.provenance["stale_reason"] = "fix-broken"
-            report.demoted.append({"unit_id": u.id, "task_id": u.task_id,
-                                   "reason": "fix-broken"})
+            report.demoted.append({"unit_id": u.id, "task_id": u.task_id, "reason": "fix-broken"})
     report.seconds = round(time.monotonic() - t0, 2)
     return report
 
@@ -139,8 +146,10 @@ def run_version_event(
     mgr = EnvManager(env_root)
     families = {fam.name: fam for fam, _ in enabled_families()}
     family_of_task = {t.id: fam.name for fam, ts in enabled_families() for t in ts}
-    old_freezes = {name: digest_of(mgr.provenance(fam.new_env()).get("frozen", []))
-                   for name, fam in families.items()}
+    old_freezes = {
+        name: digest_of(mgr.provenance(fam.new_env()).get("frozen", []))
+        for name, fam in families.items()
+    }
     enrich_dependency_claims(units, family_of_task, old_freezes)
 
     version = new_pin.split("==")[-1].replace(".", "-")
@@ -148,21 +157,33 @@ def run_version_event(
     new_python = mgr.ensure(new_env)
     new_freeze = digest_of(mgr.provenance(new_env).get("frozen", []))
 
-    replayer = Replayer(default_registry(),
-                        UnsafeLocalWorkspace(base.blobs, Path(base_dir) / "scratch-m4"),
-                        PytestVerifier(timeout=120))
+    replayer = Replayer(
+        default_registry(),
+        UnsafeLocalWorkspace(base.blobs, Path(base_dir) / "scratch-m4"),
+        PytestVerifier(timeout=120),
+    )
     modes = {}
     for mode in ("selective", "full"):
         # fresh copies so the two modes don't see each other's demotions
         _, _, _, fresh_units = load_pooled_units(base_dir, pool_dirs)
         enrich_dependency_claims(fresh_units, family_of_task, old_freezes)
-        modes[mode] = revalidate(fresh_units, episodes, snapshots, replayer,
-                                 family_name, new_python, new_freeze, old_freezes,
-                                 mode, n_repro=n_repro)
+        modes[mode] = revalidate(
+            fresh_units,
+            episodes,
+            snapshots,
+            replayer,
+            family_name,
+            new_python,
+            new_freeze,
+            old_freezes,
+            mode,
+            n_repro=n_repro,
+        )
 
     sel, full = modes["selective"], modes["full"]
-    agreement = sorted(d["unit_id"] for d in sel.demoted) == \
-        sorted(d["unit_id"] for d in full.demoted)
+    agreement = sorted(d["unit_id"] for d in sel.demoted) == sorted(
+        d["unit_id"] for d in full.demoted
+    )
     return {
         "event": {"family": family_name, "new_pin": new_pin},
         "units_total": len(units),

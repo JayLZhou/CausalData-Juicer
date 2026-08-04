@@ -1,6 +1,12 @@
 from causal_data_juicer.maintenance.provenance import env_fingerprint, needs_revalidation, stamp
 from causal_data_juicer.runtime.tools import default_registry
-from causal_data_juicer.sdk.schemas import CausalUnit, Intervention, InterventionType, Outcome, ToolCall
+from causal_data_juicer.sdk.schemas import (
+    CausalUnit,
+    Intervention,
+    InterventionType,
+    Outcome,
+    ToolCall,
+)
 
 
 def _unit():
@@ -27,8 +33,7 @@ def test_stamp_and_selective_revalidation():
 
 
 def test_revalidation_scope_is_the_intersection():
-    unit = stamp(_unit(), {"family": "pydantic", "env:pydantic": "aaa",
-                           "fixer_model": "qwen-7b"})
+    unit = stamp(_unit(), {"family": "pydantic", "env:pydantic": "aaa", "fixer_model": "qwen-7b"})
     # event tracks env components only; other families' drift is invisible
     current = {"env:pydantic": "aaa", "env:click": "changed!"}
     assert needs_revalidation(unit, current) == []

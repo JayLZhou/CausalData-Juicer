@@ -4,8 +4,8 @@ Exists because `_read_file` shipped without any check: `../secret.txt`
 (and even absolute paths, via pathlib's `ws / "/etc/x"` behavior) read
 host files straight into agent observations.
 """
+
 import os
-from pathlib import Path
 
 import pytest
 
@@ -25,6 +25,7 @@ def ws(tmp_path):
 
 # -- rejection: absolute paths -----------------------------------------------
 
+
 def test_rejects_absolute_posix(ws):
     with pytest.raises(WorkspaceEscapeError):
         resolve_workspace_path(ws, "/etc/passwd")
@@ -43,6 +44,7 @@ def test_pathlib_absolute_join_footgun_is_closed(ws):
 
 # -- rejection: dot-dot escapes ----------------------------------------------
 
+
 def test_rejects_simple_dotdot(ws):
     with pytest.raises(WorkspaceEscapeError):
         resolve_workspace_path(ws, "../secret.txt")
@@ -60,6 +62,7 @@ def test_rejects_embedded_dotdot_even_if_it_lands_inside(ws):
 
 
 # -- rejection: symlink escapes ----------------------------------------------
+
 
 def test_rejects_final_symlink_pointing_outside(ws, tmp_path):
     os.symlink(tmp_path / "secret.txt", ws / "link.txt")
@@ -98,6 +101,7 @@ def test_rejects_intermediate_symlink_even_pointing_inside(ws):
 
 # -- allowed paths & modes ----------------------------------------------------
 
+
 def test_normal_nested_path_resolves(ws):
     p = resolve_workspace_path(ws, "sub/deep.txt", must_exist=True)
     assert p.read_text() == "deep"
@@ -114,6 +118,7 @@ def test_must_exist_raises_filenotfound(ws):
 
 
 # -- the actual agent tools use the same rules --------------------------------
+
 
 def test_read_tool_cannot_escape(ws):
     with pytest.raises(WorkspaceEscapeError):

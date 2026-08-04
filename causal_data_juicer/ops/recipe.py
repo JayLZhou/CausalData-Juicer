@@ -11,6 +11,7 @@ A recipe is Data-Juicer's UX on the interventional algebra:
       - export_views: {}
       - save_run: {}
 """
+
 from __future__ import annotations
 
 import shutil
@@ -28,6 +29,7 @@ def run_recipe(config_path: Path) -> OpContext:
     workdir = Path(config.get("workdir", "runs/recipe"))
     if config.get("fresh", True):
         from causal_data_juicer.runtime.rundir import prepare_run_dir
+
         workdir = prepare_run_dir(workdir)
     else:
         workdir.mkdir(parents=True, exist_ok=True)
@@ -37,12 +39,11 @@ def run_recipe(config_path: Path) -> OpContext:
     steps = config.get("process", [])
     print(f"recipe {config_path} — {len(steps)} ops → {workdir}")
     for step in steps:
-        (name, params), = step.items() if isinstance(step, dict) else ((step, {}),)
+        ((name, params),) = step.items() if isinstance(step, dict) else ((step, {}),)
         op = OPERATORS.get(name)(**(params or {}))
         t0 = time.monotonic()
         ctx = op.run(ctx)
-        print(f"  [{op.category:<14}] {name:<18} {time.monotonic()-t0:6.1f}s  "
-              f"{op.summary(ctx)}")
+        print(f"  [{op.category:<14}] {name:<18} {time.monotonic() - t0:6.1f}s  {op.summary(ctx)}")
     shutil.rmtree(workdir / "scratch", ignore_errors=True)
     return ctx
 

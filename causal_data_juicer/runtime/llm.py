@@ -6,6 +6,7 @@ OpenAI-compatible commercial API.  ``DiskCachedLLM`` implements the
 touches the network and is charged zero new cost by callers (the
 ``cached`` flag on the response is how they know).
 """
+
 from __future__ import annotations
 
 import json
@@ -56,16 +57,14 @@ class OpenAICompatClient:
         self.price_out = price_out_per_mtok
 
     def params(self) -> dict:
-        return {"model": self.model, "temperature": self.temperature,
-                "max_tokens": self.max_tokens}
+        return {"model": self.model, "temperature": self.temperature, "max_tokens": self.max_tokens}
 
     def complete(self, messages: list[dict]) -> LLMResponse:
         payload = json.dumps({**self.params(), "messages": messages}).encode()
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions",
             data=payload,
-            headers={"Content-Type": "application/json",
-                     "Authorization": f"Bearer {self.api_key}"},
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"},
         )
         with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:
             body = json.loads(resp.read().decode())
@@ -74,8 +73,7 @@ class OpenAICompatClient:
         tokens_in = usage.get("prompt_tokens") or sum(len(m["content"]) // 4 for m in messages)
         tokens_out = usage.get("completion_tokens") or max(1, len(text) // 4)
         dollars = (tokens_in * self.price_in + tokens_out * self.price_out) / 1e6
-        return LLMResponse(text=text, tokens_in=tokens_in, tokens_out=tokens_out,
-                           dollars=dollars)
+        return LLMResponse(text=text, tokens_in=tokens_in, tokens_out=tokens_out, dollars=dollars)
 
 
 class DiskCachedLLM:
@@ -94,8 +92,9 @@ class DiskCachedLLM:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         os.chmod(self.cache_dir, 0o700)
         env_ttl = os.environ.get("CDJ_LLM_CACHE_TTL")
-        self.ttl_seconds = ttl_seconds if ttl_seconds is not None else (
-            float(env_ttl) if env_ttl else None)
+        self.ttl_seconds = (
+            ttl_seconds if ttl_seconds is not None else (float(env_ttl) if env_ttl else None)
+        )
         self.disabled = os.environ.get("CDJ_LLM_CACHE", "").lower() in ("off", "0", "false")
 
     def clear(self) -> int:
@@ -118,17 +117,24 @@ class DiskCachedLLM:
             return self.client.complete(messages)
         path = self.cache_dir / f"{self._key(messages)}.json"
         if path.exists():
-            expired = (self.ttl_seconds is not None
-                       and time.time() - path.stat().st_mtime > self.ttl_seconds)
+            expired = (
+                self.ttl_seconds is not None
+                and time.time() - path.stat().st_mtime > self.ttl_seconds
+            )
             if not expired:
                 data = json.loads(path.read_text())
                 return LLMResponse(**{**data, "cached": True, "dollars": 0.0})
             path.unlink(missing_ok=True)
         resp = self.client.complete(messages)
-        payload = json.dumps({
-            "text": resp.text, "tokens_in": resp.tokens_in,
-            "tokens_out": resp.tokens_out, "dollars": resp.dollars,
-        }, ensure_ascii=False)
+        payload = json.dumps(
+            {
+                "text": resp.text,
+                "tokens_in": resp.tokens_in,
+                "tokens_out": resp.tokens_out,
+                "dollars": resp.dollars,
+            },
+            ensure_ascii=False,
+        )
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, "w") as f:
             f.write(payload)

@@ -7,6 +7,7 @@ compile SFT / DPO / memory / regression views -> report.
 The headline number is flip reproducibility on the deterministic subset
 (kill line: >= 90%).  All costs are charged to ledgers from line one.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -18,11 +19,11 @@ from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
+from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.runtime.agent import ScriptedPolicy
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.tools import default_registry
 from causal_data_juicer.runtime.verifier import PytestVerifier
-from causal_data_juicer.run_store import RunStore
 from causal_data_juicer.sdk.schemas import CausalUnit, CostLedger, Episode, EvidenceTier, Snapshot
 from causal_data_juicer.slicing.ddmin import minimize_unit
 from causal_data_juicer.workloads import toy
@@ -31,6 +32,7 @@ from causal_data_juicer.workloads import toy
 def run_demo(run_dir: Path, n_repro: int = 3, keep_workspaces: bool = False) -> dict:
     t_start = time.monotonic()
     from causal_data_juicer.runtime.rundir import prepare_run_dir
+
     run_dir = prepare_run_dir(Path(run_dir))
     store = RunStore(run_dir)
     registry = default_registry()
@@ -102,9 +104,13 @@ def run_demo(run_dir: Path, n_repro: int = 3, keep_workspaces: bool = False) -> 
         "flip_repro_detail": f"{repro_flips}/{repro_runs} intervened replays flipped",
         "determinism_control_ok": all(u.original_replay_match for u in units),
         "control_digest_match_rate": (
-            round(sum(u.control_digest_match for u in units if u.control_digest_match is not None)
-                  / max(1, sum(1 for u in units if u.control_digest_match is not None)), 4)
-            if any(u.control_digest_match is not None for u in units) else None
+            round(
+                sum(u.control_digest_match for u in units if u.control_digest_match is not None)
+                / max(1, sum(1 for u in units if u.control_digest_match is not None)),
+                4,
+            )
+            if any(u.control_digest_match is not None for u in units)
+            else None
         ),
         "slicing": {
             "atoms_before": sum(u.atoms_before_slicing for u in validated),
@@ -113,7 +119,8 @@ def run_demo(run_dir: Path, n_repro: int = 3, keep_workspaces: bool = False) -> 
         "cost": total_cost.model_dump(),
         "cost_per_validated_unit_s": (
             round(sum(u.cost.wall_time_s for u in validated) / len(validated), 2)
-            if validated else None
+            if validated
+            else None
         ),
         "exports": {k: str(v) for k, v in exports.items()},
         "provenance": fingerprint,

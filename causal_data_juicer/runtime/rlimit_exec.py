@@ -3,6 +3,7 @@
 Used by exec_backend's netns level, where cgroups are unavailable —
 setrlimit is inherited across exec and enforced by the kernel.
 """
+
 from __future__ import annotations
 
 import argparse

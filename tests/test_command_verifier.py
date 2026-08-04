@@ -1,5 +1,6 @@
 """CommandVerifier: the generality escape hatch — any executable
 workload becomes verifiable, and therefore flip-attributable."""
+
 from causal_data_juicer.runtime.agent import ScriptedPolicy, ScriptedStep
 from causal_data_juicer.runtime.collector import Collector
 from causal_data_juicer.runtime.verifier import CommandVerifier
@@ -34,16 +35,23 @@ def test_full_loop_with_command_verifier(registry, blobs, replayer, ws_root, tmp
     ws = ws_root / "cmd"
     ws.mkdir()
     (ws / "build.py").write_text(
-        "import config\nraise SystemExit(0 if config.MODE == 'prod' else 1)\n")
-    policy = ScriptedPolicy([
-        ScriptedStep(action=ToolCall(tool="write_file",
-                                     args={"path": "config.py", "content": "MODE = 'dev'\n"})),
-    ])
+        "import config\nraise SystemExit(0 if config.MODE == 'prod' else 1)\n"
+    )
+    policy = ScriptedPolicy(
+        [
+            ScriptedStep(
+                action=ToolCall(
+                    tool="write_file", args={"path": "config.py", "content": "MODE = 'dev'\n"}
+                )
+            ),
+        ]
+    )
     episode, snapshots = collector.run_episode("cmd-task", "set prod mode", ws, policy)
     assert not episode.outcome.success
 
     fix = Intervention(
-        type=InterventionType.TOOL_ARGUMENT_EDIT, target_step=0,
+        type=InterventionType.TOOL_ARGUMENT_EDIT,
+        target_step=0,
         edits=[ArgEdit(arg="content", op="set", value="MODE = 'prod'\n")],
     )
     unit = replayer.paired_replay(episode, snapshots, fix, n_repro=3)

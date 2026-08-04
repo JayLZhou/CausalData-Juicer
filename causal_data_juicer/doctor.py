@@ -3,6 +3,7 @@
 A new user should know within seconds whether this machine can run the
 demo, and whether their LLM endpoint is reachable, before anything else.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,22 +31,31 @@ def run_doctor(base_url: str | None = None) -> int:
     good = True
 
     v = sys.version_info
-    good &= _check(f"python {v.major}.{v.minor}.{v.micro} (need ≥3.11)", v >= (3, 11),
-                   "install Python 3.11+ and recreate the venv")
+    good &= _check(
+        f"python {v.major}.{v.minor}.{v.micro} (need ≥3.11)",
+        v >= (3, 11),
+        "install Python 3.11+ and recreate the venv",
+    )
 
     try:
         import pydantic
+
         good &= _check(f"pydantic {pydantic.VERSION}", True)
     except ImportError:
         good &= _check("pydantic", False, "pip install -e .")
 
-    good &= _check("pytest on PATH (verifier)",
-                   subprocess.run([sys.executable, "-m", "pytest", "--version"],
-                                  capture_output=True).returncode == 0,
-                   "pip install pytest")
+    good &= _check(
+        "pytest on PATH (verifier)",
+        subprocess.run(
+            [sys.executable, "-m", "pytest", "--version"], capture_output=True, check=False
+        ).returncode
+        == 0,
+        "pip install pytest",
+    )
 
     try:
         import pyarrow  # noqa: F401
+
         _check("pyarrow (verl parquet export)", True)
     except ImportError:
         _check("pyarrow missing — verl export falls back to JSONL", True, warn=True)
@@ -56,22 +66,34 @@ def run_doctor(base_url: str | None = None) -> int:
     good &= _check("scratch space writable", writable)
 
     from causal_data_juicer.runtime.exec_backend import describe, probe
+
     caps = probe()
-    _check(f"execution isolation: {describe(caps)}",
-           caps.level == "container", warn=caps.level != "container")
+    _check(
+        f"execution isolation: {describe(caps)}",
+        caps.level == "container",
+        warn=caps.level != "container",
+    )
 
     if base_url:
         try:
             with urllib.request.urlopen(f"{base_url.rstrip('/')}/models", timeout=5) as r:
                 models = [m.get("id") for m in json.loads(r.read()).get("data", [])][:3]
-            good &= _check(f"endpoint {base_url} reachable (models: {', '.join(map(str, models))})", True)
+            good &= _check(
+                f"endpoint {base_url} reachable (models: {', '.join(map(str, models))})", True
+            )
         except Exception as e:
-            good &= _check(f"endpoint {base_url}", False,
-                           f"unreachable ({type(e).__name__}) — live collection needs an "
-                           f"OpenAI-compatible endpoint; the offline demo works without one")
+            good &= _check(
+                f"endpoint {base_url}",
+                False,
+                f"unreachable ({type(e).__name__}) — live collection needs an "
+                f"OpenAI-compatible endpoint; the offline demo works without one",
+            )
     else:
-        _check("no --base-url given — skipped endpoint check (offline demo needs none)",
-               True, warn=True)
+        _check(
+            "no --base-url given — skipped endpoint check (offline demo needs none)",
+            True,
+            warn=True,
+        )
 
     print()
     if good:

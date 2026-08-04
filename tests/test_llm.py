@@ -17,8 +17,7 @@ class FakeClient:
 
     def complete(self, messages):
         self.calls += 1
-        return LLMResponse(text=self.replies.pop(0), tokens_in=10, tokens_out=5,
-                           dollars=0.001)
+        return LLMResponse(text=self.replies.pop(0), tokens_in=10, tokens_out=5, dollars=0.001)
 
 
 def test_extract_action_variants():
@@ -43,10 +42,12 @@ def test_disk_cache_hit_is_free_and_stable(tmp_path):
 
 
 def test_llm_policy_step_and_termination():
-    client = FakeClient([
-        '{"tool": "write_file", "args": {"path": "solution.py", "content": "x = 1\\n"}}',
-        '{"tool": "done", "args": {}}',
-    ])
+    client = FakeClient(
+        [
+            '{"tool": "write_file", "args": {"path": "solution.py", "content": "x = 1\\n"}}',
+            '{"tool": "done", "args": {}}',
+        ]
+    )
     policy = LLMPolicy(client, max_steps=5)
     policy.bind_task("implement x")
 

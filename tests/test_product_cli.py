@@ -1,4 +1,5 @@
 """Product-surface tests: doctor, explain (text + HTML), command resolution."""
+
 import sys
 
 from causal_data_juicer.pipeline import run_demo
@@ -33,6 +34,7 @@ def test_explain_text_and_html(tmp_path):
 
 def test_doctor_runs_clean(capsys):
     from causal_data_juicer.doctor import run_doctor
+
     code = run_doctor(base_url=None)
     out = capsys.readouterr().out
     assert code == 0

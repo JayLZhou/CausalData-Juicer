@@ -9,6 +9,7 @@ Two built-ins:
 Anything with ``evaluate(workspace, ledger) -> Outcome`` is a verifier;
 the collector and replayer only ever see that protocol.
 """
+
 from __future__ import annotations
 
 import re
@@ -30,9 +31,26 @@ class PytestVerifier:
 
         t0 = time.monotonic()
         proc = subprocess.run(
-            [resolve_python(workspace), "-m", "pytest", "-q", "-p", "no:cacheprovider", "--tb=line",
-             "-o", "addopts=", "-o", "testpaths=", "--rootdir=.", "."],
-            cwd=workspace, capture_output=True, text=True, timeout=self.timeout,
+            [
+                resolve_python(workspace),
+                "-m",
+                "pytest",
+                "-q",
+                "-p",
+                "no:cacheprovider",
+                "--tb=line",
+                "-o",
+                "addopts=",
+                "-o",
+                "testpaths=",
+                "--rootdir=.",
+                ".",
+            ],
+            cwd=workspace,
+            capture_output=True,
+            text=True,
+            timeout=self.timeout,
+            check=False,
         )
         ledger.charge_tool(time.monotonic() - t0)
         out = proc.stdout + proc.stderr
@@ -59,16 +77,17 @@ class CommandVerifier:
         argv = resolve_command(self.command, workspace)
         if self.isolate:
             from causal_data_juicer.runtime.exec_backend import wrap
+
             argv = wrap(argv, workspace)
         t0 = time.monotonic()
-        proc = subprocess.run(argv, cwd=workspace, capture_output=True,
-                              text=True, timeout=self.timeout)
+        proc = subprocess.run(
+            argv, cwd=workspace, capture_output=True, text=True, timeout=self.timeout, check=False
+        )
         ledger.charge_tool(time.monotonic() - t0)
         out = (proc.stdout + proc.stderr).strip()
         tail = "\n".join(out.splitlines()[-30:])[-3000:]
         success = proc.returncode == 0
-        return Outcome(success=success, passed=int(success), failed=int(not success),
-                       detail=tail)
+        return Outcome(success=success, passed=int(success), failed=int(not success), detail=tail)
 
 
 def resolve_command(command: list[str], workspace: Path) -> list[str]:
@@ -109,6 +128,7 @@ class SealedVerifier:
 
     def restore(self, workspace: Path) -> int:
         from causal_data_juicer.runtime.paths import resolve_workspace_path
+
         tampered = 0
         for rel, content in self._sealed.items():
             target = resolve_workspace_path(workspace, rel)

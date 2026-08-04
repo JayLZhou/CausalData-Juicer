@@ -87,7 +87,7 @@ FORBIDDEN_IN_TESTS = [
 
 
 def scan_hermeticity(task: DepMigTask) -> list[str]:
-    violations = []
+    violations: list[str] = []
     for name, content in task.test_files().items():
         violations.extend(
             f"{task.id}:{name}: forbidden '{pattern}'"

@@ -42,7 +42,7 @@ class Capabilities:
 def _apparmor_profile() -> str:
     try:
         return Path("/proc/self/attr/current").read_text().strip()
-    except OSError:
+    except OSError:  # pragma: no cover — no /proc on some platforms
         return "unknown"
 
 
@@ -51,7 +51,7 @@ def _try(cmd: list[str], timeout: int = 20) -> bool:
         return (
             subprocess.run(cmd, capture_output=True, timeout=timeout, check=False).returncode == 0
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired):  # pragma: no cover — env-dependent
         return False
 
 
@@ -66,8 +66,8 @@ def probe() -> Capabilities:
         detail[runtime] = exe
         # the decisive test is running a real container, not --version
         if _try([exe, "run", "--rm", "--network=none", "alpine", "true"], timeout=60):
-            detail["runtime"] = runtime
-            return Capabilities("container", detail)
+            detail["runtime"] = runtime  # pragma: no cover — needs a live runtime;
+            return Capabilities("container", detail)  # pragma: no cover — asserted by test_isolation_backend on capable hosts
         detail[f"{runtime}_error"] = "cannot run containers here (mount ops likely denied)"
 
     unshare = shutil.which("unshare")

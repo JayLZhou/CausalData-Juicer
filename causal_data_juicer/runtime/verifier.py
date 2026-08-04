@@ -16,10 +16,15 @@ import re
 import subprocess
 import time
 from pathlib import Path
+from typing import Protocol
 
 from causal_data_juicer.sdk.schemas import CostLedger, Outcome
 
 _SUMMARY = re.compile(r"(\d+) (passed|failed|error)")
+
+
+class Verifier(Protocol):
+    def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome: ...
 
 
 class PytestVerifier:

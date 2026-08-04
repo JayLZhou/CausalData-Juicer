@@ -29,7 +29,7 @@ def _context(episode: Episode, upto: int) -> str:
 
 
 def compile_bc_sft(episodes: list[Episode], out: Path) -> Path:
-    rows = []
+    rows: list[dict] = []
     for ep in episodes:
         if ep.outcome is None or not ep.outcome.success:
             continue
@@ -46,7 +46,7 @@ def compile_bc_sft(episodes: list[Episode], out: Path) -> Path:
 
 
 def compile_failure_log(episodes: list[Episode], out: Path) -> Path:
-    rows = []
+    rows: list[dict] = []
     for ep in episodes:
         if ep.outcome is None or ep.outcome.success:
             continue

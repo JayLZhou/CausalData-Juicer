@@ -79,7 +79,7 @@ def write_env_pointer(
     """Pointer v2 carries the env *identity* (name + pins), not just an
     absolute path, so snapshots stay replayable across machines and
     directory renames."""
-    payload = {"python": str(python)}
+    payload: dict[str, str | list[str]] = {"python": str(python)}
     if name:
         payload["env_name"] = name
     if pins:

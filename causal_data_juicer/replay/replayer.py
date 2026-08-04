@@ -17,7 +17,7 @@ from __future__ import annotations
 from causal_data_juicer.interventions.apply import apply_intervention
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
 from causal_data_juicer.runtime.tools import ToolExecutor, ToolRegistry
-from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.runtime.verifier import Verifier
 from causal_data_juicer.sdk.schemas import (
     CausalUnit,
     CostLedger,
@@ -35,7 +35,7 @@ class Replayer:
         self,
         registry: ToolRegistry,
         sandbox: UnsafeLocalWorkspace,
-        verifier: PytestVerifier,
+        verifier: Verifier,
     ):
         self.registry = registry
         self.sandbox = sandbox

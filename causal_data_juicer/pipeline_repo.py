@@ -218,6 +218,7 @@ def run_repo(
     episode, snapshots = collector.run_episode(
         repo.name, description, ws, policy, workload_id="byo-repo", max_steps=max_steps
     )
+    assert episode.outcome is not None  # collector always sets it
     if episode.outcome.success:
         print("the agent fixed it — certifying its own fix as a causal unit…")
         episode, snapshots, mined = _remine_success(
@@ -267,7 +268,7 @@ def run_repo(
         "status": "ok",
         "repo": str(repo),
         "verify": verify,
-        "agent_solved": episode.outcome.success,
+        "agent_solved": episode.outcome is not None and episode.outcome.success,
         "candidates": len(candidates),
         "validated_units": len(validated),
         "seal_violations": verifier.violations,

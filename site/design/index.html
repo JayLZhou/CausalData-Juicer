@@ -1,0 +1,1677 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A budgeted interventional data engine for agent improvement">
+      
+      
+      
+      
+        <link rel="prev" href="../api/">
+      
+      
+        <link rel="next" href="../bench-m15-spec/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Design - CausalData-Juicer</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/landing.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#causaldata-juicer-m0m1" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CausalData-Juicer" class="md-header__button md-logo" aria-label="CausalData-Juicer" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CausalData-Juicer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo"  aria-label="dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="indigo"  aria-label="light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/JayLZhou/CausalData-Juicer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CausalData-Juicer
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorial/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../why-causal-data/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Why causal data
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../concepts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Concepts
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../operator-zoo/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Operator Zoo
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../story-migration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  The full story
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../cases/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Case studies
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../landscape-papers/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Landscape references
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../research-gaps/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Coverage map & gaps
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Integrations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security model
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Design
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../bench-m15-spec/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration bench spec
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CausalData-Juicer" class="md-nav__button md-logo" aria-label="CausalData-Juicer" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CausalData-Juicer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/JayLZhou/CausalData-Juicer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CausalData-Juicer
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-causal-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Why causal data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operator-zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operator Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../story-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The full story
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case studies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../landscape-papers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landscape references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../research-gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage map & gaps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 问题与主张
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-sdkschemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 核心抽象（sdk/schemas.py）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 核心抽象（sdk/schemas.py）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        证据阶梯
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 闭环各阶段
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 闭环各阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-runtimecollectorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 采集（runtime/collector.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-acquisitionscreenerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 筛选（acquisition/screener.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-replayreplayerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 重放（replay/replayer.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-slicingddminpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 切片（slicing/ddmin.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-compilerexportspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 编译（compiler/exports.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-maintenanceprovenancepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 维护（maintenance/provenance.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-storeblobpyrun_storepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 存储（store/blob.py、run_store.py）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-m1-workloadworkloadstoypy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. M1 workload（workloads/toy.py）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-m1-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. M1 实测结果（判死线 #1）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 明确不做（第一版）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench-m15-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration bench spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 问题与主张
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-sdkschemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 核心抽象（sdk/schemas.py）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 核心抽象（sdk/schemas.py）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        证据阶梯
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 闭环各阶段
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 闭环各阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-runtimecollectorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 采集（runtime/collector.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-acquisitionscreenerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 筛选（acquisition/screener.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-replayreplayerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 重放（replay/replayer.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-slicingddminpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 切片（slicing/ddmin.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-compilerexportspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 编译（compiler/exports.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-maintenanceprovenancepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 维护（maintenance/provenance.py）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-storeblobpyrun_storepy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 存储（store/blob.py、run_store.py）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-m1-workloadworkloadstoypy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. M1 workload（workloads/toy.py）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-m1-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. M1 实测结果（判死线 #1）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 明确不做（第一版）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="causaldata-juicer-m0m1">CausalData-Juicer 设计文档（M0/M1）</h1>
+<blockquote>
+<p>A Budgeted Interventional Data Engine for Agent Improvement
+本文是 README 主张的展开：抽象定义、闭环各阶段的语义、以及 M1 实现的落地决策。</p>
+</blockquote>
+<h2 id="1">1. 问题与主张</h2>
+<p>Agent trace 是观察性数据：它只记录 agent 恰好尝试过的那一条路径。要得到"如果第 k 步换一个动作，结局是否翻转"这样的因果结论，必须做干预实验。干预实验昂贵（fork 环境、重放、验证），因此系统的核心不是"能不能做反事实"，而是<strong>在预算内最大化每美元/每分钟产出的已验证因果单元数</strong>。</p>
+<p>三个设计支柱：</p>
+<ol>
+<li><strong>成对反事实重放</strong>（paired counterfactual replay）：同一 snapshot fork 两支——原始支（determinism 对照）与干预支。只有对照支复现原始失败、干预支成功，才算一次有效 flip。</li>
+<li><strong>证据阶梯</strong>：数据单元的可信度是显式状态机，任何弱化（环境漂移）会降级，任何强化（复现实验、切片再验证、训练验证）才能升级。</li>
+<li><strong>全程记账</strong>：每次 LLM 调用、工具执行、重放都入账。成本是论文横轴。</li>
+</ol>
+<h2 id="2-sdkschemaspy">2. 核心抽象（sdk/schemas.py）</h2>
+<table>
+<thead>
+<tr>
+<th>抽象</th>
+<th>语义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Episode</code></td>
+<td>一次任务执行：步骤序列（动作 + 观测 + 观测摘要 digest + 缓存的 LLM 交互）+ 最终 <code>Outcome</code> + 成本账本</td>
+</tr>
+<tr>
+<td><code>Snapshot</code></td>
+<td>step 边界处的状态：文件系统树（content-addressed digest）+ 显式声明状态。不承诺进程级恢复</td>
+</tr>
+<tr>
+<td><code>Intervention</code></td>
+<td>对某一步动作的修改：<code>ACTION_REPLACE</code>（整体替换工具调用）或 <code>TOOL_ARGUMENT_EDIT</code>（参数编辑，可分解为 set / per-line patch 原子）</td>
+</tr>
+<tr>
+<td><code>Outcome</code></td>
+<td>verifier 判定：success + passed/failed 计数 + 摘要。M1 verifier = pytest</td>
+</tr>
+<tr>
+<td><code>CausalUnit</code></td>
+<td>终端资产：episode + 干预 + 双臂结局 + flip 判定 + 复现记录 + 最小切片 + 证据等级 + provenance + 成本</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_1">证据阶梯</h3>
+<div class="highlight"><pre><span></span><code>OBSERVED                 原始轨迹里出现过
+SUGGESTED                screener 提出的候选（或验证失败退回）
+COUNTERFACTUAL_VALIDATED 一次 paired replay 确认 flip
+REPRODUCIBLE             n/n 次独立 fork 重放全部 flip
+MINIMAL                  ddmin 切片后仍 flip，且切片后再验证通过
+TRAINING_VALIDATED       下游训练实验证实增益（RQ1，M1 不涉及）
+</code></pre></div>
+<p>规则：所有导出行都带 <code>evidence_tier</code> 字段；编译器只导出 <code>COUNTERFACTUAL_VALIDATED</code> 及以上。</p>
+<h2 id="3">3. 闭环各阶段</h2>
+<h3 id="31-runtimecollectorpy">3.1 采集（runtime/collector.py）</h3>
+<p>Collector 驱动一个 <code>Policy</code>（M1：<code>ScriptedPolicy</code>，确定性 mock-LLM，走与真 LLM 相同的记录接口）。每一步：</p>
+<ol>
+<li>在执行动作<strong>之前</strong>对 workspace 做 snapshot（这是 fork 点）；</li>
+<li>执行工具调用，记录观测与规范化观测 digest；</li>
+<li>缓存 LLM prompt/response/token 数（重放永不重新询问模型）。</li>
+</ol>
+<p>episode 结束后由 pytest verifier 给出 <code>Outcome</code>。</p>
+<h3 id="32-acquisitionscreenerpy">3.2 筛选（acquisition/screener.py）</h3>
+<p>M1 版本：只选失败 episode，从 <code>CandidateSource</code> 收集候选干预，按 effect-signature（干预内容的 digest）去重。M1 的 source 是 workload 自带的修复表（模拟已缓存的 fixer-LLM，零 live token——账本如实记录为零）。M2 在同一接口上换上多保真筛选与 sequential stopping。</p>
+<h3 id="33-replayreplayerpy">3.3 重放（replay/replayer.py）</h3>
+<ul>
+<li><strong>Recorded replay</strong>：从 snapshot 重放记录的动作序列，逐步比对观测 digest + 最终 outcome signature → determinism 判定。</li>
+<li><strong>Paired replay</strong>：</li>
+<li>对照支（原始动作）必须 <code>deterministic_match</code>，否则该候选直接退回 <code>SUGGESTED</code>（不许在不确定的地基上宣称因果）；</li>
+<li>干预支在目标步应用干预，其余步骤按记录执行；</li>
+<li>flip := 原始失败 ∧ 干预成功；</li>
+<li>再做 n−1 次独立 fork 重放，n/n 全 flip → <code>REPRODUCIBLE</code>。</li>
+</ul>
+<p>副作用门控在执行器层强制：replay 模式下 <code>EXTERNAL_SIDE_EFFECT</code> 工具一律 dry-run mock，且其观测 digest 在 live/replay 两模式下规范化为同一占位符，不污染 determinism 判定。</p>
+<h3 id="34-slicingddminpy">3.4 切片（slicing/ddmin.py）</h3>
+<p>把干预分解为原子（每个 ArgEdit；patch_lines 进一步按行拆），经典 ddmin 找仍然 flip 的最小子集，最后整体再验证一次。每次探测都是真实重放并计入该 unit 的账本——切片成本是获取成本的一部分。<code>ACTION_REPLACE</code> 视为原子，单次确认后即 <code>MINIMAL</code>。</p>
+<h3 id="35-compilerexportspy">3.5 编译（compiler/exports.py）</h3>
+<p>四种视图，均为 JSONL、逐行带 <code>evidence_tier</code>：</p>
+<ul>
+<li><code>sft.jsonl</code>：干预前上下文 → 修正动作；</li>
+<li><code>dpo.jsonl</code>：同一 prompt 下 chosen（修正）/ rejected（原始）；</li>
+<li><code>memory.jsonl</code>：失败→恢复单元（含 rationale）；</li>
+<li><code>regression.jsonl</code> + 生成的 <code>test_regression.py</code>：可执行反事实用例——从 run 目录重新 fork snapshot、重放对照支与干预支、断言 flip 仍复现。</li>
+</ul>
+<h3 id="36-maintenanceprovenancepy">3.6 维护（maintenance/provenance.py）</h3>
+<p>每个 unit 打上环境指纹（causal_data_juicer 版本、python、平台、工具注册表 digest、workload digest）。<code>needs_revalidation(unit, current_env)</code> 返回漂移分量清单——M4 的 selective revalidation 在此钩子上展开。</p>
+<h2 id="4-storeblobpyrun_storepy">4. 存储（store/blob.py、run_store.py）</h2>
+<p>Snapshot 树以确定性 tree digest 做 content addressing，相同树只存一份（M1 规模下 shared-prefix 复用免费获得；真正的 trace DAG 与 checkpoint placement 属 M3）。run 目录自包含：episodes/snapshots/units 的 JSONL + blobs + exports + report，<code>RunStore</code> 可从磁盘完整重建重放。</p>
+<h2 id="5-m1-workloadworkloadstoypy">5. M1 workload（workloads/toy.py）</h2>
+<p>9 个确定性 "implement the function" 任务，覆盖全部机制路径：</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>情形</th>
+<th>干预</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t01/t03/t07</td>
+<td>成功基线</td>
+<td>—</td>
+</tr>
+<tr>
+<td>t02_fib</td>
+<td>off-by-one bug</td>
+<td>ACTION_REPLACE</td>
+</tr>
+<tr>
+<td>t04_reverse_words</td>
+<td>字符反转≠词反转</td>
+<td>TOOL_ARGUMENT_EDIT set(content)</td>
+</tr>
+<tr>
+<td>t05_wrong_path</td>
+<td>内容对、路径错</td>
+<td>TOOL_ARGUMENT_EDIT set(path)</td>
+</tr>
+<tr>
+<td>t06_prime</td>
+<td>因果行 + 化妆行</td>
+<td>patch_lines ×2 → ddmin 应删掉化妆原子</td>
+</tr>
+<tr>
+<td>t08_report</td>
+<td>bug + EXTERNAL 工具调用</td>
+<td>ACTION_REPLACE（重放中 send_report 被 mock）</td>
+</tr>
+<tr>
+<td>t09_abs</td>
+<td>双候选</td>
+<td>化妆非修复（必须验证失败）+ 真修复（必须 flip）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-m1-1">6. M1 实测结果（判死线 #1）</h2>
+<div class="highlight"><pre><span></span><code>episodes 9 (6 failed) / candidates 7 / units: 6 MINIMAL + 1 SUGGESTED(rejected)
+determinism control: OK
+flip repro rate: 18/18 = 100%   (kill line ≥ 90% — PASS)
+slicing: 7 atoms → 6 atoms      (t06 化妆原子被正确剔除)
+</code></pre></div>
+<p>该断言以 CI 形式固化在 <code>tests/test_e2e_demo.py</code>。</p>
+<h2 id="7">7. 明确不做（第一版）</h2>
+<p>进程级 snapshot（CRIU）、多框架 adapter、Web UI、PostgreSQL、OpenTelemetry、remote workers、非 pytest verifier、live LLM 分支策略（留给 M2 的预算机制成熟之后）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.tabs", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

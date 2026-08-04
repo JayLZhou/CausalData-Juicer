@@ -30,7 +30,8 @@ class LLMResponse:
 
 
 class LLMClient(Protocol):
-    model: str
+    @property
+    def model(self) -> str: ...
 
     def complete(self, messages: list[dict]) -> LLMResponse: ...
 

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Protocol
 
 from causal_data_juicer.runtime.tools import ToolExecutor, ToolRegistry
-from causal_data_juicer.runtime.verifier import PytestVerifier
+from causal_data_juicer.runtime.verifier import Verifier
 from causal_data_juicer.sdk.schemas import (
     Episode,
     LLMRecord,
@@ -31,7 +31,7 @@ class Policy(Protocol):
 
 
 class Collector:
-    def __init__(self, registry: ToolRegistry, blob_store: BlobStore, verifier: PytestVerifier):
+    def __init__(self, registry: ToolRegistry, blob_store: BlobStore, verifier: Verifier):
         self.registry = registry
         self.blobs = blob_store
         self.verifier = verifier

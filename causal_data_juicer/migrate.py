@@ -47,9 +47,10 @@ def migrate_run(run_dir: Path, env_root: Path = Path("bench_envs")) -> dict:
             continue  # already v2 and valid
         # match stale path to a local env by its directory name (e.g. 'pydantic-new')
         tail = Path(data["python"]).parts[-3] if len(Path(data["python"]).parts) >= 3 else None
-        name, info = by_python_tail.get(tail, (None, None))
-        if name is None:
+        hit = by_python_tail.get(tail) if tail is not None else None
+        if hit is None:
             continue
+        name, info = hit
         data.update({"python": info["python"], "env_name": name, "pins": info["pins"]})
         pointer.write_text(json.dumps(data) + "\n")
         new_digest = tree_digest(tree)

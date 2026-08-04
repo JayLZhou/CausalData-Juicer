@@ -14,10 +14,11 @@ from __future__ import annotations
 import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+from typing import Any
 
 from causal_data_juicer.sdk.schemas import CausalUnit, Episode, Intervention, Snapshot
 
-_WORKER = {}
+_WORKER: dict[str, Any] = {}
 
 
 def _init_worker(blobs_root: str, scratch_root: str, verify_argv: list[str] | None):

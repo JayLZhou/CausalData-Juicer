@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 from causal_data_juicer.acquisition.fixer import FixerLLMSource
-from causal_data_juicer.acquisition.screener import Screener
+from causal_data_juicer.acquisition.screener import CandidateSource, Screener
 from causal_data_juicer.compiler.exports import compile_all
 from causal_data_juicer.maintenance.provenance import env_fingerprint, stamp
 from causal_data_juicer.replay.replayer import Replayer
@@ -144,7 +144,7 @@ def run_depmig(
 
     # 2) fixer candidates (cached LLM), effect-signature dedup in screener
     screening_cost = CostLedger()
-    source_objs = []
+    source_objs: list[CandidateSource] = []
     for source_name in sources.split(","):
         if source_name == "fixer":
             source_objs.append(

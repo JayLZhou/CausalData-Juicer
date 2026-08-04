@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Any
 
 from causal_data_juicer.replay.replayer import Replayer
 from causal_data_juicer.replay.sandbox import UnsafeLocalWorkspace
@@ -37,7 +38,7 @@ def storage_bench(run_dir: Path, policies: list[str], repeats: int = 3) -> dict:
     fork_points = [(episodes[u.episode_id], u.effective_intervention().target_step) for u in units]
 
     blob_root = store.blobs.root
-    rows = []
+    rows: list[dict[str, Any]] = []
     for policy in policies:
         kept = select_checkpoints(snapshots, policy)
         total_s, total_prefix, forks = 0.0, 0, 0

@@ -32,3 +32,15 @@ out to be shimmed.
   `causal_data_juicer/runtime/import_trace.py` for the target schema).
 - A case study reproducing a published data-construction method on the
   public API (≤100 lines; see `examples/`).
+
+## Before you claim a commit is green
+
+Run every CI gate locally, in CI order:
+
+```bash
+scripts/gates.sh          # lint, types, tests, coverage
+scripts/gates.sh --full   # + build, twine, clean-wheel smoke, docs, pip-audit
+```
+
+Run it **after** your final edit, not before — a formatting gate verified
+earlier in a batch says nothing about the code you touched afterwards.

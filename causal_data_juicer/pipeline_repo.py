@@ -81,9 +81,9 @@ def _registry_for(verify_argv: list[str], sealed=None, isolate: bool = False) ->
             sealed.restore(workspace)  # the in-episode check is sealed too
         argv = resolve_command(verify_argv, workspace)
         if isolate:
-            from causal_data_juicer.runtime.exec_backend import wrap
+            from causal_data_juicer.runtime.exec_backend import wrap_or_downgrade
 
-            argv = wrap(argv, workspace)
+            argv, _caps, _reason = wrap_or_downgrade(argv, workspace)
         proc = subprocess.run(
             argv, cwd=workspace, capture_output=True, text=True, timeout=300, check=False
         )

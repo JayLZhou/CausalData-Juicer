@@ -30,7 +30,17 @@ itself, a security boundary.
 
 `cdj doctor` prints the level with evidence. At `container` level `cdj run`
 proceeds without ceremony; below it, the explicit `--unsafe-local-execution`
-flag is required because the filesystem is still exposed. The test suite
+flag is required because the filesystem is still exposed.
+
+**When container level actually applies.** The container mounts *only* the
+workspace, so the verify command must be runnable with the image's own
+toolchain. Workloads pinned to a per-task host venv — what `resolve_command`
+produces for the dependency-migration bench — name a host interpreter path
+that does not exist inside the image; the engine detects this
+(`check_container_compatible`), **downgrades to the next level and prints
+the reason** rather than emitting a command that would fail. To keep
+container isolation for such a workload, supply an image that carries the
+right interpreter and pins via `CDJ_CONTAINER_IMAGE=your/image:tag`. The test suite
 (`tests/test_isolation_backend.py`) proves the properties against live
 sockets and real allocations — container-level tests run wherever a runtime
 works and skip (with the probe's evidence) where it cannot.

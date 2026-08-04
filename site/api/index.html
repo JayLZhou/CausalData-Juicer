@@ -3070,7 +3070,11 @@ env-pointer interpreter (falls back to the engine's own).</p>
 <span class="normal">92</span>
 <span class="normal">93</span>
 <span class="normal">94</span>
-<span class="normal">95</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CommandVerifier</span><span class="p">:</span>
+<span class="normal">95</span>
+<span class="normal">96</span>
+<span class="normal">97</span>
+<span class="normal">98</span>
+<span class="normal">99</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CommandVerifier</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic verifier: run ``command`` inside the workspace; success is</span>
 <span class="sd">    exit code 0.  ``{python}`` in arguments expands to the workspace&#39;s</span>
 <span class="sd">    env-pointer interpreter (falls back to the engine&#39;s own).&quot;&quot;&quot;</span>
@@ -3079,13 +3083,17 @@ env-pointer interpreter (falls back to the engine's own).</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">isolate</span> <span class="o">=</span> <span class="n">isolate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_downgrade_reported</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">ledger</span><span class="p">:</span> <span class="n">CostLedger</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Outcome</span><span class="p">:</span>
         <span class="n">argv</span> <span class="o">=</span> <span class="n">resolve_command</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">workspace</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolate</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">causal_data_juicer.runtime.exec_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">causal_data_juicer.runtime.exec_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_or_downgrade</span>
 
-            <span class="n">argv</span> <span class="o">=</span> <span class="n">wrap</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">workspace</span><span class="p">)</span>
+            <span class="n">argv</span><span class="p">,</span> <span class="n">caps</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">wrap_or_downgrade</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">workspace</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">reason</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_downgrade_reported</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;isolation downgraded to </span><span class="si">{</span><span class="n">caps</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_downgrade_reported</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
         <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
             <span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span>
@@ -3148,11 +3156,7 @@ are counted in <code>violations</code>.</p>
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>causal_data_juicer/runtime/verifier.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
@@ -3180,7 +3184,11 @@ are counted in <code>violations</code>.</p>
 <span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
-<span class="normal">149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SealedVerifier</span><span class="p">:</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SealedVerifier</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap any verifier so protected files (tests, by default) are</span>
 <span class="sd">    restored from a pristine baseline before every verification — reward</span>
 <span class="sd">    hacking by editing the check itself becomes impossible, and attempts</span>
@@ -3256,11 +3264,7 @@ not on PATH (common in unactivated venvs), fall back to
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>causal_data_juicer/runtime/verifier.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
@@ -3269,7 +3273,11 @@ not on PATH (common in unactivated venvs), fall back to
 <span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
-<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">resolve_command</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">workspace</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">resolve_command</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">workspace</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand {python} to the workspace interpreter; if the executable is</span>
 <span class="sd">    not on PATH (common in unactivated venvs), fall back to</span>
 <span class="sd">    `&lt;python&gt; -m &lt;cmd&gt;` so bare &quot;pytest -q&quot; just works.&quot;&quot;&quot;</span>

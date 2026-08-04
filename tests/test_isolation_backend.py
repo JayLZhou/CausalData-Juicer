@@ -1,12 +1,15 @@
 """The isolation backend must be *proven*, not configured.
 
-Container-level tests execute a real container and assert the three
-properties that matter (network unreachable, host filesystem invisible,
-memory limit kills); they skip — loudly, with the probe's evidence — on
-hosts whose runtime cannot run containers (e.g. k8s pods under an AppArmor
-``deny mount`` profile). The netns level is asserted for real wherever
-`unshare` works, including such pods: kernel-enforced network isolation is
-tested against a live listening socket, not against configuration.
+Each level's tests run only at that level, and each asserts the same
+properties by execution: network unreachable (against a live socket),
+resource limit enforced, verifier output byte-unchanged. Container tests
+additionally assert the host filesystem is invisible.
+
+Gating history: an earlier version gated the netns tests on "level is not
+none", so on a container-capable host they ran through the container wrap
+carrying a *host* interpreter path that does not exist inside the image —
+three spurious failures, and a real product bug behind them (now
+`check_container_compatible` / `wrap_or_downgrade`).
 """
 
 import socket
@@ -17,13 +20,54 @@ from pathlib import Path
 
 import pytest
 
-from causal_data_juicer.runtime.exec_backend import describe, probe, wrap
+from causal_data_juicer.runtime.exec_backend import (
+    Capabilities,
+    IsolationIncompatible,
+    check_container_compatible,
+    container_image,
+    describe,
+    probe,
+    wrap,
+    wrap_or_downgrade,
+)
 
 CAPS = probe()
 
+netns_only = pytest.mark.skipif(
+    CAPS.level != "netns", reason=f"level is {CAPS.level}, not netns: {CAPS.detail}"
+)
+container_only = pytest.mark.skipif(
+    CAPS.level != "container", reason=f"container runtime unavailable here: {CAPS.detail}"
+)
 
-def _run(argv, timeout=90):
+
+def _run(argv, timeout=120):
     return subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
+
+
+def _live_port():
+    """A bound, listening localhost port that a wrapped process must not reach."""
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    threading.Thread(target=srv.accept, daemon=True).start()
+    return srv, srv.getsockname()[1]
+
+
+def _unreachable_probe(port: int) -> str:
+    return (
+        f"import socket; s = socket.socket(); s.settimeout(3); "
+        f"raise SystemExit(0 if s.connect_ex(('127.0.0.1', {port})) != 0 else 1)"
+    )
+
+
+EGRESS_PROBE = (
+    "import socket; s = socket.socket(); s.settimeout(3); "
+    "raise SystemExit(0 if s.connect_ex(('1.1.1.1', 80)) != 0 else 1)"
+)
+
+
+# -- level-agnostic contracts ------------------------------------------------
 
 
 def test_probe_reports_a_level_with_evidence():
@@ -33,101 +77,92 @@ def test_probe_reports_a_level_with_evidence():
 
 
 def test_wrap_none_level_is_identity(tmp_path):
-    from causal_data_juicer.runtime.exec_backend import Capabilities
-
     argv = ["echo", "hi"]
     assert wrap(argv, tmp_path, caps=Capabilities("none")) == argv
 
 
-# -- netns level: runs on this pod and anywhere unshare works ----------------
+def test_container_rejects_host_paths_it_cannot_provide(tmp_path):
+    """The bug that broke container hosts: resolve_command hands us a host
+    interpreter path, and the container mounts only the workspace."""
+    caps = Capabilities("container", {"runtime": "podman", "podman": "/usr/bin/podman"})
+    with pytest.raises(IsolationIncompatible):
+        wrap(["/opt/venvs/task/bin/python", "-m", "pytest"], tmp_path, caps=caps)
+    wrap(["pytest", "-q"], tmp_path, caps=caps)  # PATH lookup inside the image: fine
+    check_container_compatible([str(tmp_path / "bin" / "python")], tmp_path)  # mounted: fine
 
-netns_only = pytest.mark.skipif(
-    CAPS.level == "none", reason=f"no isolation available: {CAPS.detail}"
-)
+
+def test_downgrade_reports_reason_instead_of_breaking(tmp_path):
+    caps = Capabilities("container", {"runtime": "podman", "podman": "/usr/bin/podman"})
+    argv, eff, reason = wrap_or_downgrade(
+        ["/opt/venvs/task/bin/python", "-c", "pass"], tmp_path, caps=caps
+    )
+    assert eff.level in ("netns", "none")
+    assert reason and "does not exist inside" in reason
+    assert "/opt/venvs/task/bin/python" in argv  # still runs, just less isolated
+
+
+def test_container_image_is_configurable(monkeypatch):
+    monkeypatch.setenv("CDJ_CONTAINER_IMAGE", "my/custom:tag")
+    assert container_image() == "my/custom:tag"
+
+
+# -- netns level -------------------------------------------------------------
 
 
 @netns_only
-def test_network_is_really_unreachable_inside(tmp_path):
-    """Bind a live localhost port outside; the wrapped process must fail to
-    connect to it — isolation proven against a real socket."""
-    srv = socket.socket()
-    srv.bind(("127.0.0.1", 0))
-    srv.listen(1)
-    port = srv.getsockname()[1]
-    threading.Thread(target=lambda: srv.accept() if True else None, daemon=True).start()
+def test_netns_cannot_reach_a_live_local_socket(tmp_path):
+    srv, port = _live_port()
     try:
-        code = (
-            f"import socket; s = socket.socket(); s.settimeout(3); "
-            f"raise SystemExit(0 if s.connect_ex(('127.0.0.1', {port})) != 0 else 1)"
-        )
-        probe_argv = [sys.executable, "-c", code]
-        assert subprocess.run(probe_argv, check=False).returncode == 1  # reachable outside
-        proc = _run(wrap(probe_argv, tmp_path))
-        assert proc.returncode == 0, proc.stderr  # unreachable inside
+        argv = [sys.executable, "-c", _unreachable_probe(port)]
+        assert _run(argv).returncode == 1  # reachable outside the wrapper
+        assert _run(wrap(argv, tmp_path)).returncode == 0  # unreachable inside
     finally:
         srv.close()
 
 
 @netns_only
-def test_egress_is_blocked_inside(tmp_path):
-    code = (
-        "import socket; s = socket.socket(); s.settimeout(3); "
-        "raise SystemExit(0 if s.connect_ex(('1.1.1.1', 80)) != 0 else 1)"
-    )
-    proc = _run(wrap([sys.executable, "-c", code], tmp_path))
-    assert proc.returncode == 0, proc.stderr
+def test_netns_blocks_egress(tmp_path):
+    assert _run(wrap([sys.executable, "-c", EGRESS_PROBE], tmp_path)).returncode == 0
 
 
 @netns_only
-def test_memory_limit_kills_oversized_allocation(tmp_path):
-    if CAPS.level == "container":
-        pytest.skip("covered by the container-level memory test")
-    argv = wrap(
+def test_netns_memory_limit_kills_oversized_allocation(tmp_path):
+    over = wrap(
         [sys.executable, "-c", "x = bytearray(1024**3)"],
         tmp_path,
         limits={"as_bytes": 256 * 1024**2},
     )
-    proc = _run(argv)
-    assert proc.returncode != 0
-    argv_ok = wrap(
+    assert _run(over).returncode != 0
+    under = wrap(
         [sys.executable, "-c", "x = bytearray(10 * 1024**2)"],
         tmp_path,
         limits={"as_bytes": 512 * 1024**2},
     )
-    assert _run(argv_ok).returncode == 0
+    assert _run(under).returncode == 0
 
 
 @netns_only
-def test_verifier_output_is_unchanged_by_isolation(tmp_path):
-    """Digest safety: wrapping must not alter what the check prints."""
+def test_netns_leaves_verifier_output_byte_identical(tmp_path):
     argv = [sys.executable, "-c", "print('deterministic-output-42')"]
-    bare = _run(argv)
-    wrapped = _run(wrap(argv, tmp_path))
-    assert wrapped.stdout == bare.stdout == "deterministic-output-42\n"
+    assert _run(wrap(argv, tmp_path)).stdout == _run(argv).stdout == "deterministic-output-42\n"
 
 
-# -- container level: runs wherever a real runtime exists --------------------
-
-container_only = pytest.mark.skipif(
-    CAPS.level != "container", reason=f"container runtime unavailable here: {CAPS.detail}"
-)
+# -- container level ---------------------------------------------------------
 
 
 @container_only
-def test_container_network_is_off(tmp_path):
-    proc = _run(
-        wrap(
-            [
-                "python",
-                "-c",
-                (
-                    "import socket; s = socket.socket(); s.settimeout(3); "
-                    "raise SystemExit(0 if s.connect_ex(('1.1.1.1', 80)) != 0 else 1)"
-                ),
-            ],
-            tmp_path,
-        )
-    )
+def test_container_cannot_reach_a_live_local_socket(tmp_path):
+    srv, port = _live_port()
+    try:
+        proc = _run(wrap(["python", "-c", _unreachable_probe(port)], tmp_path))
+        assert proc.returncode == 0, proc.stderr
+    finally:
+        srv.close()
+
+
+@container_only
+def test_container_blocks_egress(tmp_path):
+    proc = _run(wrap(["python", "-c", EGRESS_PROBE], tmp_path))
     assert proc.returncode == 0, proc.stderr
 
 
@@ -136,19 +171,8 @@ def test_container_cannot_see_host_filesystem(tmp_path):
     marker = Path.home() / ".cdj-host-marker"
     marker.write_text("host")
     try:
-        proc = _run(
-            wrap(
-                [
-                    "python",
-                    "-c",
-                    (
-                        f"import pathlib; "
-                        f"raise SystemExit(1 if pathlib.Path('{marker}').exists() else 0)"
-                    ),
-                ],
-                tmp_path,
-            )
-        )
+        code = f"import pathlib; raise SystemExit(1 if pathlib.Path('{marker}').exists() else 0)"
+        proc = _run(wrap(["python", "-c", code], tmp_path))
         assert proc.returncode == 0, "host filesystem is visible inside the container"
     finally:
         marker.unlink(missing_ok=True)
@@ -164,6 +188,12 @@ def test_container_memory_limit_enforced(tmp_path):
         )
     )
     assert proc.returncode != 0
+
+
+@container_only
+def test_container_leaves_verifier_output_byte_identical(tmp_path):
+    argv = ["python", "-c", "print('deterministic-output-42')"]
+    assert _run(wrap(argv, tmp_path)).stdout == "deterministic-output-42\n"
 
 
 @container_only

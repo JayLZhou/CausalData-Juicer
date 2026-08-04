@@ -77,13 +77,17 @@ class CommandVerifier:
         self.command = list(command)
         self.timeout = timeout
         self.isolate = isolate
+        self._downgrade_reported = False
 
     def evaluate(self, workspace: Path, ledger: CostLedger) -> Outcome:
         argv = resolve_command(self.command, workspace)
         if self.isolate:
-            from causal_data_juicer.runtime.exec_backend import wrap
+            from causal_data_juicer.runtime.exec_backend import wrap_or_downgrade
 
-            argv = wrap(argv, workspace)
+            argv, caps, reason = wrap_or_downgrade(argv, workspace)
+            if reason and not self._downgrade_reported:
+                print(f"isolation downgraded to {caps.level}: {reason}")
+                self._downgrade_reported = True
         t0 = time.monotonic()
         proc = subprocess.run(
             argv, cwd=workspace, capture_output=True, text=True, timeout=self.timeout, check=False

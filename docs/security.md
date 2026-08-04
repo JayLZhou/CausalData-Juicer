@@ -24,13 +24,23 @@ itself, a security boundary.
 
 | Level | Mechanism | What it guarantees |
 |---|---|---|
-| `container` | rootless Podman/Docker: `--network=none`, read-only rootfs, workspace-only rw mount, `--cap-drop ALL`, `no-new-privileges`, memory/pids limits, non-root | network off, host fs invisible, resource-bounded |
+| `container` | rootless Podman/Docker: `--network=none`, read-only rootfs, workspace-only rw mount, `--cap-drop ALL`, `no-new-privileges`, memory/pids limits, non-root | network off, host fs invisible, resource-bounded **where measured** (see below) |
 | `netns` | `unshare -U -r -n` + setrlimit shim | **kernel-enforced network isolation** (even localhost unreachable) + address-space/CPU/file-size limits; **no filesystem isolation** |
 | `none` | plain host execution | nothing |
 
 `cdj doctor` prints the level with evidence. At `container` level `cdj run`
 proceeds without ceremony; below it, the explicit `--unsafe-local-execution`
 flag is required because the filesystem is still exposed.
+
+**Resource limits are measured, not assumed.** Docker prints a warning and
+silently ignores `--memory` when the cgroup memory controller is not
+available to it. The probe therefore runs a page-touching allocation
+against a small cap and records `memory_limit_enforced`; `cdj doctor`
+reports "container isolation … WITHOUT enforced memory limits" when that
+measurement fails. Note the two levels bound different things: containers
+cap **resident** memory via cgroups, while the netns level caps **address
+space** via `RLIMIT_AS` — an allocation that is never touched escapes the
+former but not the latter.
 
 **When container level actually applies.** The container mounts *only* the
 workspace, so the verify command must be runnable with the image's own

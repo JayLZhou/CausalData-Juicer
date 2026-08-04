@@ -24,8 +24,12 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
+
+DEFAULT_IMAGE = "python:3.12-slim"
+_SHIM = "causal_data_juicer.runtime.rlimit_exec"
 
 DEFAULT_LIMITS = {
     "as_bytes": 4 * 1024**3,  # address space
@@ -38,6 +42,10 @@ DEFAULT_LIMITS = {
 class Capabilities:
     level: str  # container | netns | none
     detail: dict = field(default_factory=dict)
+
+
+def container_image() -> str:
+    return os.environ.get("CDJ_CONTAINER_IMAGE", DEFAULT_IMAGE)
 
 
 def _apparmor_profile() -> str:
@@ -56,6 +64,74 @@ def _try(cmd: list[str], timeout: int = 20) -> bool:
         return False
 
 
+def _container_argv(exe: str, workspace: Path, lim: dict) -> list[str]:
+    """The container prefix, shared by probe() and wrap() so they can never
+    disagree. Only flags supported by BOTH docker and podman are used:
+    ``--read-only-tmpfs`` is podman-only (portable form: ``--tmpfs /tmp``),
+    and the uid is the caller's, not a hardcoded 1000 — a bind-mounted
+    workspace owned by the host user is unwritable to any other uid.
+    """
+    ws = str(Path(workspace).resolve())
+    return [
+        exe,
+        "run",
+        "--rm",
+        "--network=none",
+        "--user",
+        f"{os.getuid()}:{os.getgid()}",
+        "--read-only",
+        "--tmpfs",
+        "/tmp",
+        "--memory",
+        str(lim["as_bytes"]),
+        "--pids-limit",
+        "256",
+        "--security-opt",
+        "no-new-privileges",
+        "--cap-drop",
+        "ALL",
+        "-e",
+        "HOME=/tmp",  # read-only rootfs: give tools a writable HOME
+        "-v",
+        f"{ws}:/ws:rw",
+        "-w",
+        "/ws",
+        container_image(),
+    ]
+
+
+def _probe_container(exe: str) -> str | None:
+    """Run a throwaway container with **the exact flag set wrap() emits**.
+
+    Probing with a simplified command was a real defect: podman-only flags
+    (`--read-only-tmpfs`) and a hardcoded `--user 1000:1000` passed the
+    simple probe and then broke every real invocation on Docker hosts. The
+    probe now fails for the same reasons a real run would, so an
+    unsupported flag downgrades the level instead of producing broken
+    commands.
+    """
+    with tempfile.TemporaryDirectory(prefix="cdj-probe-") as tmp:
+        argv = [
+            *_container_argv(exe, Path(tmp), DEFAULT_LIMITS),
+            "python",
+            "-c",
+            "open('probe.txt', 'w').write('ok')",  # also proves the mount is writable
+        ]
+        try:
+            proc = subprocess.run(argv, capture_output=True, timeout=300, check=False, text=True)
+        except (OSError, subprocess.TimeoutExpired) as e:  # pragma: no cover — env-dependent
+            return f"{type(e).__name__}: {e}"
+        if proc.returncode != 0:
+            return (
+                (proc.stderr or proc.stdout).strip().splitlines()[-1][:200]
+                if (proc.stderr or proc.stdout).strip()
+                else f"exit {proc.returncode}"
+            )
+        if not (Path(tmp) / "probe.txt").exists():
+            return "container ran but the workspace mount was not writable"
+    return None
+
+
 @functools.lru_cache(maxsize=1)
 def probe() -> Capabilities:
     detail = {"apparmor": _apparmor_profile()}
@@ -65,13 +141,11 @@ def probe() -> Capabilities:
         if not exe:
             continue
         detail[runtime] = exe
-        # the decisive test is running a real container, not --version
-        if _try([exe, "run", "--rm", "--network=none", container_image(), "true"], timeout=120):
-            detail["runtime"] = runtime  # pragma: no cover — needs a live runtime;
-            return Capabilities(
-                "container", detail
-            )  # pragma: no cover — asserted by test_isolation_backend on capable hosts
-        detail[f"{runtime}_error"] = "cannot run containers here (mount ops likely denied)"
+        error = _probe_container(exe)
+        if error is None:
+            detail["runtime"] = runtime
+            return Capabilities("container", detail)
+        detail[f"{runtime}_error"] = error
 
     unshare = shutil.which("unshare")
     if unshare and _try([unshare, "-U", "-r", "-n", "true"]):
@@ -79,11 +153,6 @@ def probe() -> Capabilities:
         return Capabilities("netns", detail)
 
     return Capabilities("none", detail)
-
-
-_SHIM = "causal_data_juicer.runtime.rlimit_exec"
-
-DEFAULT_IMAGE = "python:3.12-slim"
 
 
 class IsolationIncompatible(RuntimeError):
@@ -94,10 +163,6 @@ class IsolationIncompatible(RuntimeError):
     produces for per-task venvs) does not exist inside the image. Callers
     catch this and downgrade a level, reporting why.
     """
-
-
-def container_image() -> str:
-    return os.environ.get("CDJ_CONTAINER_IMAGE", DEFAULT_IMAGE)
 
 
 def check_container_compatible(argv: list[str], workspace: Path) -> None:
@@ -129,32 +194,7 @@ def wrap(
 
     if caps.level == "container":
         check_container_compatible(argv, workspace)
-        runtime = caps.detail["runtime"]
-        ws = str(Path(workspace).resolve())
-        return [
-            caps.detail[runtime],
-            "run",
-            "--rm",
-            "--network=none",
-            "--user",
-            "1000:1000",
-            "--read-only",
-            "--read-only-tmpfs",
-            "--memory",
-            str(lim["as_bytes"]),
-            "--pids-limit",
-            "256",
-            "--security-opt",
-            "no-new-privileges",
-            "--cap-drop",
-            "ALL",
-            "-v",
-            f"{ws}:/ws:rw",
-            "-w",
-            "/ws",
-            container_image(),
-            *argv,
-        ]
+        return [*_container_argv(caps.detail[caps.detail["runtime"]], workspace, lim), *argv]
 
     if caps.level == "netns":
         return [

@@ -38,7 +38,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e . && pip install coverage
+      # ubuntu runners ship Docker: prove the container isolation path for
+      # real there (a silent fallback to netns would hide a broken backend)
       - run: coverage run -m pytest tests/ -q
+        env:
+          CDJ_REQUIRE_CONTAINER: ${{ matrix.os == 'ubuntu-latest' && '1' || '0' }}
       # overall gate is a ratchet: 60 now (truth: 63%), raising toward 80
       - run: coverage report --fail-under=60
       # the security boundary is held to a higher bar

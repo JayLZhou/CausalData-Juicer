@@ -12,6 +12,7 @@ three spurious failures, and a real product bug behind them (now
 `check_container_compatible` / `wrap_or_downgrade`).
 """
 
+import os
 import socket
 import subprocess
 import sys
@@ -74,6 +75,17 @@ def test_probe_reports_a_level_with_evidence():
     assert CAPS.level in ("container", "netns", "none")
     assert "apparmor" in CAPS.detail
     assert describe(CAPS)
+
+
+def test_container_level_is_reached_where_it_is_required():
+    """CI sets CDJ_REQUIRE_CONTAINER=1 on hosts that ship a runtime, so a
+    broken container path fails loudly instead of quietly skipping every
+    container test — the SKIP-as-PASS trap, one level down."""
+    if os.environ.get("CDJ_REQUIRE_CONTAINER") != "1":
+        pytest.skip("container level not required on this host")
+    assert CAPS.level == "container", (
+        f"CDJ_REQUIRE_CONTAINER=1 but probe fell back to {CAPS.level}: {CAPS.detail}"
+    )
 
 
 def test_wrap_none_level_is_identity(tmp_path):

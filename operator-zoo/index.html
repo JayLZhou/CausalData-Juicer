@@ -1,0 +1,1824 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A budgeted interventional data engine for agent improvement">
+      
+      
+      
+      
+        <link rel="prev" href="../concepts/">
+      
+      
+        <link rel="next" href="../story-migration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Operator Zoo - CausalData-Juicer</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/landing.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#operator-zoo" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CausalData-Juicer" class="md-header__button md-logo" aria-label="CausalData-Juicer" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CausalData-Juicer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Operator Zoo
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="indigo"  aria-label="dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="indigo"  aria-label="light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/JayLZhou/CausalData-Juicer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CausalData-Juicer
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorial/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../why-causal-data/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Why causal data
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../concepts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Concepts
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Operator Zoo
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../story-migration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  The full story
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../cases/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Case studies
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../landscape-papers/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Landscape references
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../research-gaps/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Coverage map & gaps
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Integrations
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security model
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../design/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Design
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../bench-m15-spec/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration bench spec
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CausalData-Juicer" class="md-nav__button md-logo" aria-label="CausalData-Juicer" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CausalData-Juicer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/JayLZhou/CausalData-Juicer" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CausalData-Juicer
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-causal-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Why causal data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operator Zoo
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operator Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#observational-no-environment-zero-budget-can-never-raise-a-tier-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observational — no environment, zero budget — can never raise a tier (17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-propose-interventions-model-cost-no-execution-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        source — propose interventions (model cost, no execution) (10)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interventional-execute-the-environment-spend-budget-raise-tiers-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interventional — execute the environment, spend budget, raise tiers (6)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compile-materialize-views-tier-preserving-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compile — materialize views; tier-preserving (7)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#under-the-hood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Under the hood
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Under the hood">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#observational-no-env-zero-budget-ceiling-suggested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observational (no env, zero budget, ceiling ≤ SUGGESTED)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#candidate-sources-propose-interventions-llm-cost-no-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate sources (propose interventions; LLM cost, no execution)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interventional-need-env-spend-budget-raise-evidence-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interventional (need env, spend budget, raise evidence tiers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compile-zero-budget-tier-preserving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compile (zero budget, tier-preserving)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../story-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The full story
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case studies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../landscape-papers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landscape references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../research-gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage map & gaps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bench-m15-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration bench spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#observational-no-environment-zero-budget-can-never-raise-a-tier-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observational — no environment, zero budget — can never raise a tier (17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-propose-interventions-model-cost-no-execution-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        source — propose interventions (model cost, no execution) (10)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interventional-execute-the-environment-spend-budget-raise-tiers-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interventional — execute the environment, spend budget, raise tiers (6)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compile-materialize-views-tier-preserving-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compile — materialize views; tier-preserving (7)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#under-the-hood" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Under the hood
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Under the hood">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#observational-no-env-zero-budget-ceiling-suggested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observational (no env, zero budget, ceiling ≤ SUGGESTED)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#candidate-sources-propose-interventions-llm-cost-no-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate sources (propose interventions; LLM cost, no execution)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interventional-need-env-spend-budget-raise-evidence-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interventional (need env, spend budget, raise evidence tiers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compile-zero-budget-tier-preserving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compile (zero budget, tier-preserving)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="operator-zoo">Operator Zoo</h1>
+<p>Operators extend Data-Juicer's observational signature to an interventional one:
+<code>(Units, Env, Budget) → Units'</code>. Four categories form the algebra — observational
+ops are free and can never raise a tier, source ops propose interventions,
+interventional ops spend real execution budget and are the only way to climb the
+evidence ladder, and compile ops materialize views.</p>
+<p>Everything below is <strong>registered and runnable in a YAML recipe</strong> (<code>cdj process
+--config recipe.yaml</code>) and listed by <code>cdj ops</code>. We deliberately do not mirror
+Data-Juicer's 200+ text-cleaning operators: those answer an observational
+question ("is this sample good?"), while every operator here answers an
+interventional one ("would the outcome have changed?").</p>
+<!-- BEGIN GENERATED ZOO -->
+
+<p><strong>40 operators ship in this package</strong>, in the four categories of the algebra. This table is generated from the registry by <code>scripts/gen_zoo_docs.py</code>; a test fails if it drifts from what <code>cdj ops</code> lists.</p>
+<h3 id="observational-no-environment-zero-budget-can-never-raise-a-tier-17"><code>observational</code> — no environment, zero budget — can never raise a tier (17)</h3>
+<table>
+<thead>
+<tr>
+<th>operator</th>
+<th>what it does</th>
+<th>params</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>attach_generation_provenance</code></td>
+<td>Reconnect executed units to the branches that proposed them. Without this the ladder has a hole: the selector hands the engine bare interventions, so a finished corpus cannot say which rows came from a model, which constraints they cleared beforehand, or which site was intervened on. Each matching unit gets <code>provenance['generation']</code>, <code>provenance['constraint_validation']</code> and <code>provenance['site']</code>. Units whose execution did not flip keep their execution-derived tier — passing a constraint filter is not evidence, and this operator never raises a tier</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>collect_toy</code></td>
+<td>Collect the built-in toy workload (offline; also seeds the toy fix table as a candidate source)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>cost_report</code></td>
+<td>Ledger breakdown plus cost per validated unit into ctx.meta['cost']</td>
+<td><code>out (optional path, relative to workdir)</code></td>
+</tr>
+<tr>
+<td><code>counterfactual_validity_filter</code></td>
+<td>Composable verdicts on generated branches — hard constraints gate, soft scores rank, and rejections keep their provenance. Hard (all must hold, checked in order): intervention_fidelity the edit actually changed the named variable target_outcome_shift the branch is <em>aimed</em> at flipping the outcome invariant_preservation nothing outside the site moved schema_validity the resulting action is well-formed and executable by a registered tool Soft (recorded, never gating): minimality, semantic_proximity, fluency, diversity, verifier_confidence. Passing lifts a branch to <strong>CONSTRAINT_VALIDATED and no further</strong> — this operator never executes anything, so it cannot make a causal claim. A rejected branch is kept with <code>failed_at</code> and a reason, because the rejections are the training signal for the generator</td>
+<td><code>keep_rejected (default true), min_proximity (default 0.0, soft-only), drop_identical (default true)</code></td>
+</tr>
+<tr>
+<td><code>coverage_report</code></td>
+<td>How much of the failure set got covered, by task and by tier, into ctx.meta['coverage']</td>
+<td><code>out (optional path)</code></td>
+</tr>
+<tr>
+<td><code>dag_stats</code></td>
+<td>Trace-DAG sharing statistics (unique trees, bytes saved) into ctx.meta['dag']</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>dedupe_units</code></td>
+<td>Drop units whose (episode, target step, effect) signature repeats — two fixes that flip the same failure the same way are one datum</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>effect_signature_deduplicator</code></td>
+<td>Collapse generated branches that would run the same experiment. Two edits that change the same variable at the same step to the same value are one counterfactual, however differently they were phrased. Deduplicating <em>before</em> the selector means the replay budget is spent on distinct hypotheses rather than on paraphrases; the survivors keep a <code>duplicates</code> count so the corpus still records how often a strategy proposed the same thing. Keeps the representative with the highest site influence_score</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>export_observational</code></td>
+<td>Behaviour-cloning and failure-log views straight from episodes — the OBSERVED-ceiling exports that need no replay at all</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>filter_units</code></td>
+<td>Keep units matching a predicate</td>
+<td><code>min_tier (e.g. MINIMAL), flipped (bool), task_prefix (str), source (str). Unset params do not constrain</code></td>
+</tr>
+<tr>
+<td><code>her_relabel</code></td>
+<td>Hindsight relabelling: a failed trajectory is optimal supervision for the goal it <em>did</em> reach. Pure re-reading of recorded episodes, so the rows carry the OBSERVED ceiling</td>
+<td><code>out (default exports/her_sft.jsonl)</code></td>
+</tr>
+<tr>
+<td><code>import_traces</code></td>
+<td>Ingest external agent traces (Import Mode; OBSERVED ceiling)</td>
+<td><code>path</code></td>
+</tr>
+<tr>
+<td><code>intervention_site_mapper</code></td>
+<td>Identify the variables in a trajectory that a <code>do</code> could act on, typed and annotated with what must stay fixed. Sites are read off recorded steps: tool arguments (<code>ToolArgument</code>), structured fields inside written artifacts (<code>StructuredField</code>), reasoning sentences (<code>Rationale</code>), retrieved blocks (<code>TextSpan</code>), subject-predicate-object statements (<code>SemanticTriple</code>), and the actions themselves (<code>AgentAction</code>). <code>influence_score</code> is an openly heuristic prior for ordering work — it is never evidence</td>
+<td><code>kinds (list, default all), rationale_paths (default ['thoughts.md']), context_paths (default ['context.md']), invariants (default ['task', 'repository', 'user_intent'])</code></td>
+</tr>
+<tr>
+<td><code>load_run</code></td>
+<td>Load a previous run directory into the context</td>
+<td><code>path</code></td>
+</tr>
+<tr>
+<td><code>replay_promotion_selector</code></td>
+<td>Decide which generated branches are worth real execution. Generation is cheap and unreliable; replay is expensive and decisive, so the budget should buy <em>information</em>, not volume. Branches are clustered by effect signature — two edits that change the same variable the same way are one experiment — and each cluster is scored value_i = P(flip)_i x novelty_i x coverage_i x uncertainty_i / cost_i then packed greedily by value density under <code>budget</code>. A cluster's representative is queued first; <code>sequential</code> mode then re-scores the remaining clusters using the flip rate observed so far (a Beta-Bernoulli posterior over the cluster's strategy), and stops early once every remaining cluster falls below <code>min_value</code> — the branches that never reach a replay are recorded, not silently dropped. The output is a list of ReplayRequests in ctx.services['replay_requests'] and, for the interventional operators downstream, ctx.candidates</td>
+<td><code>budget (replays, default 20), sequential (default true), min_value (default 0.01), cost_per_replay (default 1.0), prior_flip (default 0.3)</code></td>
+</tr>
+<tr>
+<td><code>sample_units</code></td>
+<td>Deterministically subsample units (stable across runs — the digest of the unit id decides)</td>
+<td><code>n (required), seed (default 0)</code></td>
+</tr>
+<tr>
+<td><code>screen_failures</code></td>
+<td>Select failed episodes and gather deduped candidates from the context's sources</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="source-propose-interventions-model-cost-no-execution-10"><code>source</code> — propose interventions (model cost, no execution) (10)</h3>
+<table>
+<thead>
+<tr>
+<th>operator</th>
+<th>what it does</th>
+<th>params</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clause_perturb</code></td>
+<td>Clause-level stress perturbations (CAPER semantics): patch one line of a written artifact with a supplied variant, so the verifier decides which clauses are critical and which are harmless</td>
+<td><code>path (required), patches (list of {line, text})</code></td>
+</tr>
+<tr>
+<td><code>context_ablate</code></td>
+<td>Leave-one-document-out over an assembled context (ContextCite semantics): each candidate drops exactly one block, so a downstream reader that still succeeds proves the block was not load-bearing</td>
+<td><code>path (default context.md), separator (default '\n\n'), keep_min (default 1)</code></td>
+</tr>
+<tr>
+<td><code>do_counterfactual_mapper</code></td>
+<td><code>do(Z_j = z_j')</code> on identified sites, regenerating <strong>only the declared descendants</strong>. This is the difference between a counterfactual and a rewrite: the site says what changes and what must hold, so the edit touches one variable and the engine re-derives the downstream consequences by <em>executing</em> them. Unconstrained "rewrite the sample" prompting cannot make that distinction, which is why it is not offered here. Strategies (<code>strategy</code> may be a list): mask_edit blank the site's value (the null intervention) retrieve_edit substitute a value from <code>values</code> / <code>values_file</code> rationale_edit truncate the reasoning at this sentence semantic_triple_edit swap the object of a subject-predicate-object descendant_regeneration ask a model for the new value, constrained to the site and its invariants (needs base_url/model) Every branch records its do(), the invariants it promises to preserve, and full generation provenance. Branches enter at SUGGESTED; the filter can raise them to CONSTRAINT_VALIDATED; only a paired replay goes higher</td>
+<td><code>strategy (default ['mask_edit']), values (list) or values_file, kinds (restrict site kinds), max_sites (default 0 = all), target_outcome (default 'success'), base_url, model, seed</code></td>
+</tr>
+<tr>
+<td><code>fix_table</code></td>
+<td>Curated / cached fixes as a candidate source — the zero-cost way to replay a known set of corrections</td>
+<td><code>path (JSON {task_id: [{tool, args}, …]})</code></td>
+</tr>
+<tr>
+<td><code>fixer_llm</code></td>
+<td>LLM fixer candidate source</td>
+<td><code>base_url, model, candidates (default 2), tests_by_task (optional)</code></td>
+</tr>
+<tr>
+<td><code>message_ablate</code></td>
+<td>Multi-agent message credit: replace one teammate's message with a supplied alternative and let downstream agents re-react (needs <code>continuation_policy</code> at replay time to be meaningful)</td>
+<td><code>path (default inbox.md), replacements (list of strings, or a JSON file via replacements_file)</code></td>
+</tr>
+<tr>
+<td><code>refine</code></td>
+<td>Validation-in-the-loop: revise the interventions that did NOT flip, conditioning on their own executed failure output. Requires units from a previous paired_replay</td>
+<td><code>base_url, model, rounds (default 1)</code></td>
+</tr>
+<tr>
+<td><code>resample</code></td>
+<td>Temperature-resampling candidate source</td>
+<td><code>base_url, model, k (default 3), temperature (default 0.85)</code></td>
+</tr>
+<tr>
+<td><code>thought_truncate</code></td>
+<td>Thought-anchor probing without a model: truncate a reasoning trace at each sentence boundary, so the earliest truncation that still flips marks the sentence carrying the counterfactual weight</td>
+<td><code>path (default thoughts.md)</code></td>
+</tr>
+<tr>
+<td><code>tool_ablate</code></td>
+<td>Was this tool call necessary? Replace a step's action with a <em>pure</em> read of the same path, which keeps the trajectory plausible while removing the step's effect — downstream steps then re-react, and a run that still succeeds proves the call was not load-bearing</td>
+<td><code>tools (list of tool names to ablate, default ['write_file']), max_steps (default 0 = every matching step)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="interventional-execute-the-environment-spend-budget-raise-tiers-6"><code>interventional</code> — execute the environment, spend budget, raise tiers (6)</h3>
+<table>
+<thead>
+<tr>
+<th>operator</th>
+<th>what it does</th>
+<th>params</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>budget_screen</code></td>
+<td>Validate candidates under a hard budget with a pluggable acquisition policy — the "budgeted" half of the engine, exposed</td>
+<td><code>policy (exhaustive | random | adaptive, default adaptive), replays (budget, default 60), n_repro (default 3)</code></td>
+</tr>
+<tr>
+<td><code>minimize</code></td>
+<td>ddmin-slice REPRODUCIBLE units to MINIMAL</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>paired_replay</code></td>
+<td>Validate every candidate with paired counterfactual replay</td>
+<td><code>n_repro (default 3)</code></td>
+</tr>
+<tr>
+<td><code>paired_replay_parallel</code></td>
+<td>paired_replay across a process pool — identical outputs, wall-clock divided by the worker count (the per-worker control caches duplicate some replays; cost_report will show it)</td>
+<td><code>workers (default 4), n_repro (default 3)</code></td>
+</tr>
+<tr>
+<td><code>revalidate</code></td>
+<td>Selective revalidation under a dependency event: only units whose claims intersect the change are replayed, inside the NEW environment; survivors are re-stamped, casualties demoted</td>
+<td><code>family (required), python (required, interpreter of the new env), freeze (required, the new</code>pip freeze<code>text), mode (selective | full, default selective), n_repro (default 2)</code></td>
+</tr>
+<tr>
+<td><code>stress_probe</code></td>
+<td>The stress direction: run each candidate as a single intervened branch against a <em>passing</em> episode and record whether it breaks the outcome — critical vs harmless, same machinery, opposite sign</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="compile-materialize-views-tier-preserving-7"><code>compile</code> — materialize views; tier-preserving (7)</h3>
+<table>
+<thead>
+<tr>
+<th>operator</th>
+<th>what it does</th>
+<th>params</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>credit_ate</code></td>
+<td>Compile step-level counterfactual credit — ATE = P(success</td>
+<td>do(a')) - P(success</td>
+</tr>
+<tr>
+<td><code>export_trl</code></td>
+<td>Trainer-native exports</td>
+<td><code>formats (default [trl-sft, trl-dpo, verl])</code></td>
+</tr>
+<tr>
+<td><code>export_views</code></td>
+<td>Compile SFT / DPO / memory / regression views</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>group_advantage</code></td>
+<td>Group-relative advantage per intervened branch — the data core of tree-based GRPO methods (TreeRL / Tree-GRPO / RTMC). Siblings are the units sharing a fork point; each one scores its own success minus the sibling-group mean. Offline: reads stored outcomes, executes nothing</td>
+<td><code>out (default exports/group_advantage.jsonl)</code></td>
+</tr>
+<tr>
+<td><code>process_rewards</code></td>
+<td>Compile a process-reward view: one row per intervened atom, labelled by whether it was necessary (critical) or not (harmless) — the clause-PRM / step-PRM shape</td>
+<td><code>out (default exports/process_rewards.jsonl)</code></td>
+</tr>
+<tr>
+<td><code>report</code></td>
+<td>Write the human-readable report for this recipe run (terminal text and optional HTML), so a recipe ends with something a person can read</td>
+<td><code>html (bool, default false)</code></td>
+</tr>
+<tr>
+<td><code>save_run</code></td>
+<td>Persist the context as a run directory (episodes/snapshots/units)</td>
+<td><code>none (uses the recipe workdir)</code></td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED ZOO -->
+
+<h2 id="under-the-hood">Under the hood</h2>
+<p>The classes and functions these operators wrap, for readers who want the
+Python API rather than the recipe vocabulary:</p>
+<h3 id="observational-no-env-zero-budget-ceiling-suggested">Observational (no env, zero budget, ceiling ≤ SUGGESTED)</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Module</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Screener</code></td>
+<td><code>acquisition/screener.py</code></td>
+<td>select failed episodes, dedupe candidates by effect signature</td>
+</tr>
+<tr>
+<td><code>load_generic_traces</code></td>
+<td><code>runtime/import_trace.py</code></td>
+<td>ingest external agent traces (Import Mode)</td>
+</tr>
+<tr>
+<td><code>compile_bc_sft</code> / <code>compile_failure_log</code></td>
+<td><code>compiler/observational.py</code></td>
+<td>behavior cloning from successes / failure logs, OBSERVED-stamped</td>
+</tr>
+<tr>
+<td><code>dag_stats</code></td>
+<td><code>store/dag.py</code></td>
+<td>shared-prefix trace-DAG sharing statistics</td>
+</tr>
+<tr>
+<td>HER relabel</td>
+<td><code>examples/case_her_relabel.py</code></td>
+<td>failures → supervision for the goal they <em>did</em> achieve</td>
+</tr>
+</tbody>
+</table>
+<h3 id="candidate-sources-propose-interventions-llm-cost-no-execution">Candidate sources (propose interventions; LLM cost, no execution)</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Module</th>
+<th>Coverage character</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TableFixSource</code></td>
+<td><code>acquisition/screener.py</code></td>
+<td>curated / cached fix tables</td>
+</tr>
+<tr>
+<td><code>FixerLLMSource</code></td>
+<td><code>acquisition/fixer.py</code></td>
+<td>blind LLM fixer (sees failure output)</td>
+</tr>
+<tr>
+<td><code>FixerLLMSource(tests_by_task=…)</code></td>
+<td><code>acquisition/fixer.py</code></td>
+<td>test-aware fixer — reads the sealed spec</td>
+</tr>
+<tr>
+<td><code>ResampleSource</code></td>
+<td><code>acquisition/resample.py</code></td>
+<td>temperature resampling of the policy itself — pierces deterministic-model ceilings</td>
+</tr>
+<tr>
+<td><code>propose_refinement</code></td>
+<td><code>acquisition/fixer.py</code></td>
+<td>validation-in-the-loop: revises against its own <em>executed</em> failure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interventional-need-env-spend-budget-raise-evidence-tiers">Interventional (need env, spend budget, raise evidence tiers)</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Module</th>
+<th>Tier effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Replayer.paired_replay</code></td>
+<td><code>replay/replayer.py</code></td>
+<td>SUGGESTED → COUNTERFACTUAL-VALIDATED → REPRODUCIBLE</td>
+</tr>
+<tr>
+<td><code>Replayer.recorded_replay</code></td>
+<td><code>replay/replayer.py</code></td>
+<td>determinism control (digest-matched)</td>
+</tr>
+<tr>
+<td><code>Replayer.intervened_flip</code></td>
+<td><code>replay/replayer.py</code></td>
+<td>single-branch probe (slicing, stress direction)</td>
+</tr>
+<tr>
+<td><code>minimize_unit</code> (ddmin)</td>
+<td><code>slicing/ddmin.py</code></td>
+<td>REPRODUCIBLE → MINIMAL over intervention atoms</td>
+</tr>
+<tr>
+<td><code>Replayer.fork_at</code></td>
+<td><code>replay/replayer.py</code></td>
+<td>fork anywhere from sparse checkpoints (prefix re-execution)</td>
+</tr>
+<tr>
+<td><code>revalidate</code></td>
+<td><code>maintenance/revalidate.py</code></td>
+<td>version events: confirm &amp; re-stamp, or demote stale units</td>
+</tr>
+<tr>
+<td><code>AcquisitionEngine.run</code></td>
+<td><code>acquisition/engine.py</code></td>
+<td>budgeted scheduling of all of the above</td>
+</tr>
+</tbody>
+</table>
+<p>Intervention types: <code>ActionReplace</code> (swap the step's tool call) and
+<code>ToolArgumentEdit</code> (<code>set</code> whole values or <code>patch_lines</code> — line atoms are what
+slicing minimizes over; a SQL clause, a config line, a code hunk).</p>
+<h3 id="compile-zero-budget-tier-preserving">Compile (zero budget, tier-preserving)</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>compile_sft</code> / <code>compile_dpo</code> / <code>compile_memory</code> / <code>compile_regression</code></td>
+<td>minimal correction pairs / preference pairs / failure→recovery units / <strong>executable</strong> counterfactual test suites</td>
+</tr>
+<tr>
+<td><code>export_trl_sft</code> / <code>export_trl_dpo</code> / <code>export_verl</code></td>
+<td>TRL messages / TRL DPO / verl parquet, trainer-native</td>
+</tr>
+<tr>
+<td>step-DPO, PRM, ATE-credit, tree-credit, clause-PRM</td>
+<td>example-level compilers in <a href="https://github.com/JayLZhou/CausalData-Juicer/blob/main/examples/"><code>examples/</code></a></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.tabs", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

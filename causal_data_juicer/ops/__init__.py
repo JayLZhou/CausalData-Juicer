@@ -3,6 +3,7 @@
 from causal_data_juicer.ops import (  # noqa: F401  (import registers)
     analysis_ops,
     attribution_ops,
+    cda_ops,
     engine_ops,
     ops_zoo,
 )

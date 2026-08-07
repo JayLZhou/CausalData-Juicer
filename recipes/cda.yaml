@@ -1,0 +1,24 @@
+# Identify -> Generate -> Filter -> Validate, offline and end to end.
+#
+# What this recipe demonstrates is as much the GATE as the pipeline:
+# `mask_edit` is a necessity probe (blank a variable and see what breaks),
+# not a repair strategy, so on a workload of already-failing tasks nothing
+# flips — and nothing is promoted. Branches reach CONSTRAINT_VALIDATED from
+# generation + filtering alone, and stay there. Swap in
+# `retrieve_edit`/`descendant_regeneration` with candidate values to do
+# repair; the ladder rules do not change.
+workdir: runs/recipe-cda
+process:
+  - collect_toy: {}
+  - intervention_site_mapper: {}
+  - do_counterfactual_mapper: {strategy: [mask_edit], max_sites: 40}
+  - counterfactual_validity_filter: {}
+  - replay_promotion_selector: {budget: 12, sequential: true}
+  - paired_replay: {n_repro: 2}
+  - attach_generation_provenance: {}
+  - minimize: {}
+  - group_advantage: {}
+  - process_rewards: {}
+  - coverage_report: {out: coverage.json}
+  - cost_report: {out: cost.json}
+  - save_run: {}

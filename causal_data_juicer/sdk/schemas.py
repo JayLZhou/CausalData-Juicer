@@ -12,9 +12,9 @@ import enum
 import hashlib
 import json
 import uuid
-from typing import Any
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 
 def new_id(prefix: str) -> str:
@@ -39,14 +39,50 @@ class SideEffectClass(enum.StrEnum):
 
 class EvidenceTier(enum.IntEnum):
     """Ordered evidence ladder.  Weak evidence must never masquerade as
-    strong: every API/export surface carries ``tier.name``."""
+    strong: every API/export surface carries ``tier.name``.
+
+    Values are spaced by ten so a rung can be inserted without renumbering
+    the ones above it — ``CONSTRAINT_VALIDATED`` was added between
+    SUGGESTED and COUNTERFACTUAL_VALIDATED exactly this way. Runs written
+    before that insertion stored small integers (0-5); those are remapped
+    on load by :data:`LEGACY_TIER_VALUES`, and new runs persist the *name*,
+    which no future insertion can reinterpret.
+    """
 
     OBSERVED = 0
-    SUGGESTED = 1
-    COUNTERFACTUAL_VALIDATED = 2
-    REPRODUCIBLE = 3
-    MINIMAL = 4
-    TRAINING_VALIDATED = 5
+    SUGGESTED = 10
+    #: LLM-generated and constraint-filtered — never a claim about the world.
+    #: Only a real paired replay can lift a unit past this rung.
+    CONSTRAINT_VALIDATED = 15
+    COUNTERFACTUAL_VALIDATED = 20
+    REPRODUCIBLE = 30
+    MINIMAL = 40
+    TRAINING_VALIDATED = 50
+
+
+#: Wire format written before CONSTRAINT_VALIDATED existed (schema v1).
+LEGACY_TIER_VALUES = {
+    0: EvidenceTier.OBSERVED,
+    1: EvidenceTier.SUGGESTED,
+    2: EvidenceTier.COUNTERFACTUAL_VALIDATED,
+    3: EvidenceTier.REPRODUCIBLE,
+    4: EvidenceTier.MINIMAL,
+    5: EvidenceTier.TRAINING_VALIDATED,
+}
+
+
+def parse_tier(value: Any) -> EvidenceTier:
+    """Accept a name, a current value, or a legacy (0-5) integer."""
+    if isinstance(value, EvidenceTier):
+        return value
+    if isinstance(value, str):
+        return EvidenceTier[value]
+    if isinstance(value, int):
+        if value in EvidenceTier._value2member_map_:
+            return EvidenceTier(value)
+        if value in LEGACY_TIER_VALUES:
+            return LEGACY_TIER_VALUES[value]
+    raise ValueError(f"unrecognized evidence tier: {value!r}")
 
 
 class CostLedger(BaseModel):
@@ -208,6 +244,17 @@ class CausalUnit(BaseModel):
     repro_runs: int = 0
     repro_flips: int = 0
     tier: EvidenceTier = EvidenceTier.SUGGESTED
+
+    @field_validator("tier", mode="before")
+    @classmethod
+    def _coerce_tier(cls, v: Any) -> EvidenceTier:
+        return parse_tier(v)
+
+    @field_serializer("tier")
+    def _dump_tier(self, tier: EvidenceTier) -> str:
+        # names survive rung insertions; the legacy integers did not
+        return tier.name
+
     minimal_intervention: Intervention | None = None
     atoms_before_slicing: int = 0
     atoms_after_slicing: int = 0
@@ -220,3 +267,143 @@ class CausalUnit(BaseModel):
 
     def effective_intervention(self) -> Intervention:
         return self.minimal_intervention or self.intervention
+
+
+# ---------------------------------------------------------------------------
+# Identify -> Generate -> Filter -> Validate
+#
+# The mainstream counterfactual-data-augmentation pipeline, made explicit.
+# Generation is cheap and unreliable; execution is expensive and decisive.
+# These types keep the two apart, so a model-written branch can reach
+# CONSTRAINT_VALIDATED on its own merits and no further.
+# ---------------------------------------------------------------------------
+
+
+class SiteKind(enum.StrEnum):
+    """What sort of variable a site names."""
+
+    TEXT_SPAN = "TextSpan"
+    SEMANTIC_TRIPLE = "SemanticTriple"
+    RATIONALE = "Rationale"
+    AGENT_ACTION = "AgentAction"
+    TOOL_ARGUMENT = "ToolArgument"
+    STRUCTURED_FIELD = "StructuredField"
+
+
+class InterventionSite(BaseModel):
+    """A variable that *can* be intervened on, with the causal bookkeeping
+    an honest ``do`` needs: what must stay fixed, and what is allowed to
+    change downstream."""
+
+    id: str = Field(default_factory=lambda: new_id("site"))
+    episode_id: str = ""
+    step_index: int = 0
+    kind: SiteKind = SiteKind.TEXT_SPAN
+    variable: str  # e.g. "tool_argument.version"
+    current_value: str = ""
+    influence_score: float = 0.0  # heuristic prior, never evidence
+    invariants: list[str] = Field(default_factory=list)
+    possible_descendants: list[str] = Field(default_factory=list)
+    locator: dict[str, Any] = Field(default_factory=dict)  # how to edit it
+
+
+class GenerationProvenance(BaseModel):
+    """Who produced this branch, and how — recorded so a reviewer can tell
+    a model's guess from an executed fact."""
+
+    generator: str = "unknown"  # operator name
+    strategy: str = ""
+    model: str | None = None
+    prompt_digest: str | None = None
+    seed: int | None = None
+    cached: bool = False
+    regenerated_descendants: list[str] = Field(default_factory=list)
+
+
+class ValidationVector(BaseModel):
+    """Composable verdicts. Hard constraints gate promotion; soft scores
+    rank. One LLM judge is never the whole story."""
+
+    intervention_fidelity: bool | None = None
+    target_outcome_shift: bool | None = None
+    invariant_preservation: bool | None = None
+    schema_validity: bool | None = None
+    minimality: float | None = None
+    semantic_proximity: float | None = None
+    fluency: float | None = None
+    diversity: float | None = None
+    verifier_confidence: float | None = None
+    accepted: bool = False
+    failed_at: str | None = None
+    reason: str = ""
+
+    #: Checked as a cascade, most fundamental first, so ``failed_at`` names
+    #: the real problem: an unexecutable action is not an invariant bug.
+    HARD: ClassVar[tuple[str, ...]] = (
+        "schema_validity",
+        "intervention_fidelity",
+        "invariant_preservation",
+        "target_outcome_shift",
+    )
+
+    def first_failure(self) -> str | None:
+        for name in self.HARD:
+            value = getattr(self, name)
+            if value is False:
+                return name
+        return None
+
+
+class GeneratedBranch(BaseModel):
+    """A model-proposed counterfactual: an intervention plus everything a
+    reviewer (or a filter) needs to judge it *before* paying for a replay."""
+
+    id: str = Field(default_factory=lambda: new_id("gb"))
+    episode_id: str
+    task_id: str = ""
+    site_id: str = ""
+    site: InterventionSite | None = None
+    intervention: Intervention
+    target_outcome: str = "success"  # what this do() is meant to achieve
+    invariants: list[str] = Field(default_factory=list)
+    provenance: GenerationProvenance = Field(default_factory=GenerationProvenance)
+    validation: ValidationVector | None = None
+    tier: EvidenceTier = EvidenceTier.SUGGESTED
+
+    @field_validator("tier", mode="before")
+    @classmethod
+    def _coerce_tier(cls, v: Any) -> EvidenceTier:
+        return parse_tier(v)
+
+    @field_serializer("tier")
+    def _dump_tier(self, tier: EvidenceTier) -> str:
+        return tier.name
+
+    def effect_signature(self) -> str:
+        """Branches that intervene on the same variable in the same way are
+        one experiment; the selector spends budget per signature, not per
+        duplicate."""
+        iv = self.intervention
+        payload = {
+            "episode": self.episode_id,
+            "step": iv.target_step,
+            "type": str(iv.type),
+            "variable": (self.site.variable if self.site else self.site_id),
+            "value": digest_of(
+                iv.new_action.model_dump() if iv.new_action else [e.model_dump() for e in iv.edits]
+            ),
+        }
+        return digest_of(payload)
+
+
+class ReplayRequest(BaseModel):
+    """A branch the selector judged worth real execution, with the reasoning
+    that bought it the slot."""
+
+    branch_id: str
+    episode_id: str
+    effect_signature: str
+    priority: float = 0.0
+    estimated_cost: float = 1.0
+    rationale: str = ""
+    is_cluster_representative: bool = False

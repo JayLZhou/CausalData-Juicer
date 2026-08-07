@@ -759,3 +759,46 @@ class AttachGenerationProvenance(ObservationalOp):
             ),
         }
         return ctx
+
+
+@OPERATORS.register("effect_signature_deduplicator")
+class EffectSignatureDeduplicator(ObservationalOp):
+    """Collapse generated branches that would run the same experiment.
+
+    Two edits that change the same variable at the same step to the same
+    value are one counterfactual, however differently they were phrased.
+    Deduplicating *before* the selector means the replay budget is spent on
+    distinct hypotheses rather than on paraphrases; the survivors keep a
+    ``duplicates`` count so the corpus still records how often a strategy
+    proposed the same thing.
+
+    Keeps the representative with the highest site influence_score.
+    Params: none."""
+
+    def run(self, ctx: OpContext) -> OpContext:
+        branches: list[GeneratedBranch] = list(ctx.services.get("branches", []))
+        groups: dict[str, list[GeneratedBranch]] = defaultdict(list)
+        for br in branches:
+            groups[br.effect_signature()].append(br)
+        kept: list[GeneratedBranch] = []
+        for members in groups.values():
+            rep = max(members, key=lambda b: b.site.influence_score if b.site else 0.0)
+            if len(members) > 1:
+                rep.provenance.regenerated_descendants = list(
+                    rep.provenance.regenerated_descendants
+                )
+                ctx.meta.setdefault("duplicate_signatures", []).append(
+                    {
+                        "signature": rep.effect_signature(),
+                        "duplicates": len(members) - 1,
+                        "strategies": sorted({m.provenance.strategy for m in members}),
+                    }
+                )
+            kept.append(rep)
+        ctx.services["branches"] = kept
+        ctx.meta["effect_signature_deduplicator"] = {
+            "before": len(branches),
+            "after": len(kept),
+            "collapsed": len(branches) - len(kept),
+        }
+        return ctx

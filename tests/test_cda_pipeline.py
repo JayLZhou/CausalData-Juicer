@@ -311,3 +311,34 @@ def test_provenance_attaches_generation_and_never_raises_a_tier(tmp_path):
     # the gate: constraint validation does not survive as causal evidence
     assert unit.tier is EvidenceTier.SUGGESTED
     assert ctx.meta["attach_generation_provenance"]["promoted_by_execution"] == 0
+
+
+def test_effect_signature_deduplicator_collapses_paraphrases(tmp_path):
+    """Two strategies proposing the identical edit are one experiment; the
+    replay budget must not pay twice for it."""
+    ctx = _mapped(
+        tmp_path, _episode(writes=[("config.yaml", "version: latest")]), kinds=["StructuredField"]
+    )
+    # mask_edit and retrieve_edit with the empty value produce the same effect
+    OPERATORS.get("do_counterfactual_mapper")(
+        strategy=["mask_edit", "retrieve_edit"], values=[""]
+    ).run(ctx)
+    before = len(ctx.services["branches"])
+    assert before >= 2
+    OPERATORS.get("effect_signature_deduplicator")().run(ctx)
+    meta = ctx.meta["effect_signature_deduplicator"]
+    assert meta["before"] == before and meta["after"] < before
+    assert meta["collapsed"] >= 1
+    assert ctx.meta["duplicate_signatures"][0]["duplicates"] >= 1
+
+
+def test_deduplicator_keeps_distinct_hypotheses(tmp_path):
+    ctx = _mapped(
+        tmp_path,
+        _episode(writes=[("config.yaml", "version: latest\ntimeout: 30")]),
+        kinds=["StructuredField"],
+    )
+    OPERATORS.get("do_counterfactual_mapper")(strategy="mask_edit").run(ctx)
+    n = len(ctx.services["branches"])
+    OPERATORS.get("effect_signature_deduplicator")().run(ctx)
+    assert len(ctx.services["branches"]) == n  # different variables: not duplicates

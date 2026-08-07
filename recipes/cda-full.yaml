@@ -1,0 +1,20 @@
+# The mainline recipe as specified, runnable verbatim except for two names
+# that already existed in this engine under different labels:
+#   causal_minimize    -> `minimize`      (ddmin over intervention atoms)
+#   dpo_or_sft_compiler -> `export_views` (SFT / DPO / memory / regression)
+# Aliases were deliberately not added: two names for one operator would
+# inflate `cdj ops` without adding a capability.
+workdir: runs/recipe-cda-full
+process:
+  - collect_toy: {}
+  - intervention_site_mapper: {}
+  - do_counterfactual_mapper: {strategy: [mask_edit, rationale_edit], max_sites: 60}
+  - counterfactual_validity_filter: {}
+  - effect_signature_deduplicator: {}
+  - replay_promotion_selector: {budget: 15, sequential: true}
+  - paired_replay: {n_repro: 2}
+  - attach_generation_provenance: {}
+  - minimize: {}                 # causal_minimize
+  - export_views: {}             # dpo_or_sft_compiler
+  - cost_report: {out: cost.json}
+  - save_run: {}

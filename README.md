@@ -47,7 +47,7 @@ Then pick your entry point:
 | a repo + a check | `cdj run --repo . --verify "pytest -q"` | certified correction pairs + an HTML report of what changed and why it counts |
 | a DJ habit | `cdj process --config recipes/demo.yaml` | the same loop as a YAML operator recipe |
 
-**39 operators** ship registered and recipe-usable (`cdj ops`) across the four
+**40 operators** ship registered and recipe-usable (`cdj ops`) across the four
 categories of the algebra — observational, source, interventional, compile.
 We deliberately do not mirror Data-Juicer's 200+ text-cleaning operators:
 those answer an observational question ("is this sample good?"), while every

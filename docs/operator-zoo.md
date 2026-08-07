@@ -14,9 +14,9 @@ interventional one ("would the outcome have changed?").
 
 <!-- BEGIN GENERATED ZOO -->
 
-**39 operators ship in this package**, in the four categories of the algebra. This table is generated from the registry by `scripts/gen_zoo_docs.py`; a test fails if it drifts from what `cdj ops` lists.
+**40 operators ship in this package**, in the four categories of the algebra. This table is generated from the registry by `scripts/gen_zoo_docs.py`; a test fails if it drifts from what `cdj ops` lists.
 
-### `observational` — no environment, zero budget — can never raise a tier (16)
+### `observational` — no environment, zero budget — can never raise a tier (17)
 
 | operator | what it does | params |
 |---|---|---|
@@ -27,6 +27,7 @@ interventional one ("would the outcome have changed?").
 | `coverage_report` | How much of the failure set got covered, by task and by tier, into ctx.meta['coverage'] | `out (optional path)` |
 | `dag_stats` | Trace-DAG sharing statistics (unique trees, bytes saved) into ctx.meta['dag'] | — |
 | `dedupe_units` | Drop units whose (episode, target step, effect) signature repeats — two fixes that flip the same failure the same way are one datum | — |
+| `effect_signature_deduplicator` | Collapse generated branches that would run the same experiment. Two edits that change the same variable at the same step to the same value are one counterfactual, however differently they were phrased. Deduplicating *before* the selector means the replay budget is spent on distinct hypotheses rather than on paraphrases; the survivors keep a ``duplicates`` count so the corpus still records how often a strategy proposed the same thing. Keeps the representative with the highest site influence_score | — |
 | `export_observational` | Behaviour-cloning and failure-log views straight from episodes — the OBSERVED-ceiling exports that need no replay at all | — |
 | `filter_units` | Keep units matching a predicate | `min_tier (e.g. MINIMAL), flipped (bool), task_prefix (str), source (str). Unset params do not constrain` |
 | `her_relabel` | Hindsight relabelling: a failed trajectory is optimal supervision for the goal it *did* reach. Pure re-reading of recorded episodes, so the rows carry the OBSERVED ceiling | `out (default exports/her_sft.jsonl)` |
